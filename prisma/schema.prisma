@@ -1,0 +1,224 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  uuid              String      @id      @default(uuid())
+  password          String?
+  firstname         String?
+  lastname          String?
+  email             String?     @unique
+  phone             String?
+  register_date     DateTime?   @default(now())
+  Passenger         Passenger[]
+  Booking           Booking[]
+}
+
+model Admin {
+  id                Int         @id
+  username          String?     @unique
+  password          String?
+  fullname          String?
+  permission        Permission
+}
+
+model Aircraft {
+  aircraftID       String @id
+  ownerAirlineCode String
+  aircraftModel    String?
+  costPerMile      Float
+  aircraftFCap     Int
+  aircraftCCap     Int
+  aircraftYCap     Int
+  aircraftWCap     Int
+  Flights          Flight[]
+  OwnerAirline     Airline      @relation(fields: [ownerAirlineCode], references: [airlineCode])
+}
+
+model Airline {
+  airlineCode String @id
+  airlineName String?
+  aircrafts   Aircraft[]
+  Flights     Flight[]
+}
+
+model Airport {
+  airportCode     String @id
+  airportName     String
+  airportCountry  String
+  airportCity     String
+  airportTimezone String
+  airportLat      Float
+  airportLon      Float
+  DepartFlights   Flight[]      @relation(name: "DepartAirportRelation")
+  ArriveFlights   Flight[]      @relation(name: "ArriveAirportRelation")
+}
+
+model Booking {
+  bookingId            String           @id
+  uuid                 String
+  numAdultPassenger    Int?
+  numChildrenPassenger Int?
+  numInfantPassenger   Int?
+  bookingDate          DateTime
+  bookingStatus        BookingStatus
+  bookings             BookingFlight[]
+  PassengerBooking     PassengerBooking[]
+  Tickets              Ticket[]
+  Payment              Payment[]
+  User                 User?         @relation(fields: [uuid], references: [uuid])
+}
+
+model BookingFlight {
+  bookingId   String
+  flightNum   String
+  Booking     Booking                @relation(fields: [bookingId], references: [bookingId])
+  Flight      Flight                 @relation(fields: [flightNum], references: [flightNum])
+  @@id([bookingId, flightNum])
+}
+
+model Flight {
+  flightNum         String    @id
+  airlineCode       String
+  aircraftID        String
+  departAirportCode String
+  arriveAirportCode String
+  availableSeats    Int?
+  departureTime     DateTime?
+  arrivalTime       DateTime?
+  BookingFlights    BookingFlight[]
+  Seats             Seat[]
+  Tickets           Ticket[]
+  Aircraft          Aircraft          @relation(fields: [aircraftID], references: [aircraftID])
+  DepartAirport     Airport           @relation(name: "DepartAirportRelation", fields: [departAirportCode], references: [airportCode])
+  ArriveAirport     Airport           @relation(name: "ArriveAirportRelation", fields: [arriveAirportCode], references: [airportCode])
+  Airline           Airline           @relation(fields: [airlineCode], references: [airlineCode])
+  oldTransit        transit[]         @relation(name: "old")
+  newTransit        transit[]         @relation(name: "new")
+}
+
+model Passenger {
+  passportNum        String    @id
+  passportCountry    String?
+  passportExpireDate DateTime?
+  firstName          String?
+  lastName           String?
+  DoB                DateTime?
+  nationality        String?
+  userUuid           String?
+  passengerBookings  PassengerBooking[]
+  Tickets            Ticket[]
+  user               User?            @relation(fields: [userUuid], references: [uuid])
+}
+
+model PassengerBooking {
+  bookingId   String
+  passportNum String
+  Booking     Booking                 @relation(fields: [bookingId], references: [bookingId])
+  Passenger   Passenger               @relation(fields: [passportNum], references: [passportNum])
+  @@id([bookingId, passportNum])
+}
+
+model Payment {
+  paymentCode   Int                   @id
+  bookingId     String
+  paymentAmount Float
+  paymentMethod String
+  paymentDate   DateTime
+  Booking       Booking               @relation(fields: [bookingId], references: [bookingId])
+}
+
+model Seat {
+  seatNum   String
+  seatRow   Int
+  class     SeatClass
+  flightNum String
+  price     Float
+  reserved  ReservedStatus
+  feature   String
+  seatFloor Int
+  flight    Flight                    @relation(fields: [flightNum], references: [flightNum])
+  Ticket    Ticket[]
+  @@id([flightNum, seatNum])
+}
+
+model Ticket {
+  ticketNum              String       @id
+  bookingId              String
+  flightNum              String
+  passportNum            String
+  seatNum                String
+  farePackage            FarePackage
+  baggageAllowanceWeight Int?
+  baggageAllowancePrice  Float?
+  mealSelection          String?
+  mealPrice              Float?
+  totalPrice             Float
+  ticketStatus           TicketStatus
+  booking                Booking      @relation(fields: [bookingId], references: [bookingId])
+  flight                 Flight       @relation(fields: [flightNum], references: [flightNum])
+  passenger              Passenger    @relation(fields: [passportNum], references: [passportNum])
+  seat                   Seat         @relation(fields: [flightNum, seatNum], references: [flightNum, seatNum])
+}
+
+model transit {
+  transitAirport    String
+  transitTime       DateTime
+  transitDuration   Int
+  transitFlightNum  String
+  transitFlightNum2 String
+  oldFlight         Flight            @relation(name: "old", fields: [transitFlightNum], references: [flightNum])
+  newFlight         Flight            @relation(name: "new", fields: [transitFlightNum2], references: [flightNum])
+  @@id([transitFlightNum, transitFlightNum2])
+}
+
+
+//Enumerable
+
+enum Permission {
+  SUPER
+  DATAENTRY
+}
+
+enum BookingStatus {
+  Paid
+  Unpaid
+  Cancelled
+}
+
+enum SeatClass {
+  C
+  Y
+  F
+  W
+}
+
+enum ReservedStatus {
+  YES
+  NO
+  MAYBE
+}
+
+enum FarePackage {
+  supersaver
+  saver
+  standard
+  flexi
+  fullflex
+}
+
+enum TicketStatus {
+  Paid
+  Cancelled
+}

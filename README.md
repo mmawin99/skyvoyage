@@ -9,7 +9,7 @@ A Final Project of CPE241 Database Systems course.
 ### Development
 First, you need to install dependencies.
 ```bash
-bun  install
+bun install
 
 ```
 > To run the development server, first ensure that you put the database URL in the `.env` file. Create `.env` or rename `.env.example` to `.env`, then configure your own database URL.
@@ -28,7 +28,7 @@ bun prisma generate
 Finally, you can run project in development mode by typing these commands.
 
 ```bash
-bun  dev
+bun dev
 ```
 
 We're using Next.js as Frontend and Backend. so `bun dev` command will open a localhost server for both frontend and backend.

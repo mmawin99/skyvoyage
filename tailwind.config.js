@@ -1,6 +1,5 @@
-import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
-const config: Config = {
+const config = {
     content: [
       "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
       "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -39,14 +38,7 @@ const config: Config = {
         'xl-dpr-3': {             'raw': '(min-width: 1280px) and (min-resolution: 3dppx), (min-width: 1280px) and (-webkit-min-device-pixel-ratio: 3)',},
         'xl_extra-dpr-3': {       'raw': '(min-width: 1340px) and (min-resolution: 3dppx), (min-width: 1340px) and (-webkit-min-device-pixel-ratio: 3)',},
         '2xl-dpr-3': {            'raw': '(min-width: 1536px) and (min-resolution: 3dppx), (min-width: 1536px) and (-webkit-min-device-pixel-ratio: 3)',},
-      },
-      extend: {
-        fontFamily: {
-          sans: ["Inter", "sans-serif"],
-          serif: ["Georgia", "serif"],
-          mono: ["Menlo", "monospace"],
-        },
-      },
+      }
     },
   plugins: [tailwindcssAnimate],
 };

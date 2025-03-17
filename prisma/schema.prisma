@@ -61,6 +61,7 @@ model Airport {
   airportTimezone String
   airportLat      Float
   airportLon      Float
+  airportAlt      Int
   DepartFlights   Flight[]      @relation(name: "DepartAirportRelation")
   ArriveFlights   Flight[]      @relation(name: "ArriveAirportRelation")
 }
@@ -82,20 +83,21 @@ model Booking {
 
 model BookingFlight {
   bookingId   String
-  flightNum   String
+  flightID   String
   Booking     Booking                @relation(fields: [bookingId], references: [bookingId])
-  Flight      Flight                 @relation(fields: [flightNum], references: [flightNum])
-  @@id([bookingId, flightNum])
+  Flight      Flight                 @relation(fields: [flightID], references: [flightID])
+  @@id([bookingId, flightID])
 }
 
 model Flight {
-  flightNum         String    @id
+  flightID          String           @id   @default(uuid()) // Primary key as UUID
+  flightNum         String
+  callsign          String
   airlineCode       String
   aircraftID        String
   departAirportCode String
   arriveAirportCode String
-  availableSeats    Int?
-  departureTime     DateTime?
+  departureTime     DateTime
   arrivalTime       DateTime?
   BookingFlights    BookingFlight[]
   Seats             Seat[]
@@ -106,8 +108,9 @@ model Flight {
   Airline           Airline           @relation(fields: [airlineCode], references: [airlineCode])
   oldTransit        transit[]         @relation(name: "old")
   newTransit        transit[]         @relation(name: "new")
-}
 
+  @@unique([flightNum, departureTime]) // Ensures logical uniqueness
+}
 model Passenger {
   passportNum        String    @id
   passportCountry    String?
@@ -133,9 +136,9 @@ model PassengerBooking {
 model Payment {
   paymentCode   Int                   @id
   bookingId     String
-  paymentAmount Float
-  paymentMethod String
-  paymentDate   DateTime
+  paymentAmount Float?
+  paymentMethod String?
+  paymentDate   DateTime?
   Booking       Booking               @relation(fields: [bookingId], references: [bookingId])
 }
 
@@ -143,20 +146,20 @@ model Seat {
   seatNum   String
   seatRow   Int
   class     SeatClass
-  flightNum String
+  flightID String
   price     Float
   reserved  ReservedStatus
   feature   String
   seatFloor Int
-  flight    Flight                    @relation(fields: [flightNum], references: [flightNum])
+  flight    Flight                    @relation(fields: [flightID], references: [flightID])
   Ticket    Ticket[]
-  @@id([flightNum, seatNum])
+  @@id([flightID, seatNum])
 }
 
 model Ticket {
   ticketNum              String       @id
   bookingId              String
-  flightNum              String
+  flightID              String
   passportNum            String
   seatNum                String
   farePackage            FarePackage
@@ -167,9 +170,9 @@ model Ticket {
   totalPrice             Float
   ticketStatus           TicketStatus
   booking                Booking      @relation(fields: [bookingId], references: [bookingId])
-  flight                 Flight       @relation(fields: [flightNum], references: [flightNum])
+  flight                 Flight       @relation(fields: [flightID], references: [flightID])
   passenger              Passenger    @relation(fields: [passportNum], references: [passportNum])
-  seat                   Seat         @relation(fields: [flightNum, seatNum], references: [flightNum, seatNum])
+  seat                   Seat         @relation(fields: [flightID, seatNum], references: [flightID, seatNum])
 }
 
 model transit {
@@ -178,8 +181,8 @@ model transit {
   transitDuration   Int
   transitFlightNum  String
   transitFlightNum2 String
-  oldFlight         Flight            @relation(name: "old", fields: [transitFlightNum], references: [flightNum])
-  newFlight         Flight            @relation(name: "new", fields: [transitFlightNum2], references: [flightNum])
+  oldFlight         Flight            @relation(name: "old", fields: [transitFlightNum], references: [flightID])
+  newFlight         Flight            @relation(name: "new", fields: [transitFlightNum2], references: [flightID])
   @@id([transitFlightNum, transitFlightNum2])
 }
 

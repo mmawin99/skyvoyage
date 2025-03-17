@@ -204,10 +204,10 @@ enum BookingStatus {
 }
 
 enum SeatClass {
-  FIRST
-  BUSINESS
-  ECONOMY
-  PREMIUM
+  F
+  C
+  Y
+  W
 }
 
 enum ReservedStatus {

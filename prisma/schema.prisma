@@ -106,8 +106,8 @@ model Flight {
   DepartAirport     Airport           @relation(name: "DepartAirportRelation", fields: [departAirportCode], references: [airportCode])
   ArriveAirport     Airport           @relation(name: "ArriveAirportRelation", fields: [arriveAirportCode], references: [airportCode])
   Airline           Airline           @relation(fields: [airlineCode], references: [airlineCode])
-  oldTransit        transit[]         @relation(name: "old")
-  newTransit        transit[]         @relation(name: "new")
+  previousTransit   transit[]         @relation(name: "previous")
+  nextTransit       transit[]         @relation(name: "next")
 
   @@unique([flightNum, departureTime]) // Ensures logical uniqueness
 }
@@ -128,7 +128,7 @@ model Passenger {
 model PassengerBooking {
   bookingId   String
   passportNum String
-  Booking     Booking                 @relation(fields: [bookingId], references: [bookingId])
+  Booking     Booking                 @relation(fields: [bookingId],   references: [bookingId])
   Passenger   Passenger               @relation(fields: [passportNum], references: [passportNum])
   @@id([bookingId, passportNum])
 }
@@ -169,9 +169,9 @@ model Ticket {
   mealPrice              Float?
   totalPrice             Float
   ticketStatus           TicketStatus
-  booking                Booking      @relation(fields: [bookingId], references: [bookingId])
-  flight                 Flight       @relation(fields: [flightID], references: [flightID])
-  passenger              Passenger    @relation(fields: [passportNum], references: [passportNum])
+  booking                Booking      @relation(fields: [bookingId],         references: [bookingId])
+  flight                 Flight       @relation(fields: [flightID],          references: [flightID])
+  passenger              Passenger    @relation(fields: [passportNum],       references: [passportNum])
   seat                   Seat         @relation(fields: [flightID, seatNum], references: [flightID, seatNum])
 }
 
@@ -181,8 +181,8 @@ model transit {
   transitDuration   Int
   transitFlightNum  String
   transitFlightNum2 String
-  oldFlight         Flight            @relation(name: "old", fields: [transitFlightNum], references: [flightID])
-  newFlight         Flight            @relation(name: "new", fields: [transitFlightNum2], references: [flightID])
+  previousFlight    Flight            @relation(name: "previous", fields: [transitFlightNum],  references: [flightID])
+  nextFlight        Flight            @relation(name: "next",     fields: [transitFlightNum2], references: [flightID])
   @@id([transitFlightNum, transitFlightNum2])
 }
 

@@ -162,26 +162,6 @@ body {
     }
   }
 }
-@custom-variant xxs-dpr-2            (@media (min-width: 375px)  and (min-resolution: 2dppx), @media (min-width: 375px)  and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant xs-dpr-2             (@media (min-width: 576px)  and (min-resolution: 2dppx), @media (min-width: 576px)  and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant sm-dpr-2             (@media (min-width: 640px)  and (min-resolution: 2dppx), @media (min-width: 640px)  and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant md-dpr-2             (@media (min-width: 768px)  and (min-resolution: 2dppx), @media (min-width: 768px)  and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant medium_large-dpr-2   (@media (min-width: 960px)  and (min-resolution: 2dppx), @media (min-width: 960px)  and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant lg-dpr-2             (@media (min-width: 1024px) and (min-resolution: 2dppx), @media (min-width: 1024px) and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant large_extra-dpr-2    (@media (min-width: 1120px) and (min-resolution: 2dppx), @media (min-width: 1120px) and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant xl-dpr-2             (@media (min-width: 1280px) and (min-resolution: 2dppx), @media (min-width: 1280px) and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant xl_extra-dpr-2       (@media (min-width: 1340px) and (min-resolution: 2dppx), @media (min-width: 1340px) and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant 2xl-dpr-2            (@media (min-width: 1536px) and (min-resolution: 2dppx), @media (min-width: 1536px) and (-webkit-min-device-pixel-ratio: 2);
-@custom-variant xxs-dpr-3            (@media (min-width: 375px)  and (min-resolution: 3dppx), @media (min-width: 576px)  and (-webkit-min-device-pixel-ratio: 3);
-@custom-variant xs-dpr-3             (@media (min-width: 576px)  and (min-resolution: 3dppx), @media (min-width: 576px)  and (-webkit-min-device-pixel-ratio: 3);
-@custom-variant sm-dpr-3             (@media (min-width: 640px)  and (min-resolution: 3dppx), @media (min-width: 640px)  and (-webkit-min-device-pixel-ratio: 3);
-@custom-variant md-dpr-3             (@media (min-width: 768px)  and (min-resolution: 3dppx), @media (min-width: 768px)  and (-webkit-min-device-pixel-ratio: 3);
-@custom-variant medium_large-dpr-3   (@media (min-width: 960px)  and (min-resolution: 3dppx), @media (min-width: 960px)  and (-webkit-min-device-pixel-ratio: 3);
-@custom-variant lg-dpr-3             (@media (min-width: 1024px) and (min-resolution: 3dppx), @media (min-width: 1024px) and (-webkit-min-device-pixel-ratio: 3);
-@custom-variant large_extra-dpr-3    (@media (min-width: 1120px) and (min-resolution: 3dppx), @media (min-width: 1120px) and (-webkit-min-device-pixel-ratio: 3);
-@custom-variant xl-dpr-3             (@media (min-width: 1280px) and (min-resolution: 3dppx), @media (min-width: 1280px) and (-webkit-min-device-pixel-ratio: 3);
-@custom-variant xl_extra-dpr-3       (@media (min-width: 1340px) and (min-resolution: 3dppx), @media (min-width: 1340px) and (-webkit-min-device-pixel-ratio: 3);
-@custom-variant 2xl-dpr-3            (@media (min-width: 1536px) and (min-resolution: 3dppx), @media (min-width: 1536px) and (-webkit-min-device-pixel-ratio: 3);
 
 @layer base {
   * {

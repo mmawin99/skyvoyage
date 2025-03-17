@@ -92,23 +92,24 @@ model BookingFlight {
 }
 
 model Flight {
-  flightId         String          @id   @default(uuid())   @db.VarChar(36)
-  flightNum        String          @db.VarChar(10)
-  airlineCode      String          @db.VarChar(3)
-  aircraftId       String          @db.VarChar(13)
-  departAirportId  String          @db.VarChar(4)
-  arriveAirportId  String          @db.VarChar(4)
-  departureTime    DateTime
-  arrivalTime      DateTime
-  bookings         BookingFlight[]
-  seats            Seat[]
-  tickets          Ticket[]
-  aircraft         Aircraft        @relation(fields: [aircraftId], references: [aircraftId])
-  departAirport    Airport         @relation(name: "DepartAirportRelation", fields: [departAirportId], references: [airportCode])
-  arriveAirport    Airport         @relation(name: "ArriveAirportRelation", fields: [arriveAirportId], references: [airportCode])
-  airline          Airline         @relation(fields: [airlineCode], references: [airlineCode])
-  previousTransit  Transit[]       @relation(name: "previous")
-  nextTransit      Transit[]       @relation(name: "next")
+  flightId          String          @id   @default(uuid())   @db.VarChar(36)
+  flightNum         String          @db.VarChar(10)
+  airlineCode       String          @db.VarChar(3)
+  aircraftId        String          @db.VarChar(13)
+  departAirportId   String          @db.VarChar(4)
+  arriveAirportId   String          @db.VarChar(4)
+  departureTime     DateTime
+  departureGate     String          @db.VarChar(5)
+  arrivalTime       DateTime
+  bookings          BookingFlight[]
+  seats             Seat[]
+  tickets           Ticket[]
+  aircraft          Aircraft        @relation(fields: [aircraftId], references: [aircraftId])
+  departAirport     Airport         @relation(name: "DepartAirportRelation", fields: [departAirportId], references: [airportCode])
+  arriveAirport     Airport         @relation(name: "ArriveAirportRelation", fields: [arriveAirportId], references: [airportCode])
+  airline           Airline         @relation(fields: [airlineCode], references: [airlineCode])
+  previousTransit   Transit[]       @relation(name: "previous")
+  nextTransit       Transit[]       @relation(name: "next")
   
   @@unique([flightNum, departureTime])
 }

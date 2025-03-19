@@ -31,11 +31,11 @@ bun dev
 #### Backend
 `Windows Backend`
 ```bash
-cd skyvoyage_backend
+cd backend
 bun install
 cd ..
 ```
-To run the backend development server, Ensure that `.env` file on folder `skyvoyage_backend` contains your database URL.
+To run the backend development server, Ensure that `.env` file on folder `backend` contains your database URL.
 If file `.env` isn't exist on your backend folder, Create new one.
 Or you can copy file `.env.example` and rename it into `.env`.
 ```env
@@ -43,19 +43,19 @@ DATABASE_URL="mysql://<your_database_user>:<your_database_password>@<your_databa
 ```
 Push your schema into mysql database.
 ```bash
-cd skyvoyage_backend
+cd backend
 bun prisma db push
 ```
 
 then you need to generate prisma client
 ```bash
-cd skyvoyage_backend
+cd backend
 bun prisma generate
 ```
 
 Run backend
 
 ```bash
-cd skyvoyage_backend
+cd backend
 bun dev
 ```

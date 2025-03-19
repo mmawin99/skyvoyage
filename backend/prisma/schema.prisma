@@ -1,0 +1,231 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions 
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  uuid          String        @id @default(uuid())
+  password      String        @db.LongText
+  firstname     String     
+  lastname      String 
+  email         String        @unique
+  phone         String        
+  registerDate  DateTime      @default(now())
+  passengers    Passenger[]
+  bookings      Booking[]
+}
+
+model Admin {
+  id          Int        @id   @default(autoincrement())
+  username    String     @unique
+  password    String     @db.LongText
+  fullname    String     @db.VarChar(30)
+  permission  Permission
+}
+
+model Aircraft {
+  aircraftId       String    @id  @db.VarChar(13)
+  ownerAirlineCode String    @db.VarChar(3)
+  model            String    @db.VarChar(10)
+  costPerMile      Float     @default(0)
+  firstClassCap    Int       @default(0)
+  businessClassCap Int       @default(0)
+  economyClassCap  Int       @default(0)
+  premiumClassCap  Int       @default(0)
+  flights         Flight[]
+  ownerAirline    Airline    @relation(fields: [ownerAirlineCode], references: [airlineCode])
+}
+
+model Airline {
+  airlineCode String    @id  @db.VarChar(3)
+  name        String    @db.VarChar(50)
+  aircrafts   Aircraft[]
+  flights     Flight[]
+}
+
+model Airport {
+  airportCode      String       @id   @db.VarChar(4)
+  name             String       @db.VarChar(100)
+  country          String       @db.VarChar(100)
+  city             String       @db.VarChar(100)
+  timezone         String       @db.VarChar(30)
+  latitude         Float        @default(0)
+  longitude        Float        @default(0)
+  altitude         Int          @default(0)
+  departingFlights Flight[]     @relation(name: "DepartAirportRelation")
+  arrivingFlights  Flight[]     @relation(name: "ArriveAirportRelation")
+  transits         Transit[]
+}
+
+model Booking {
+  bookingId            String               @id @db.VarChar(36) @default(uuid())
+  userId               String               @db.VarChar(36)
+  adultPassengers      Int                  @default(0)
+  childPassengers      Int                  @default(0)
+  infantPassengers     Int                  @default(0)
+  bookingDate          DateTime             @default(now())
+  status               BookingStatus
+  flights              BookingFlight[]
+  passengerBookings    PassengerBooking[]
+  tickets              Ticket[]
+  payments             Payment[]
+  user                 User                 @relation(fields: [userId], references: [uuid])
+}
+
+model BookingFlight {
+  bookingId  String               @db.VarChar(36)
+  flightId   String               @db.VarChar(36)
+  booking    Booking              @relation(fields: [bookingId], references: [bookingId])
+  flight     Flight               @relation(fields: [flightId], references: [flightId])
+  @@id([bookingId, flightId])
+}
+
+model Flight {
+  flightId          String          @id   @default(uuid())   @db.VarChar(36)
+  flightNum         String          @db.VarChar(10)
+  airlineCode       String          @db.VarChar(3)
+  aircraftId        String          @db.VarChar(13)
+  departAirportId   String          @db.VarChar(4)
+  arriveAirportId   String          @db.VarChar(4)
+  departureTime     DateTime
+  departureGate     String          @db.VarChar(5)
+  arrivalTime       DateTime
+  bookings          BookingFlight[]
+  seats             Seat[]
+  tickets           Ticket[]
+  aircraft          Aircraft        @relation(fields: [aircraftId], references: [aircraftId])
+  departAirport     Airport         @relation(name: "DepartAirportRelation", fields: [departAirportId], references: [airportCode])
+  arriveAirport     Airport         @relation(name: "ArriveAirportRelation", fields: [arriveAirportId], references: [airportCode])
+  airline           Airline         @relation(fields: [airlineCode], references: [airlineCode])
+  previousTransit   Transit[]       @relation(name: "previous")
+  nextTransit       Transit[]       @relation(name: "next")
+  
+  @@unique([flightNum, departureTime])
+}
+
+model Passenger {
+  passportNum        String             @id @db.VarChar(9)
+  passportCountry    String             @db.VarChar(30)
+  passportExpiry     DateTime           
+  firstName          String             @db.VarChar(30)
+  lastName           String             @db.VarChar(30)
+  dateOfBirth        DateTime           
+  nationality        String             @db.VarChar(100)
+  userId             String             @db.VarChar(36)
+  bookings           PassengerBooking[]
+  tickets            Ticket[]
+  user               User      @relation(fields: [userId], references: [uuid])
+}
+
+model PassengerBooking {
+  bookingId   String      @db.VarChar(36)
+  passportNum String      @db.VarChar(9)
+  booking     Booking     @relation(fields: [bookingId], references: [bookingId])
+  passenger   Passenger   @relation(fields: [passportNum], references: [passportNum])
+  @@id([bookingId, passportNum])
+}
+
+model Payment {
+  paymentId     String        @id @default(uuid()) @db.VarChar(36)
+  bookingId     String        @db.VarChar(36)
+  amount        Float         @default(0)
+  method        String        @db.VarChar(30)
+  paymentDate   DateTime      @default(now())
+  booking       Booking       @relation(fields: [bookingId], references: [bookingId])
+}
+
+model Seat {
+  seatNum    String            @db.VarChar(4)
+  flightId   String            @db.VarChar(36)
+  row        Int               @default(1)
+  class      SeatClass         @default(Y)
+  price      Float             @default(0)
+  reserved   ReservedStatus    @default(NO)
+  features   String            @db.MediumText
+  floor      Int               @default(1)
+  flight     Flight            @relation(fields: [flightId], references: [flightId])
+  tickets    Ticket[]
+  
+  @@id([flightId, seatNum])
+}
+
+model Ticket {
+  ticketNum              String          @id   @db.VarChar(13)
+  bookingId              String          @db.VarChar(36)
+  flightId               String          @db.VarChar(36)
+  passportNum            String          @db.VarChar(9)
+  seatNum                String          @db.VarChar(4)
+  farePackage            FarePackage     @default(STANDARD)
+  baggageAllowanceWeight Int             @default(0)
+  baggageAllowancePrice  Float           @default(0)
+  mealSelection          String          @db.VarChar(10)
+  mealPrice              Float           @default(0)
+  ticketPrice            Float           @default(0)
+  status                 TicketStatus    @default(PAID)
+  booking                Booking         @relation(fields: [bookingId], references: [bookingId])
+  flight                 Flight          @relation(fields: [flightId], references: [flightId])
+  passenger              Passenger       @relation(fields: [passportNum], references: [passportNum])
+  seat                   Seat            @relation(fields: [flightId, seatNum], references: [flightId, seatNum])
+}
+
+model Transit {
+  flightFrom     String        @db.VarChar(36)
+  flightTo       String        @db.VarChar(36)
+  airportId      String        @db.VarChar(4)
+  transitTime    DateTime      
+  duration       Int           @default(0)
+  transitAirport Airport       @relation(fields: [airportId], references: [airportCode])
+  previousFlight Flight        @relation(name: "previous", fields: [flightFrom], references: [flightId])
+  nextFlight     Flight        @relation(name: "next", fields: [flightTo], references: [flightId])
+  
+  @@id([flightFrom, flightTo])
+}
+
+// Enums
+
+enum Permission {
+  SUPER
+  DATA_ENTRY
+}
+
+enum BookingStatus {
+  PAID
+  UNPAID
+  CANCELLED
+}
+
+enum SeatClass {
+  F
+  C
+  Y
+  W
+}
+
+enum ReservedStatus {
+  YES
+  NO
+  MAYBE
+}
+
+enum FarePackage {
+  SUPER_SAVER
+  SAVER
+  STANDARD
+  FLEXI
+  FULL_FLEX
+}
+
+enum TicketStatus {
+  PAID
+  CANCELLED
+}

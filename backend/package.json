@@ -3,7 +3,7 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.tsx"
+    "dev": "bun run --watch src/index.ts --watch-dependencies"
   },
   "dependencies": {
     "@elysiajs/bearer": "^1.2.0",

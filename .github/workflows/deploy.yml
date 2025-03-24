@@ -11,21 +11,28 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       skip_deploy: ${{ steps.check_message.outputs.skip }}
+      silent: ${{ steps.check_message.outputs.silent }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Check commit message for --nodeploy
+      - name: Check commit message for --nodeploy and --silent
         id: check_message
         run: |
           MESSAGE="$(git log -1 --pretty=%B)"
-          if [[ "$MESSAGE" == *"--nodeploy"* ]]; then
+          if [[ "$MESSAGE" == *"--nodeploy"* || "$MESSAGE" == *"--nd"* ]]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
+          if [[ "$MESSAGE" == *"--silent"* || "$MESSAGE" == *"--s"* ]]; then
+            echo "silent=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "silent=false" >> "$GITHUB_OUTPUT"
+          fi
+
   check_changes:
     needs: check_commit
     if: needs.check_commit.outputs.skip_deploy == 'false'
@@ -52,7 +59,7 @@ jobs:
 
   notify_no_changes:
     needs: check_changes
-    if: needs.check_changes.outputs.both_unchanged == 'true'
+    if: needs.check_changes.outputs.both_unchanged == 'true' && needs.check_commit.outputs.silent == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Send Notification to ntfy.sh (No changes)
@@ -75,7 +82,7 @@ jobs:
                 { "name": "Date", "value": "${{ github.event.head_commit.timestamp }}", "inline": true },
                 { "name": "Status", "value": "❌ No Changes", "inline": true }
               ]
-            }]
+            }]}
           }'
 
   deploy_frontend:
@@ -93,6 +100,7 @@ jobs:
           echo "deploy_url=$DEPLOY_URL" >> $GITHUB_ENV
 
       - name: Send Notification to ntfy.sh & Discord (Frontend)
+        if: needs.check_commit.outputs.silent == 'false'
         run: |
           curl -X POST "${{ secrets.NTFY_URL }}" \
             -H "Title: ✅ Frontend Deployed" \
@@ -110,7 +118,7 @@ jobs:
                 { "name": "Date", "value": "${{ github.event.head_commit.timestamp }}", "inline": true },
                 { "name": "Status", "value": "[✅ Success]($DEPLOY_URL)", "inline": true }
               ]
-            }]
+            }]}
           }'
 
   deploy_backend:
@@ -128,6 +136,7 @@ jobs:
           echo "deploy_url=$DEPLOY_URL" >> $GITHUB_ENV
 
       - name: Send Notification to ntfy.sh & Discord (Backend)
+        if: needs.check_commit.outputs.silent == 'false'
         run: |
           curl -X POST "${{ secrets.NTFY_URL }}" \
             -H "Title: ✅ Backend Deployed" \
@@ -145,5 +154,5 @@ jobs:
                 { "name": "Date", "value": "${{ github.event.head_commit.timestamp }}", "inline": true },
                 { "name": "Status", "value": "[✅ Success]($DEPLOY_URL)", "inline": true }
               ]
-            }]
+            }]}
           }'

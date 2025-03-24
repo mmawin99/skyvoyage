@@ -87,7 +87,9 @@ jobs:
           # Create .vercel directory if it doesn't exist
           mkdir -p .vercel
           # Configure project ID
-          echo '{"projectId":"${{ secrets.FRONTEND_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}"}' > .vercel/project.json
+          echo '{"projectId":"${{ secrets.FRONTEND_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}","buildCommand":"npm run build"}' > .vercel/project.json
+          # Create vercel.json to force npm usage
+          echo '{"buildCommand":"npm run build","installCommand":"npm install"}' > vercel.json
           # Deploy to Vercel
           DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes)
           echo "deploy_url=$DEPLOY_URL" >> $GITHUB_ENV

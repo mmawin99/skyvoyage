@@ -83,7 +83,7 @@ jobs:
       - name: Deploy Frontend to Vercel
         id: deploy_frontend
         run: |
-          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes)
+          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --desc "Deploy frontend: ${{ github.event.head_commit.message }}")
           echo "deploy_url=$DEPLOY_URL" >> $GITHUB_ENV
   
       - name: Send Notification to ntfy.sh & Discord (Frontend)
@@ -122,7 +122,7 @@ jobs:
       - name: Deploy Backend to Vercel
         id: deploy_backend
         run: |
-          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes)
+          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --desc "Deploy backend: ${{ github.event.head_commit.message }}")
           echo "deploy_url=$DEPLOY_URL" >> $GITHUB_ENV
   
       - name: Send Notification to ntfy.sh & Discord (Backend)

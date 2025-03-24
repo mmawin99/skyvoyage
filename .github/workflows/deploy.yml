@@ -103,12 +103,13 @@ jobs:
           mkdir -p .vercel
           # Configure project ID
           echo '{"projectId":"${{ secrets.FRONTEND_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}"}' > .vercel/project.json
-          # Create vercel.json to force npm usage with legacy peer deps
-          echo '{"buildCommand":"npm run build --legacy-peer-deps","installCommand":"npm install --legacy-peer-deps"}' > vercel.json
+          # Ensure build happens before deploy
+          npm install --legacy-peer-deps
+          npm run build
           # Deploy to Vercel
-          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes)
+          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --force)
           echo "deploy_url=$DEPLOY_URL" >> $GITHUB_ENV
-  
+          
       - name: Send Notification to ntfy.sh & Discord (Frontend)
         run: |
           curl -X POST "${{ secrets.NTFY_URL }}" \

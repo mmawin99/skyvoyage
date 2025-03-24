@@ -10,6 +10,8 @@ jobs:
   check_commit:
     runs-on: ubuntu-latest
     outputs:
+      frontend_deploy: ${{ steps.check_message.outputs.frontend }}
+      backend_deploy: ${{ steps.check_message.outputs.backend }}
       skip_deploy: ${{ steps.check_message.outputs.skip }}
     steps:
       - name: Checkout Repository
@@ -17,70 +19,58 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Check commit message for --nodeploy
+      - name: Check commit message for deploy flags
         id: check_message
         run: |
           MESSAGE="$(git log -1 --pretty=%B)"
-          if [[ "$MESSAGE" == *"--nodeploy"* || "$MESSAGE" == *"--nd"* ]]; then
+          if [[ "$MESSAGE" == *"--nda"* ]]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "frontend=false" >> "$GITHUB_OUTPUT"
+            echo "backend=false" >> "$GITHUB_OUTPUT"
+          elif [[ "$MESSAGE" == *"--ndf"* ]]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "frontend=false" >> "$GITHUB_OUTPUT"
+            echo "backend=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$MESSAGE" == *"--ndb"* ]]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            echo "backend=false" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            echo "backend=true" >> "$GITHUB_OUTPUT"
           fi
-  check_changes:
+
+  notify_skip:
     needs: check_commit
-    if: needs.check_commit.outputs.skip_deploy == 'false'
-    runs-on: ubuntu-latest
-    outputs:
-      frontend_changed: ${{ steps.filter.outputs.frontend }}
-      backend_changed: ${{ steps.filter.outputs.backend }}
-      both_unchanged: ${{ steps.filter.outputs.both_unchanged }}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Check for changes
-        id: filter
-        run: |
-          FRONTEND_CHANGED=$(git diff --name-only HEAD^ HEAD | grep -q "^frontend/" && echo "true" || echo "false")
-          BACKEND_CHANGED=$(git diff --name-only HEAD^ HEAD | grep -q "^backend/" && echo "true" || echo "false")
-          BOTH_UNCHANGED=$([[ "$FRONTEND_CHANGED" == "false" && "$BACKEND_CHANGED" == "false" ]] && echo "true" || echo "false")
-          echo "frontend=$FRONTEND_CHANGED" >> $GITHUB_OUTPUT
-          echo "backend=$BACKEND_CHANGED" >> $GITHUB_OUTPUT
-          echo "both_unchanged=$BOTH_UNCHANGED" >> $GITHUB_OUTPUT
-
-  notify_no_changes:
-    needs: check_changes
-    if: needs.check_changes.outputs.both_unchanged == 'true'
+    if: needs.check_commit.outputs.skip_deploy == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Send Notification to ntfy.sh (No changes)
+      - name: Send Notification to ntfy.sh (Deploy Skipped)
         run: |
           curl -X POST "${{ secrets.NTFY_URL }}" \
-            -H "Title: ⛔ No Changes Detected" \
+            -H "Title: ⛔ Deploy Skipped" \
             -H "Tags: info" \
-            -d "No changes in frontend or backend. Commit: ${{ github.event.head_commit.message }} by ${{ github.event.head_commit.author.name }}"
+            -d "Deploy skipped due to commit message. Commit: ${{ github.event.head_commit.message }} by ${{ github.event.head_commit.author.name }}"
 
-      - name: Send Notification to Discord (No changes)
+      - name: Send Notification to Discord (Deploy Skipped)
         run: |
           curl -H "Content-Type: application/json" -X POST ${{ secrets.DISCORD_WEBHOOK }} -d '{
             "username": "Skyvoyage App",
-            "embeds": [{
-              "title": "⛔ No Changes Detected",
-              "description": "No changes in frontend or backend.",
+            "embeds": [ {
+              "title": "⛔ Deploy Skipped",
+              "description": "Deploy was skipped as per commit flag.",
               "fields": [
                 { "name": "Commit", "value": "${{ github.event.head_commit.message }}", "inline": true },
                 { "name": "Commit By", "value": "${{ github.event.head_commit.author.name }}", "inline": true },
-                { "name": "Date", "value": "${{ github.event.head_commit.timestamp }}", "inline": true },
-                { "name": "Status", "value": "❌ No Changes", "inline": true }
+                { "name": "Status", "value": "❌ Deploy Skipped", "inline": true }
               ]
             }]
           }'
 
   deploy_frontend:
-    needs: check_changes
-    if: needs.check_changes.outputs.frontend_changed == 'true'
+    needs: check_commit
+    if: needs.check_commit.outputs.frontend_deploy == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -114,8 +104,8 @@ jobs:
           }'
 
   deploy_backend:
-    needs: check_changes
-    if: needs.check_changes.outputs.backend_changed == 'true'
+    needs: check_commit
+    if: needs.check_commit.outputs.backend_deploy == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository

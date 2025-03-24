@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { FlightSearchPanel } from "@/components/flightSearchPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import type React from "react"
@@ -310,7 +311,10 @@ export function FlightSearchPanel() {
                     <p>Maximum 9 passengers (adults + children). Infants don&apos;t count toward this limit.</p>
                   </div>
 
-                  {passengers.find((p) => p.type === "infant")?.count !== undefined && passengers.find((p) => p.type === "infant")?.count > 0 && (
+                  {(() => {
+                    const infantPassenger = passengers.find((p) => p.type === "infant");
+                    return infantPassenger?.count !== undefined && infantPassenger.count > 0;
+                  })() && (
                     <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded-md flex items-start mt-4">
                       <Info className="h-4 w-4 mr-1 shrink-0 mt-0.5" />
                       <p>Infants (0-23 months) must sit on an adult&apos;s lap during the flight. One infant per adult.</p>

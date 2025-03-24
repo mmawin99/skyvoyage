@@ -2,7 +2,7 @@ import Elysia from "elysia";
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 export const userController = new Elysia({
-    prefix: '/user'
+    prefix: '/user',
     })
     .post('/register', async (context: {
         body: {
@@ -14,6 +14,28 @@ export const userController = new Elysia({
         }
     })=>{
         return "This is a register user endpoint"
+    }, {
+        detail: {
+            tags: ['Auth'],
+            description: 'Register a new user',
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                email: { type: 'string' },
+                                password: { type: 'string' },
+                                firstname: { type: 'string' },
+                                lastname: { type: 'string' },
+                                phone: { type: 'string' }
+                            }
+                        }
+                    }
+                }
+            },
+        }
     })
     .post('/login', ()=>{
         return 'This is a login user endpoint'
@@ -38,6 +60,55 @@ export const userController = new Elysia({
             return {
                 message: 'Admin Authentication Failed',
                 status: false
+            }
+        }
+    }, {
+        detail:{
+            tags: ['Auth'],
+            description: 'Authenticate an admin user',
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                username: { type: 'string' },
+                                password: { type: 'string' }
+                            }
+                        }
+                    }
+                }
+            },
+            responses:{
+                200:{
+                    description: 'Admin Authentication Successful',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    message: { type: 'string', default: 'Admin Authentication Successful' },
+                                    status: { type: 'boolean' }
+                                }
+                            }
+                        }
+                    }
+                },
+                401:{
+                    description: 'Admin Authentication Failed',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    message: { type: 'string', default: 'Admin Authentication Failed' },
+                                    status: { type: 'boolean', default: false }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     })

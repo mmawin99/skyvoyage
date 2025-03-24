@@ -65,7 +65,7 @@ jobs:
       - name: Send Notification to Discord (No changes)
         run: |
           curl -H "Content-Type: application/json" -X POST ${{ secrets.DISCORD_WEBHOOK }} -d '{
-            "username": "Deploy Bot",
+            "username": "Skyvoyage App",
             "embeds": [{
               "title": "⛔ No Changes Detected",
               "description": "No changes in frontend or backend.",
@@ -101,7 +101,7 @@ jobs:
             -d "Commit: ${{ github.event.head_commit.message }} by ${{ github.event.head_commit.author.name }}"
 
           curl -H "Content-Type: application/json" -X POST ${{ secrets.DISCORD_WEBHOOK }} -d '{
-            "username": "Deploy Bot",
+            "username": "Skyvoyage App",
             "embeds": [{
               "title": "Frontend Deployed",
               "description": "Commit: `${{ github.event.head_commit.message }}`",
@@ -136,7 +136,7 @@ jobs:
             -d "Commit: ${{ github.event.head_commit.message }} by ${{ github.event.head_commit.author.name }}"
 
           curl -H "Content-Type: application/json" -X POST ${{ secrets.DISCORD_WEBHOOK }} -d '{
-            "username": "Deploy Bot",
+            "username": "Skyvoyage App",
             "embeds": [{
               "title": "Backend Deployed",
               "description": "Commit: `${{ github.event.head_commit.message }}`",

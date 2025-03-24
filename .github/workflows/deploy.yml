@@ -1,0 +1,149 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  check_commit:
+    runs-on: ubuntu-latest
+    outputs:
+      skip_deploy: ${{ steps.check_message.outputs.skip }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Check commit message for --nodeploy
+        id: check_message
+        run: |
+          MESSAGE="$(git log -1 --pretty=%B)"
+          if [[ "$MESSAGE" == *"--nodeploy"* || "$MESSAGE" == *"--nd"* ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+  check_changes:
+    needs: check_commit
+    if: needs.check_commit.outputs.skip_deploy == 'false'
+    runs-on: ubuntu-latest
+    outputs:
+      frontend_changed: ${{ steps.filter.outputs.frontend }}
+      backend_changed: ${{ steps.filter.outputs.backend }}
+      both_unchanged: ${{ steps.filter.outputs.both_unchanged }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for changes
+        id: filter
+        run: |
+          FRONTEND_CHANGED=$(git diff --name-only HEAD^ HEAD | grep -q "^frontend/" && echo "true" || echo "false")
+          BACKEND_CHANGED=$(git diff --name-only HEAD^ HEAD | grep -q "^backend/" && echo "true" || echo "false")
+          BOTH_UNCHANGED=$([[ "$FRONTEND_CHANGED" == "false" && "$BACKEND_CHANGED" == "false" ]] && echo "true" || echo "false")
+          echo "frontend=$FRONTEND_CHANGED" >> $GITHUB_OUTPUT
+          echo "backend=$BACKEND_CHANGED" >> $GITHUB_OUTPUT
+          echo "both_unchanged=$BOTH_UNCHANGED" >> $GITHUB_OUTPUT
+
+  notify_no_changes:
+    needs: check_changes
+    if: needs.check_changes.outputs.both_unchanged == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Notification to ntfy.sh (No changes)
+        run: |
+          curl -X POST "${{ secrets.NTFY_URL }}" \
+            -H "Title: ⛔ No Changes Detected" \
+            -H "Tags: info" \
+            -d "No changes in frontend or backend. Commit: ${{ github.event.head_commit.message }} by ${{ github.event.head_commit.author.name }}"
+
+      - name: Send Notification to Discord (No changes)
+        run: |
+          curl -H "Content-Type: application/json" -X POST ${{ secrets.DISCORD_WEBHOOK }} -d '{
+            "username": "Skyvoyage App",
+            "embeds": [{
+              "title": "⛔ No Changes Detected",
+              "description": "No changes in frontend or backend.",
+              "fields": [
+                { "name": "Commit", "value": "${{ github.event.head_commit.message }}", "inline": true },
+                { "name": "Commit By", "value": "${{ github.event.head_commit.author.name }}", "inline": true },
+                { "name": "Date", "value": "${{ github.event.head_commit.timestamp }}", "inline": true },
+                { "name": "Status", "value": "❌ No Changes", "inline": true }
+              ]
+            }]
+          }'
+
+  deploy_frontend:
+    needs: check_changes
+    if: needs.check_changes.outputs.frontend_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Frontend to Vercel
+        id: deploy_frontend
+        run: |
+          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }})
+          echo "deploy_url=$DEPLOY_URL" >> $GITHUB_ENV
+
+      - name: Send Notification to ntfy.sh & Discord (Frontend)
+        run: |
+          curl -X POST "${{ secrets.NTFY_URL }}" \
+            -H "Title: ✅ Frontend Deployed" \
+            -H "Tags: rocket" \
+            -H "Click: $DEPLOY_URL" \
+            -d "Commit: ${{ github.event.head_commit.message }} by ${{ github.event.head_commit.author.name }}"
+
+          curl -H "Content-Type: application/json" -X POST ${{ secrets.DISCORD_WEBHOOK }} -d '{
+            "username": "Skyvoyage App",
+            "embeds": [{
+              "title": "Frontend Deployed",
+              "description": "Commit: `${{ github.event.head_commit.message }}`",
+              "fields": [
+                { "name": "Commit By", "value": "${{ github.event.head_commit.author.name }}", "inline": true },
+                { "name": "Date", "value": "${{ github.event.head_commit.timestamp }}", "inline": true },
+                { "name": "Status", "value": "[✅ Success]($DEPLOY_URL)", "inline": true }
+              ]
+            }]
+          }'
+
+  deploy_backend:
+    needs: check_changes
+    if: needs.check_changes.outputs.backend_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Backend to Vercel
+        id: deploy_backend
+        run: |
+          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }})
+          echo "deploy_url=$DEPLOY_URL" >> $GITHUB_ENV
+
+      - name: Send Notification to ntfy.sh & Discord (Backend)
+        run: |
+          curl -X POST "${{ secrets.NTFY_URL }}" \
+            -H "Title: ✅ Backend Deployed" \
+            -H "Tags: rocket" \
+            -H "Click: $DEPLOY_URL" \
+            -d "Commit: ${{ github.event.head_commit.message }} by ${{ github.event.head_commit.author.name }}"
+
+          curl -H "Content-Type: application/json" -X POST ${{ secrets.DISCORD_WEBHOOK }} -d '{
+            "username": "Skyvoyage App",
+            "embeds": [{
+              "title": "Backend Deployed",
+              "description": "Commit: `${{ github.event.head_commit.message }}`",
+              "fields": [
+                { "name": "Commit By", "value": "${{ github.event.head_commit.author.name }}", "inline": true },
+                { "name": "Date", "value": "${{ github.event.head_commit.timestamp }}", "inline": true },
+                { "name": "Status", "value": "[✅ Success]($DEPLOY_URL)", "inline": true }
+              ]
+            }]
+          }'

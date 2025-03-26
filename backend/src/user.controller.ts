@@ -1,4 +1,4 @@
-import Elysia from "elysia";
+import Elysia, { error } from "elysia";
 import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 export const userController = new Elysia({
@@ -57,10 +57,10 @@ export const userController = new Elysia({
                 status: true
             };
         } else {
-            return {
+            return error('Unauthorized', {
                 message: 'Admin Authentication Failed',
                 status: false
-            }
+            })
         }
     }, {
         detail:{

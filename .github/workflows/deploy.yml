@@ -79,19 +79,37 @@ jobs:
       - name: Install Vercel CLI
         run: |
           npm install -g vercel
+      
+      - name: Fix npm dependencies
+        working-directory: ./frontend
+        run: |
+          # Update package.json to force npm to resolve dependency conflicts
+          if [ -f package.json ]; then
+            # Add resolutions or overrides to handle peer dependency conflicts
+            jq '.overrides = {"cmdk": {"react": "^19.0.0"}}' package.json > package.json.tmp
+            mv package.json.tmp package.json
+            
+            # Force install with legacy peer deps
+            # This will be used during the local preparation, not in Vercel's build
+            echo "Setting up .npmrc with legacy peer deps"
+            echo "legacy-peer-deps=true" > .npmrc
+          fi
   
       - name: Deploy Frontend to Vercel
         id: deploy_frontend
-        working-directory: ./frontend  # Adjust if your frontend is in a different directory
+        working-directory: ./frontend
         run: |
           # Create .vercel directory if it doesn't exist
           mkdir -p .vercel
           # Configure project ID
           echo '{"projectId":"${{ secrets.FRONTEND_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}"}' > .vercel/project.json
+          # Ensure build happens before deploy
+          npm install --legacy-peer-deps
+          npm run build
           # Deploy to Vercel
-          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes)
+          DEPLOY_URL=$(vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes --force)
           echo "deploy_url=$DEPLOY_URL" >> $GITHUB_ENV
-  
+          
       - name: Send Notification to ntfy.sh & Discord (Frontend)
         run: |
           curl -X POST "${{ secrets.NTFY_URL }}" \
@@ -127,7 +145,7 @@ jobs:
   
       - name: Deploy Backend to Vercel
         id: deploy_backend
-        working-directory: ./backend  # Adjust if your backend is in a different directory
+        working-directory: ./backend
         run: |
           # Create .vercel directory if it doesn't exist
           mkdir -p .vercel

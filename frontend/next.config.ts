@@ -4,7 +4,10 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
   output:"export",
-  devIndicators: false
+  devIndicators: false,
+  images:{
+    unoptimized:true
+  }
 };
 
 export default nextConfig;

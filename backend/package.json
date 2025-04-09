@@ -12,9 +12,11 @@
     "@elysiajs/swagger": "^1.2.2",
     "@prisma/client": "6.5.0",
     "bcryptjs": "^3.0.2",
+    "country-to-iso": "^1.6.0",
     "dotenv": "^16.4.7",
     "elysia": "latest",
     "elysia-rate-limit": "^4.2.1",
+    "i18n-iso-countries": "^7.14.0",
     "jose": "^6.0.10",
     "prisma": "^6.5.0"
   },

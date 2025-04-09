@@ -6,6 +6,7 @@ import { bearer } from '@elysiajs/bearer'
 import { PrismaClient } from '@prisma/client'
 import { userModule } from "./module.user";
 import { adminAuthModule } from "./module.admin_auth";
+import { flightModule } from "./module.flight";
 
 const prisma = new PrismaClient()
 const app = new Elysia()
@@ -20,12 +21,16 @@ const app = new Elysia()
             description: 'SkyVoyage Documentation'
           },
           tags:[
-            {name: 'Auth', description: 'Authentication'},
+            {name: 'Auth', description: 'Authentication for user to sign in and sign up'},
+            {name: 'User', description: 'User Endpoints'},
+            {name: 'Admin', description: 'Admin Endpoints'},
+            {name: 'Flight', description: 'Flight Search Endpoints'},
           ]
         }
       }))
       .use(userModule)       //See module.user.ts       for more information about the api. (Just a simple module to split the code)
       .use(adminAuthModule)  //See module.admin_auth.ts
+      .use(flightModule)     //See module.flight.ts
       ;
       app.listen(4000, ()=>{
         console.log(`🦊 Serving Elysia at http://${app.server?.hostname}:${app.server?.port}`);

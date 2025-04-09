@@ -119,6 +119,108 @@ export const userModule = new Elysia({
             }
         }
     })
+    .post("/verify", async({ cookie: {skyvoyage_auth}, body }: { cookie:{ skyvoyage_auth: any }, body: { } })=>{
+        const cookie_skyvoyage_auth = skyvoyage_auth.value
+        if(!cookie_skyvoyage_auth) return error(401, {
+            msg: 'Unauthorized',
+            status: false,
+        })
+        
+        // verify jwt token from cookie_skyvoyage_auth
+        const jwt = await jose.jwtVerify(cookie_skyvoyage_auth, JWT_SECRET, {
+            issuer: 'skyvoyage:v1:signin',
+            audience: 'skyvoyage:user:auth'
+        })
+
+        if(!jwt) return error(401, {
+            msg: 'Invalid Authorization Token',
+            status: false,
+        })
+        // get uuid from jwt token and fetch user data from database
+        const uuid = jwt.payload.uuid
+        const user:User[] = await prisma.$queryRaw`SELECT uuid,email,firstname,lastname,phone FROM user WHERE uuid = ${uuid}`
+        if(user.length === 0) return error(404, {
+            msg: 'User not found',
+            status: false,
+        })
+        return {
+            status: true,
+            msg: 'User verified successfully',
+            data: user[0]
+        }
+    }, {
+        detail:{
+            tags: ['Auth'],
+            description: 'Token Verification for cookie authorization',
+            requestBody:{
+                required: false,
+                content:{
+                    'application/json': {
+                        schema:{
+                            type:'object',
+                            properties:{
+                                // no properties required
+                            }
+                        }
+                    }
+                }
+            },
+            responses:{
+                200:{
+                    description: 'User verified successfully',
+                    content:{
+                        'application/json':{
+                            schema:{
+                                type:'object',
+                                properties:{
+                                    message:{type:'string', description:'User verified successfully'},
+                                    status:{type:'boolean'},
+                                    data:{
+                                        type:'object',
+                                        properties:{
+                                            uuid:{type:'string', description:'User UUID'},
+                                            email:{type:'string', description:'User email'},
+                                            firstname:{type:'string', description:'User firstname'},
+                                            lastname:{type:'string', description:'User lastname'},
+                                            phone:{type:'string', description:'User phone number'}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                401:{
+                    description: 'Unauthorized or Invalid Authorization Token',
+                    content:{
+                        'application/json':{
+                            schema:{
+                                type:'object',
+                                properties:{
+                                    message:{type:'string', description:'Unauthorized or Invalid Authorization Token'},
+                                    status:{type:'boolean', default: false}
+                                }
+                            }
+                        }
+                    }
+                },
+                404:{
+                    description: 'User not found',
+                    content:{
+                        'application/json':{
+                            schema:{
+                                type:'object',
+                                properties:{
+                                    message:{type:'string', description:'User not found'},
+                                    status:{type:'boolean', default: false}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    })
     .post('/signin', async({ cookie: { skyvoyage_auth }, body }: { cookie:{ skyvoyage_auth: any }, body: { email: string, password: string } })=>{
         const { email, password } = body
         const user:User[] = await prisma.$queryRaw`SELECT uuid,email,\`password\` FROM user WHERE email = ${email}`
@@ -414,8 +516,4 @@ export const userModule = new Elysia({
                 }
             }
         }
-    })
-    .get('/fetch_user', async ()=>{
-        const result = await prisma.$queryRaw`SELECT uuid,email,\`password\` FROM user`
-        return result
     })

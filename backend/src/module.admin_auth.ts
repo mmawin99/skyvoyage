@@ -8,5 +8,7 @@ export const adminAuthModule = new Elysia({
     prefix: '/admin',
     })
     .post("/signin", {
-        
+
+    },{
+        tags: ['Admin',"Auth"],
     })

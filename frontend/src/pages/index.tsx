@@ -13,21 +13,6 @@ export default function Home() {
     <main className="min-h-screen bg-white">
     {/* Hero Section with Carousel and Overlapping Panel */}
     <div className="relative">
-      {/* Background Carousel */}
-      {/* <div className="h-[100vh] overflow-hidden">
-        <div className="relative w-full h-full">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-blue-900/40 z-10" />
-          <div className="carousel-container w-full h-full">
-            <div
-              className="h-full w-full bg-cover bg-center animate-carousel-slide"
-              style={{
-                backgroundImage: "url('/carousel_1.jpg')",
-                animation: "carousel-slide 30s infinite linear",
-              }}
-            />
-          </div>
-        </div>
-      </div> */}
       <section className="w-full relative">
           <Carousel opts={{loop: true}} plugins={[  Autoplay({delay: 5000}) ]} className="w-full h-[30vh] sm:h-[40vh] md:h-[50vh] lg:h-[60vh]">
               <CarouselContent className="h-[30vh] sm:h-[40vh] md:h-[50vh] lg:h-[60vh]">

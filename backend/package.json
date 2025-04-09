@@ -11,8 +11,11 @@
     "@elysiajs/jwt": "^1.2.0",
     "@elysiajs/swagger": "^1.2.2",
     "@prisma/client": "6.5.0",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.4.7",
     "elysia": "latest",
     "elysia-rate-limit": "^4.2.1",
+    "jose": "^6.0.10",
     "prisma": "^6.5.0"
   },
   "devDependencies": {

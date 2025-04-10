@@ -301,7 +301,7 @@ export function FlightSearchPanel() {
                         <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
                       </div>
                     )}
-                    {!loadingOrigin && originSearch.length < 0 && originAirports.length <= 0 ? (
+                    {!loadingOrigin && originSearch.length > 0 && originAirports.length <= 0 ? (
                       <CommandEmpty>No airports found</CommandEmpty>
                     ) : null}
                     {!loadingOrigin && originAirports.length > 0 ? (
@@ -318,10 +318,10 @@ export function FlightSearchPanel() {
                             >
                             <div className="flex flex-col">
                               <span className="font-medium">
-                                {airport.city} ({airport.code})
+                                {airport.name} ({airport.code})
                               </span>
                               <span className="text-xs text-gray-500">
-                                {airport.name}, {airport.country}
+                                {airport.city}, {airport.country}
                               </span>
                             </div>
                           </CommandItem>
@@ -415,10 +415,10 @@ export function FlightSearchPanel() {
                           >
                             <div className="flex flex-col">
                               <span className="font-medium">
-                                {airport.city} ({airport.code})
+                                {airport.name} ({airport.code})
                               </span>
                               <span className="text-xs text-gray-500">
-                                {airport.name}, {airport.country}
+                                {airport.city}, {airport.country}
                               </span>
                             </div>
                           </CommandItem>

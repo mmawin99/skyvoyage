@@ -12,7 +12,9 @@ export const flightModule = new Elysia({
         if(kind == "airport"){
             //html decode the search string
             let searchstring = decodeURIComponent(search)
-            let searchConstant = countryToAlpha2(searchstring) || search
+            let searchCountry = countryToAlpha2(searchstring) || searchstring //convert the search string to country code,
+                                                                              //if the search string is not a country code, 
+                                                                              //it will return the search string itself.
             let airportList: Airport[];
             if(search == "popular_airport"){
                 airportList = await prisma.$queryRaw`
@@ -22,8 +24,8 @@ export const flightModule = new Elysia({
                     )
                     LIMIT 20;
                 `
-            }else if(searchConstant == search){
-                const wildcard = `%${searchConstant}%`
+            }else if(searchCountry == searchstring){
+                const wildcard = `%${searchstring}%`
                 airportList = await prisma.$queryRaw`
                     SELECT airportCode, \`name\`, country, city FROM airport
                     WHERE airportCode LIKE ${wildcard}
@@ -35,7 +37,7 @@ export const flightModule = new Elysia({
             }else{
                 airportList = await prisma.$queryRaw`
                     SELECT airportCode, \`name\`, country, city FROM airport
-                    WHERE country = ${searchConstant}
+                    WHERE country = ${searchCountry}
                     LIMIT 20;
                 `
             }
@@ -48,11 +50,8 @@ export const flightModule = new Elysia({
                     city: airport.city
                 }
             })
+            
             return airportReturn
-            // return {
-            //     airportReturn,
-            //     test: countryToAlpha2(search) || search,
-            // }
         }else{
             return error(404, "Invalid kind")
         }
@@ -63,6 +62,17 @@ export const flightModule = new Elysia({
             responses:{
                 200:{
                     description: "Successfully fetched autocomplete data",
+                    content:{
+                        "application/json": {
+                            schema: t.Array(t.Object({
+                                code: t.String(),
+                                name: t.String(),
+                                short_country: t.String(),
+                                country: t.String(),
+                                city: t.String()
+                            }))
+                        }
+                    }
                 },
                 400:{
                     description: "Bad request",

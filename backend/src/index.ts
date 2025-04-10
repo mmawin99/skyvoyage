@@ -10,7 +10,17 @@ import { flightModule } from "./module.flight";
 
 const prisma = new PrismaClient()
 const app = new Elysia()
-      .use(cors())
+      .use(cors({
+        origin: [
+          /.*\.saltyaom\.com$/,
+          /.*\.example\.com$/,
+          'trustedsite.com',
+          'localhost:4000',
+          'localhost:3000',
+        ],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        maxAge: 3600,
+      }))
       .use(bearer())
       .use(swagger({
         path: '/v1/docs',

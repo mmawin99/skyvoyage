@@ -22,7 +22,7 @@ export const flightModule = new Elysia({
                     )
                     LIMIT 20;
                 `
-            }else{
+            }else if(!searchstring.includes(" ")){
                 // const wildcard = `'%${searchstring}%'`
                 const wildcard = `%${searchstring}%` //Why don't we put "'" in the wildcard?
                                                      //Because of prisma auto handling quoting symbols
@@ -37,6 +37,24 @@ export const flightModule = new Elysia({
                     OR city LIKE ${wildcard}
                     LIMIT 20;
                 `
+            }else{
+                const searchstringArray = searchstring.trim().split(/\s+/);
+                const wildcardArray = searchstringArray.map(word => `%${word}%`);
+                
+                let andConditions: string[] = [];
+                let values: string[] = [];
+                
+                wildcardArray.forEach((wildcard) => {
+                  // Each word needs to match one of the 4 columns
+                  andConditions.push(`(airportCode LIKE ? OR name LIKE ? OR country LIKE ? OR city LIKE ?)`);
+                  values.push(wildcard, wildcard, wildcard, wildcard);
+                });
+                
+                const whereClause = andConditions.join(' AND ');
+                const query = `SELECT airportCode, \`name\`, country, city FROM airport WHERE ${whereClause} LIMIT 20`;
+                
+                airportList = await prisma.$queryRawUnsafe(query, ...values);
+
             }
             const airportReturn = airportList.map((airport)=>{
                 return {

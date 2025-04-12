@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils"
 import type { DateRange, DayProps } from "react-day-picker"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
 import { Airport } from "../../type"
+import { useBackendURL } from "./backend-url-provider"
 interface PassengerType {
   type: "adult" | "child" | "infant"
   count: number
@@ -24,7 +25,8 @@ interface PassengerType {
 }
 
 export function FlightSearchPanel() {
-  const router = useRouter()
+  const router = useRouter();
+  const {backend:backendURL, setBackend, status} = useBackendURL(); 
   const [tripType, setTripType] = useState("roundtrip")
   const [origin, setOrigin] = useState<Airport | null>(null)
   const [destination, setDestination] = useState<Airport | null>(null)
@@ -100,7 +102,7 @@ export function FlightSearchPanel() {
 
     try {
       // In a real app, this would be a fetch to your API
-      const response = await fetch(`http://localhost:4000/flight/autocomplete/airport/${query}`, { method:"POST", signal })
+      const response = await fetch(`${backendURL}/flight/autocomplete/airport/${query}`, { method:"POST", signal })
       const data = await response.json()
 
       // console.log("Fetched airports:", data)
@@ -338,7 +340,7 @@ export function FlightSearchPanel() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0" align="start">
-                <Command className="md:min-w-[450px]">
+                <Command className="md:min-w-[450px]" shouldFilter={false}>
                   <div className="flex items-center border-b px-3 w-full">
                     {/* <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" /> */}
                     <CommandInput
@@ -436,7 +438,7 @@ export function FlightSearchPanel() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0" align="start">
-                <Command className='md:min-w-[450px]'>
+                <Command className='md:min-w-[450px]' shouldFilter={false}>
                   <div className="flex items-center border-b px-3 w-full">
                     {/* <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" /> */}
                     <CommandInput

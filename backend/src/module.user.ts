@@ -5,7 +5,7 @@ import * as jose from 'jose'
 import { checkPasswordWithHash, hashDataWithSHA256AndSalt, JWT_SECRET } from "../lib";
 
 export const userModule = new Elysia({
-    prefix: '/user',
+    prefix: '/api/user',
     })
     .post('/signup', async (context: {
         body: {

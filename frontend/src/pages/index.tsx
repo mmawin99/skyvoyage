@@ -8,6 +8,7 @@ import { ArrowRight, ChevronLeftIcon, ChevronRightIcon, Clock, FacebookIcon, Glo
 import { NextSeo } from "next-seo";
 import Image from "next/image";
 import Autoplay from "embla-carousel-autoplay"
+import Link from "next/link";
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
@@ -383,12 +384,12 @@ export default function Home() {
           <div>
             <h4 className="text-blue-400 font-semibold mb-3">Company</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:text-blue-100">How it works</a></li>
-              <li><a href="#" className="hover:text-blue-100">Newsletter</a></li>
-              <li><a href="#" className="hover:text-blue-100">Careers</a></li>
-              <li><a href="#" className="hover:text-blue-100">Investors</a></li>
-              <li><a href="#" className="hover:text-blue-100">Blogs</a></li>
-              <li><a href="#" className="hover:text-blue-100">Destinations</a></li>
+              <li><Link href="#" className="hover:text-blue-100">How it works</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Newsletter</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Careers</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Investors</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Blogs</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Destinations</Link></li>
             </ul>
           </div>
 
@@ -396,11 +397,11 @@ export default function Home() {
           <div>
             <h4 className="text-blue-400 font-semibold mb-3">Services</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:text-blue-100">Airport Transfer</a></li>
-              <li><a href="#" className="hover:text-blue-100">Limousine Service</a></li>
-              <li><a href="#" className="hover:text-blue-100">Private Taxi</a></li>
-              <li><a href="#" className="hover:text-blue-100">Chauffeur Service</a></li>
-              <li><a href="#" className="hover:text-blue-100">City tour</a></li>
+              <li><Link href="#" className="hover:text-blue-100">Airport Transfer</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Limousine Service</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Private Taxi</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Chauffeur Service</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">City tour</Link></li>
             </ul>
           </div> */}
 
@@ -416,12 +417,12 @@ export default function Home() {
           <div>
             <h4 className="text-blue-400 font-semibold mb-3">Partnership</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:text-blue-100">Business Solutions</a></li>
-              <li><a href="#" className="hover:text-blue-100">Travel Agencies</a></li>
-              <li><a href="#" className="hover:text-blue-100">Affiliate & Webmasters</a></li>
-              <li><a href="#" className="hover:text-blue-100">Drive with Us</a></li>
-              <li><a href="#" className="hover:text-blue-100">Become A Partner</a></li>
-              <li><a href="#" className="hover:text-blue-100">Register as Guide</a></li>
+              <li><Link href="#" className="hover:text-blue-100">Business Solutions</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Travel Agencies</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Affiliate & Webmasters</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Drive with Us</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Become A Partner</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Register as Guide</Link></li>
             </ul>
           </div>
 
@@ -429,15 +430,15 @@ export default function Home() {
           <div>
             <h4 className="text-blue-400 font-semibold mb-3">Legal</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:text-blue-100">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-blue-100">Terms & Conditions</a></li>
-              <li><a href="#" className="hover:text-blue-100">Cookie Policy</a></li>
+              <li><Link href="#" className="hover:text-blue-100">Privacy Policy</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Terms & Conditions</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Cookie Policy</Link></li>
             </ul>
             <h4 className="text-blue-400 font-semibold mt-4 mb-2">Help</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:text-blue-100">Help Center</a></li>
-              <li><a href="#" className="hover:text-blue-100">Get Support</a></li>
-              <li><a href="/admin" className="text-white font-semibold hover:text-blue-100">Admin Panel</a></li>
+              <li><Link href="#" className="hover:text-blue-100">Help Center</Link></li>
+              <li><Link href="#" className="hover:text-blue-100">Get Support</Link></li>
+              <li><Link href="/admin" className="text-white font-semibold hover:text-blue-100">Admin Panel</Link></li>
             </ul>
           </div>
           <div className="border-t-[1px] border-white pt-8 col-span-2 md:col-span-3 lg:col-span-4 flex flex-col items-center">

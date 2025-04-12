@@ -27,6 +27,11 @@ Run frontend
 cd frontend
 bun dev
 ```
+or
+
+```bash
+bun frontend
+```
 
 #### Backend
 `Windows Backend`
@@ -59,6 +64,11 @@ Run backend
 ```bash
 cd backend
 bun dev
+```
+or
+
+```bash
+bun backend
 ```
 
 #### Additional

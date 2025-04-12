@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { ArrowRight, ChevronLeftIcon, ChevronRightIcon, Clock, Globe, Shield, Star, TrendingUp } from "lucide-react";
+import { ArrowRight, ChevronLeftIcon, ChevronRightIcon, Clock, FacebookIcon, Globe, LinkedinIcon, LucidePlane, Shield, Star, TrendingUp } from "lucide-react";
 import { NextSeo } from "next-seo";
 import Image from "next/image";
 import Autoplay from "embla-carousel-autoplay"
@@ -25,8 +25,8 @@ export default function Home() {
                             unoptimized
                             placeholder='empty'
                             alt={"Explore the world"}
-                            className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-gray-700 via-gray-600/90 via-30% to-transparent p-8 md:p-12 lg:p-16">
+                            className="w-full h-full object-cover rounded-b-4xl" />
+                        <div className="rounded-b-4xl absolute inset-0 bg-gradient-to-t from-gray-700 via-gray-600/90 via-30% to-transparent p-8 md:p-12 lg:p-16">
                             <div className={`flex flex-col h-full justify-end md:pb-10 -translate-y-20 lg:-translate-y-20 xl:-translate-y-32 text-white`}>
                                 <div className={`text-3xl lg:text-7xl font-semibold mb-5`}>Explore the world</div>
                                 <div className={`text-xl lg:text-3xl font-medium`}> Discover new destinations, enjoy seamless travel experiences!</div>
@@ -368,23 +368,110 @@ export default function Home() {
       </div>
     </div>
 
-    {/* Newsletter */}
-    <div className="bg-gray-900 py-12">
-      <div className="container mx-auto px-4 text-center">
-        <h2 className="text-2xl font-bold text-white mb-4">Subscribe to Our Newsletter</h2>
-        <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-          Stay updated with our latest offers, travel tips, and exclusive deals delivered straight to your inbox.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
-          <input
-            type="email"
-            placeholder="Your email address"
-            className="flex-1 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Button className="bg-blue-600 hover:bg-blue-700">Subscribe</Button>
+    {/* Footer */}
+    <footer className="bg-primary text-white pt-10 pb-6">
+      <div className="container mx-auto px-6">
+        {/* Top Section */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 text-sm text-gray-300">
+          {/* Logo */}
+          <div className="justify-center col-span-2 lg:col-span-1 flex items-center gap-10 lg:flex-col lg:items-start">
+            <LucidePlane className="w-20 h-20" />
+            <div className="text-4xl font-bold">SkyVoyage</div>
+          </div>
+
+          {/* Company
+          <div>
+            <h4 className="text-blue-400 font-semibold mb-3">Company</h4>
+            <ul className="space-y-2">
+              <li><a href="#" className="hover:text-blue-100">How it works</a></li>
+              <li><a href="#" className="hover:text-blue-100">Newsletter</a></li>
+              <li><a href="#" className="hover:text-blue-100">Careers</a></li>
+              <li><a href="#" className="hover:text-blue-100">Investors</a></li>
+              <li><a href="#" className="hover:text-blue-100">Blogs</a></li>
+              <li><a href="#" className="hover:text-blue-100">Destinations</a></li>
+            </ul>
+          </div>
+
+          Services 
+          <div>
+            <h4 className="text-blue-400 font-semibold mb-3">Services</h4>
+            <ul className="space-y-2">
+              <li><a href="#" className="hover:text-blue-100">Airport Transfer</a></li>
+              <li><a href="#" className="hover:text-blue-100">Limousine Service</a></li>
+              <li><a href="#" className="hover:text-blue-100">Private Taxi</a></li>
+              <li><a href="#" className="hover:text-blue-100">Chauffeur Service</a></li>
+              <li><a href="#" className="hover:text-blue-100">City tour</a></li>
+            </ul>
+          </div> */}
+
+          {/* About us */}
+          <div>
+            <h4 className="text-blue-400 font-semibold mb-3">About us</h4>
+            <p>Created by SkyVoyage group</p>
+            <p className="mt-2">1002, 1011, 1018, 1020, 1029</p>
+            <p>&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</p>
+          </div>
+
+          {/* Partnership */}
+          <div>
+            <h4 className="text-blue-400 font-semibold mb-3">Partnership</h4>
+            <ul className="space-y-2">
+              <li><a href="#" className="hover:text-blue-100">Business Solutions</a></li>
+              <li><a href="#" className="hover:text-blue-100">Travel Agencies</a></li>
+              <li><a href="#" className="hover:text-blue-100">Affiliate & Webmasters</a></li>
+              <li><a href="#" className="hover:text-blue-100">Drive with Us</a></li>
+              <li><a href="#" className="hover:text-blue-100">Become A Partner</a></li>
+              <li><a href="#" className="hover:text-blue-100">Register as Guide</a></li>
+            </ul>
+          </div>
+
+          {/* Legal + Help */}
+          <div>
+            <h4 className="text-blue-400 font-semibold mb-3">Legal</h4>
+            <ul className="space-y-2">
+              <li><a href="#" className="hover:text-blue-100">Privacy Policy</a></li>
+              <li><a href="#" className="hover:text-blue-100">Terms & Conditions</a></li>
+              <li><a href="#" className="hover:text-blue-100">Cookie Policy</a></li>
+            </ul>
+            <h4 className="text-blue-400 font-semibold mt-4 mb-2">Help</h4>
+            <ul className="space-y-2">
+              <li><a href="#" className="hover:text-blue-100">Help Center</a></li>
+              <li><a href="#" className="hover:text-blue-100">Get Support</a></li>
+              <li><a href="/admin" className="text-white font-semibold hover:text-blue-100">Admin Panel</a></li>
+            </ul>
+          </div>
+          <div className="border-t-[1px] border-white pt-8 col-span-2 md:col-span-3 lg:col-span-4 flex flex-col items-center">
+            <h2 className="text-white font-semibold mb-4 text-lg">Subscribe to Our Newsletter</h2>
+            <p className="mb-4 text-gray-400">
+              Get the latest deals, travel tips, and updates delivered straight to your inbox.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 max-w-md">
+              <input
+                type="email"
+                placeholder="Your email address"
+                className="flex-1 px-4 py-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <Button className="bg-blue-600 hover:bg-blue-700">Subscribe</Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-white mt-8 pt-4 flex flex-col md:flex-row items-center justify-between text-sm text-gray-400">
+          <p>&copy; {new Date().getFullYear()} SkyVoyage, All rights reserved.</p>
+
+          {/* Social Icons */}
+
+          {/* Payment Icons */}
+          <div className="flex gap-2 mt-4 md:mt-0">
+            <Image width={100} height={70} src="https://github.com/aaronfagan/svg-credit-card-payment-icons/raw/main/logo/paypal.svg" alt="Paypal" className="h-6" />
+            <Image width={100} height={70} src="https://github.com/aaronfagan/svg-credit-card-payment-icons/raw/main/logo/amex.svg" alt="Amex" className="h-6" />
+            <Image width={100} height={70} src="https://github.com/aaronfagan/svg-credit-card-payment-icons/raw/main/logo/mastercard.svg" alt="MasterCard" className="h-6" />
+            <Image width={100} height={70} src="https://github.com/aaronfagan/svg-credit-card-payment-icons/raw/main/logo/visa.svg" alt="Visa" className="h-6" />
+          </div>
         </div>
       </div>
-    </div>
+    </footer>
   </main>
   );
 }

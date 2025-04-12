@@ -12,9 +12,7 @@ const prisma = new PrismaClient()
 const app = new Elysia()
       .use(cors({
         origin: [
-          /.*\.saltyaom\.com$/,
-          /.*\.example\.com$/,
-          'trustedsite.com',
+          /.*\.mwn99\.com$/,
           'localhost:4000',
           'localhost:3000',
         ],
@@ -38,6 +36,25 @@ const app = new Elysia()
           ]
         }
       }))
+      .get("/ping",()=> "pong",{
+        detail:{
+          summary: 'Ping the server',
+          description: 'This is a ping endpoint to check if the server is running',
+          responses:{
+            200:{
+              description: 'Pong, the response from the server',
+              content:{
+                'text/plain':{
+                  schema:{
+                    type: 'string',
+                    example: 'pong'
+                  }
+                }
+              }
+            }
+          }
+        }
+      })
       .use(userModule)       //See module.user.ts       for more information about the api. (Just a simple module to split the code)
       .use(adminAuthModule)  //See module.admin_auth.ts
       .use(flightModule)     //See module.flight.ts

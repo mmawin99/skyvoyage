@@ -1,5 +1,5 @@
 import Elysia, { error, t } from "elysia";
-import { Airport, PrismaClient } from '@prisma/client'
+import { airport as Airport, PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 import * as jose from 'jose'
 import { checkPasswordWithHash, hashDataWithSHA256AndSalt, JWT_SECRET } from "../lib";
@@ -12,10 +12,8 @@ export const flightModule = new Elysia({
         if(kind == "airport"){
             //html decode the search string
             let searchstring = decodeURIComponent(search)
-            let searchCountry = countryToAlpha2(searchstring) || searchstring //convert the search string to country code,
-                                                                              //if the search string is not a country code, 
-                                                                              //it will return the search string itself.
             let airportList: Airport[];
+            let a:boolean = false
             if(search == "popular_airport"){
                 airportList = await prisma.$queryRaw`
                     SELECT airportCode, \`name\`, country, city FROM airport
@@ -24,8 +22,13 @@ export const flightModule = new Elysia({
                     )
                     LIMIT 20;
                 `
-            }else if(searchCountry == searchstring){
-                const wildcard = `%${searchstring}%`
+            }else{
+                // const wildcard = `'%${searchstring}%'`
+                const wildcard = `%${searchstring}%` //Why don't we put "'" in the wildcard?
+                                                     //Because of prisma auto handling quoting symbols
+                                                     //If you use others like phpmyadmin, you need to put "'"
+                                                     //It will be like this: '%${searchstring}%'
+                                                     //instead of %${searchstring}% in prisma
                 airportList = await prisma.$queryRaw`
                     SELECT airportCode, \`name\`, country, city FROM airport
                     WHERE airportCode LIKE ${wildcard}
@@ -34,23 +37,16 @@ export const flightModule = new Elysia({
                     OR city LIKE ${wildcard}
                     LIMIT 20;
                 `
-            }else{
-                airportList = await prisma.$queryRaw`
-                    SELECT airportCode, \`name\`, country, city FROM airport
-                    WHERE country = ${searchCountry}
-                    LIMIT 20;
-                `
             }
             const airportReturn = airportList.map((airport)=>{
                 return {
                     code: airport.airportCode,
                     name: airport.name,
-                    short_country: countries.getName(airport.country, 'en', {select: 'official'}) || airport.country,
-                    country: countries.getName(airport.country, 'en', {select: 'official'}) || airport.country,
+                    short_country: countries.getName(airport.country, 'en', {select: 'alias'}) || airport.country,
+                    country: airport.country,
                     city: airport.city
                 }
             })
-            
             return airportReturn
         }else{
             return error(404, "Invalid kind")

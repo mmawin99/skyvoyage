@@ -11,13 +11,12 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { format } from "date-fns"
+import { format, addDays } from "date-fns"
 import { CalendarIcon, ChevronDown, ChevronUp, Info, Loader2, MapPin, Plane, Search, Users, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { DateRange } from "react-day-picker"
+import type { DateRange, DayProps } from "react-day-picker"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
 import { Airport } from "../../type"
-
 interface PassengerType {
   type: "adult" | "child" | "infant"
   count: number
@@ -36,6 +35,8 @@ export function FlightSearchPanel() {
   const [originAirports, setOriginAirports] = useState<Airport[]>([])
   const [destinationAirports, setDestinationAirports] = useState<Airport[]>([])
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [openDepartureDate, setOpenDepartureDate] = useState(false)
+  const [openReturnDate, setOpenReturnDate] = useState(false)
   const [cabinClass, setCabinClass] = useState("economy")
   // Remove the expanded state and related code
   // const [expanded, setExpanded] = useState(false)
@@ -166,6 +167,31 @@ export function FlightSearchPanel() {
     };
   }, [])
 
+  const handleDepartureDateSelect = (newDateRange: DateRange | undefined) => {
+    if (!newDateRange) return
+
+    // If only selecting departure date, keep the existing return date if any
+    const updatedRange = {
+      from: newDateRange.from,
+      to: dateRange?.to || (tripType === "roundtrip" ? addDays(newDateRange.from ?? new Date(), 7) : undefined),
+    }
+    setDateRange(updatedRange)
+    setOpenDepartureDate(false)
+  }
+
+  // Handle return date selection
+  const handleReturnDateSelect = (newDateRange: DateRange | undefined) => {
+    if (!newDateRange || !newDateRange.to) return
+
+    // When selecting return date, ensure it's after the departure date
+    const updatedRange = {
+      from: dateRange?.from || new Date(),
+      to: newDateRange.to,
+    }
+    setDateRange(updatedRange)
+    setOpenReturnDate(false)
+  }
+
   // Update the handlePassengerChange function to implement the correct constraints
   const handlePassengerChange = (type: "adult" | "child" | "infant", increment: boolean) => {
     setPassengers((prev) => {
@@ -214,6 +240,21 @@ export function FlightSearchPanel() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (!origin || !destination) {
+      alert("Please select both origin and destination airports")
+      return
+    }
+
+    if (!dateRange?.from) {
+      alert("Please select a departure date")
+      return
+    }
+
+    if (tripType === "roundtrip" && !dateRange.to) {
+      alert("Please select a return date")
+      return
+    }
+
     // Format passenger data for URL
     const adultsCount = passengers.find((p) => p.type === "adult")?.count || 1
     const childrenCount = passengers.find((p) => p.type === "child")?.count || 0
@@ -223,9 +264,34 @@ export function FlightSearchPanel() {
 
     // Navigate to search results with query params
     router.push(
-      `/search-results?origin=${origin}&destination=${destination}&departDate=${dateRange?.from?.toISOString()}&returnDate=${dateRange?.to?.toISOString()}&passengers=${passengersParam}&cabinClass=${cabinClass}&tripType=${tripType}`,
+      `/search-results?origin=${origin.code}&destination=${destination.code}&departDate=${dateRange.from.toISOString()}&returnDate=${
+        dateRange.to ? dateRange.to.toISOString() : ""
+      }&passengers=${passengersParam}&cabinClass=${cabinClass}&tripType=${tripType}`,
     )
   }
+
+  useEffect(() => {
+      if (!dateRange) {
+        const today = new Date()
+        const nextWeek = addDays(today, 7)
+        setDateRange({
+          from: today,
+          to: tripType === "roundtrip" ? nextWeek : undefined,
+        })
+      } else if (tripType === "oneway" && dateRange.to) {
+        // If switching to one-way, remove the return date
+        setDateRange({
+          from: dateRange.from,
+          to: undefined,
+        })
+      } else if (tripType === "roundtrip" && !dateRange.to && dateRange.from) {
+        // If switching to round-trip and no return date, set a default return date
+        setDateRange({
+          from: dateRange.from,
+          to: addDays(dateRange.from, 7),
+        })
+      }
+  }, [tripType, dateRange])
 
   return (
     <div className="w-full max-w-5xl mx-auto bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-6 md:p-8">
@@ -360,7 +426,7 @@ export function FlightSearchPanel() {
                     <MapPin className="mr-2 h-4 w-4 text-gray-400" />
                     {destination ? (
                       <span>
-                        {destination.city} {destination.short_country} ({destination.code})
+                        {destination.name} {destination.short_country} ({destination.code})
                       </span>
                     ) : (
                       <span className="text-muted-foreground">Search for airport or city</span>
@@ -438,57 +504,166 @@ export function FlightSearchPanel() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="date-range" className="text-sm font-medium">
-            Travel Dates
-          </Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="date-range"
-                variant="outline"
-                className={cn("w-full justify-start text-left font-normal", !dateRange && "text-muted-foreground")}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange?.from ? (
-                  tripType === "roundtrip" && dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "MMM d, yyyy")} - {format(dateRange.to, "MMM d, yyyy")}
-                    </>
-                  ) : (
-                    format(dateRange.from, "MMM d, yyyy")
-                  )
-                ) : (
-                  "Select date(s)"
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              {tripType === "roundtrip" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="departure-date" className="text-sm font-medium">
+              Departure Date
+            </Label>
+            <Popover open={openDepartureDate} onOpenChange={setOpenDepartureDate}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="departure-date"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !dateRange?.from && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? format(dateRange.from, "MMM d, yyyy") : "Select departure date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
-                  initialFocus
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={2}
-                  disabled={(date) => date < new Date()}
-                  defaultMonth={new Date()}
-                />
-              ) : (
-                <Calendar
-                  initialFocus
                   mode="single"
                   selected={dateRange?.from}
-                  onSelect={(date) => setDateRange({ from: date, to: undefined })}
+                  onSelect={(date) => {
+                    if (date) {
+                       handleDepartureDateSelect({ from: date, to: dateRange?.to })
+                    }
+                  }}
                   numberOfMonths={2}
-                  disabled={(date) => date < new Date()}
-                  defaultMonth={new Date()}
+                  pagedNavigation
+                  showOutsideDays={true}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  defaultMonth={dateRange?.from || new Date()}
+                  components={{
+                    Day: ({ day, modifiers,...props }: DayProps) => {
+                      return (
+                        <div
+                          {...props}
+                          onClick={(e)=>{
+                            if (modifiers.disabled) return
+                            if(modifiers.outside) return
+                            handleDepartureDateSelect({ from: day.date, to: dateRange?.to })
+                          }}
+                          className={cn(
+                            "text-[1rem] flex flex-col items-center justify-center w-12 h-12 rounded-md p-2 cursor-pointer",
+                            !modifiers.disabled && "hover:bg-gray-300/40",
+                            modifiers.selected && "!bg-primary !text-white cursor-pointer",
+                            modifiers.today && "bg-blue-100 text-blue-600 cursor-pointer",
+                            modifiers.disabled && "text-gray-400 cursor-not-allowed",
+                            modifiers.outside && "text-gray-400 cursor-not-allowed",
+                            modifiers.focused && "bg-green-100 text-blue-600 cursor-pointer",
+                            modifiers.hidden && "hidden cursor-not-allowed",
+                          )}
+                        >
+                          <span 
+                          className={cn(
+                            modifiers.outside && "hidden"
+                          )
+                          }
+                          >{day.date.getDate()}</span>
+                          <span className={cn(
+                            "text-[.77rem]",
+                            !modifiers.outside && !modifiers.disabled && "!text-green-400",
+                            modifiers.outside && "text-gray-400 !hidden",
+                            modifiers.selected && "!text-green-400 !font-black",
+                            modifiers.today && "text-green-400",
+                            modifiers.focused && "text-green-400",
+                            modifiers.hidden && "text-green-400 !hidden",
+                            modifiers.disabled && "text-gray-400 !hidden",
+                          )}>${(Math.floor(Math.random() * 100) + 100)}</span>
+                        </div>
+                      )
+                    }
+                  }}
                 />
-              )}
-            </PopoverContent>
-          </Popover>
-        </div>
+              </PopoverContent>
+            </Popover>
+          </div>
 
+          {tripType === "roundtrip" && (
+            <div className="space-y-2">
+              <Label htmlFor="return-date" className="text-sm font-medium">
+                Return Date
+              </Label>
+              <Popover open={openReturnDate} onOpenChange={setOpenReturnDate}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="return-date"
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dateRange?.to && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.to ? format(dateRange.to, "MMM d, yyyy") : "Select return date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                  mode="single"
+                  selected={dateRange?.from}
+                  onSelect={(date) => {
+                    if (date) {
+                       handleDepartureDateSelect({ from: date, to: dateRange?.to })
+                    }
+                  }}
+                  numberOfMonths={2}
+                  pagedNavigation
+                  showOutsideDays={true}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  defaultMonth={dateRange?.to || new Date()}
+                  components={{
+                    Day: ({ day, modifiers,...props }: DayProps) => {
+                      return (
+                        <div
+                          {...props}
+                          onClick={(e)=>{
+                            if (modifiers.disabled) return
+                            if(modifiers.outside) return
+                            handleDepartureDateSelect({ from: day.date, to: dateRange?.to })
+                          }}
+                          className={cn(
+                            "text-[1rem] flex flex-col items-center justify-center w-12 h-12 rounded-md p-2 cursor-pointer",
+                            !modifiers.disabled && "hover:bg-gray-300/40",
+                            modifiers.selected && "!bg-primary !text-white cursor-pointer",
+                            modifiers.today && "bg-blue-100 text-blue-600 cursor-pointer",
+                            modifiers.disabled && "text-gray-400 cursor-not-allowed",
+                            modifiers.outside && "text-gray-400 cursor-not-allowed",
+                            modifiers.focused && "bg-green-100 text-blue-600 cursor-pointer",
+                            modifiers.hidden && "hidden cursor-not-allowed",
+                          )}
+                        >
+                          <span 
+                          className={cn(
+                            modifiers.outside && "hidden"
+                          )
+                          }
+                          >{day.date.getDate()}</span>
+                          <span className={cn(
+                            "text-[.77rem]",
+                            !modifiers.outside && !modifiers.disabled && "!text-green-400",
+                            modifiers.outside && "text-gray-400 !hidden",
+                            modifiers.selected && "!text-green-400 !font-black",
+                            modifiers.today && "text-green-400",
+                            modifiers.focused && "text-green-400",
+                            modifiers.hidden && "text-green-400 !hidden",
+                            modifiers.disabled && "text-gray-400 !hidden",
+                          )}>${(Math.floor(Math.random() * 100) + 100)}</span>
+                        </div>
+                      )
+                    }
+                  }}
+                />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="passengers" className="text-sm font-medium">
@@ -581,7 +756,7 @@ export function FlightSearchPanel() {
               Cabin Class
             </Label>
             <Select value={cabinClass} onValueChange={setCabinClass}>
-              <SelectTrigger id="cabin-class">
+              <SelectTrigger id="cabin-class" className="w-full">
                 <SelectValue placeholder="Select cabin class" />
               </SelectTrigger>
               <SelectContent>

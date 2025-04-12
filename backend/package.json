@@ -3,7 +3,7 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts --watch-dependencies"
+    "dev": "bun run --watch src/app.ts --watch-dependencies"
   },
   "dependencies": {
     "@elysiajs/bearer": "^1.2.0",
@@ -11,10 +11,12 @@
     "@elysiajs/jwt": "^1.2.0",
     "@elysiajs/swagger": "^1.2.2",
     "@prisma/client": "6.5.0",
+    "arctic": "^3.6.0",
     "bcryptjs": "^3.0.2",
     "country-to-iso": "^1.6.0",
     "dotenv": "^16.4.7",
     "elysia": "latest",
+    "elysia-oauth2": "^2.0.0",
     "elysia-rate-limit": "^4.2.1",
     "i18n-iso-countries": "^7.14.0",
     "jose": "^6.0.10",

@@ -2,9 +2,10 @@ import React, { useState } from 'react'
 import { signIn, useSession } from "next-auth/react"
 import { NextRouter, useRouter } from 'next/router'
 import { Button } from '@/components/ui/button'
-import { Loader2Icon, LockKeyholeOpen, LucidePlane } from 'lucide-react'
+import { Loader2Icon, LockKeyholeOpen, LucidePlane, TriangleAlert } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 
 const AdminSignin = () => {
@@ -13,15 +14,26 @@ const AdminSignin = () => {
     const [username, setUsername] = useState<string>("")
     const [password, setPassword] = useState<string>("")
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [error, setError] = useState<string>("")
+    const [isError, setIsError] = useState<boolean>(false)
     const handleSignin = async () => {
         setIsLoading(true)
-        const signinData = await signIn("admin-login", {
+        setError("")
+        setIsError(false)
+        const signinData = await signIn("adminSignin", {
             redirect: false,
             username: username,
             password: password,
             callbackUrl: "/admin",
         })
+        setIsLoading(false)
         console.log(signinData)
+        if(signinData?.error) {
+            setIsError(true)
+            setError(signinData.error)
+        }else{
+
+        }
     }
 
     if (!(!session || session.user.role !== "admin")) {
@@ -47,7 +59,10 @@ const AdminSignin = () => {
     return (
         <div className='container relative grid h-svh flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0'>
             <div className='relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex'>
-                <div className='absolute inset-0 bg-zinc-900' />
+                <div className='absolute inset-0'>
+                    <div className='z-10 absolute inset-0 from-black/60 to-black/60 via-transparent via-50% bg-gradient-to-b' />
+                    <div className='absolute inset-0 bg-[url("/adminLoginSplash.jpg")] bg-cover bg-center w-full h-full' />
+                </div>
                 <div className='relative z-20 flex items-center text-lg font-medium'>
                     <LucidePlane />
                 SkyVoyage
@@ -55,23 +70,32 @@ const AdminSignin = () => {
 
 
                 <div className='relative z-20 mt-auto'>
-                <blockquote className='space-y-2'>
-                    <p className='text-lg'>
-                    &ldquo;A CPE241 Database System Term Project 2024/2.&rdquo;
-                    </p>
-                    <footer className='text-sm'>SkyVoyage Group</footer>
-                </blockquote>
+                    <blockquote className='space-y-2'>
+                        <p className='text-lg'>
+                        &ldquo;A CPE241 Database System Term Project 2024/2.&rdquo;
+                        </p>
+                        <footer className='text-sm'>SkyVoyage Group</footer>
+                    </blockquote>
                 </div>
             </div>
             <div className='lg:p-8'>
                 <div className='mx-auto flex w-full flex-col justify-center space-y-2 sm:w-[350px]'>
                 <div className='flex flex-col space-y-2 text-left'>
                     <h1 className='text-2xl font-semibold tracking-tight'>Admin Login</h1>
+                    <div className='bg-gray-500 h-[1px] w-36' />
                     <p className='text-sm text-muted-foreground'>
                     Enter username and password below <br />
                     to access the admin dashboard.
                     </p>
                 </div>
+                {
+                    isError && error !== "" &&
+                    <Alert variant='destructive' className={`transition-all duration-300 ${isError ? "opacity-100" : "opacity-0"}`}>
+                        <TriangleAlert className='h-4 w-4' />
+                        <AlertTitle className='text-sm font-medium'>Error</AlertTitle>
+                        <AlertDescription className='text-sm'>{error == "CredentialsSignin" ? "Invalid Username or Password" : ""}</AlertDescription>
+                    </Alert>
+                }
                 <div className="grid gap-6">
                     <div className="grid gap-2">
                         <Label htmlFor="username">Username</Label>

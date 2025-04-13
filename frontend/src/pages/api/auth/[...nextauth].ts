@@ -45,7 +45,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 export default NextAuth({
   providers: [
     CredentialsProvider({
-      id: "admin-login",
+      id: "adminSignin",
       name: "Admin",
       credentials: {
         username: { label: "Username", type: "text" },
@@ -72,7 +72,7 @@ export default NextAuth({
       },
     }),
     CredentialsProvider({
-      id: "user-login",
+      id: "userSignin",
       name: "User",
       credentials: {
         email: { label: "Email", type: "text" },

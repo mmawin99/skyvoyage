@@ -102,6 +102,7 @@ const AdminSignin = () => {
                         <Input id="username" type="text" placeholder="Enter your username"
                             required
                             value={username}
+                            autoComplete="new-password"
                             onChange={(e) => setUsername(e.target.value)}
                         />
                     </div>
@@ -115,6 +116,7 @@ const AdminSignin = () => {
                         <Input id="password" type="password" required
                             placeholder="Enter your password"
                             value={password}
+                            autoComplete="new-password"
                             onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>

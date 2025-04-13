@@ -1,38 +1,30 @@
 "use client"
 import * as React from "react"
 import {
-  BarChartIcon,
   BellIcon,
-  BriefcaseBusiness,
-  CameraIcon,
+  Building2,
+  CalendarClock,
+  CalendarRange,
+  ChevronsLeftRightEllipsis,
+  ChevronsUpDown,
   ClipboardListIcon,
   CreditCardIcon,
-  DatabaseIcon,
-  FileCodeIcon,
-  FileIcon,
-  FileTextIcon,
-  FolderIcon,
   HelpCircleIcon,
-//   LayoutDashboardIcon,
-  ListIcon,
+  LayoutGrid,
   LogOutIcon,
   LucideIcon,
-//   MailIcon,
-  MoreHorizontalIcon,
-  MoreVerticalIcon,
   PlaneIcon,
-//   PlusCircleIcon,
-  SearchIcon,
   SettingsIcon,
-  ShareIcon,
+  TicketsPlane,
   UserCircle2Icon,
   Users,
-  UsersIcon,
 } from "lucide-react"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, useSidebar } from "./ui/sidebar"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from "./ui/sidebar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import Link from "next/link"
+import { NextRouter, useRouter } from "next/router"
+import { Separator } from "./ui/separator"
 const data = {
   user: {
     name: "SkyVoyage Admin",
@@ -41,78 +33,45 @@ const data = {
   },
   navMain: [
     {
-      title: "Airline",
-      url: "/admin/airline",
-      icon: BriefcaseBusiness,
+      title: "Dashboard",
+      url: "/admin",
+      icon: LayoutGrid,
     },
     {
-      title: "Admin user",
+      title: "Airlines",
+      url: "/admin/airlines",
+      icon: PlaneIcon,
+    },
+    {
+      title: "Airports",
+      url: "/admin/airports",
+      icon: Building2,
+    },
+    {
+      title: "Admin account",
+      url: "/admin/admin",
+      icon: Users,
+    },
+    {
+      title: "User Account",
       url: "/admin/user",
       icon: Users,
     },
-    // {
-    //   title: "Analytics",
-    //   url: "#",
-    //   icon: BarChartIcon,
-    // },
-    // {
-    //   title: "Projects",
-    //   url: "#",
-    //   icon: FolderIcon,
-    // },
-    // {
-    //   title: "Team",
-    //   url: "#",
-    //   icon: UsersIcon,
-    // },
-  ],
-  navClouds: [
     {
-      title: "Capture",
-      icon: CameraIcon,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      title: "User Booking",
+      url: "/admin/user-booking",
+      icon: CalendarRange,
     },
     {
-      title: "Proposal",
-      icon: FileTextIcon,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      title: "Tickets",
+      url: "/admin/tickets",
+      icon: TicketsPlane,
     },
     {
-      title: "Prompts",
-      icon: FileCodeIcon,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
+      title: "Payments",
+      url: "/admin/payments",
+      icon: CreditCardIcon,
+    }
   ],
   navSecondary: [
     {
@@ -128,21 +87,51 @@ const data = {
   ],
   airlineLevel: [
     {
-      name: "Data Library",
-      url: "#",
-      icon: DatabaseIcon,
+      title: "Aircraft",
+      url: "/admin/aircraft",
+      icon: PlaneIcon,
     },
     {
-      name: "Reports",
-      url: "#",
+      title: "Flights",
+      url: "/admin/flights",
       icon: ClipboardListIcon,
     },
     {
-      name: "Word Assistant",
-      url: "#",
-      icon: FileIcon,
+      title: "Schedules",
+      url: "/admin/schedules",
+      icon: CalendarClock,
     },
+    {
+      title: "Transit",
+      url: "/admin/transit",
+      icon: ChevronsLeftRightEllipsis,
+    },
+    {
+      title: "Seat Map",
+      url: "/admin/seat-map",
+      icon: LayoutGrid,
+    }
   ],
+}
+
+const SidebarItemAdminSidebar = ({
+  item,
+}: {
+  item: {
+    title: string
+    url: string
+    icon?: LucideIcon
+  }
+})=>{
+  const router:NextRouter = useRouter()
+  return (
+    <SidebarMenuItem className={`cursor-pointer`} key={item.title}>
+        <SidebarMenuButton className={`cursor-pointer ${router.asPath == item.url && "bg-gray-100"} hover:bg-gray-200`} tooltip={item.title} onClick={() => { router.push(item.url) }}>
+          {item.icon && <item.icon />}
+          <span>{item.title}</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+  )
 }
 
 function NavMain({
@@ -158,34 +147,8 @@ function NavMain({
       <SidebarGroup>
         <SidebarGroupLabel>Global Management</SidebarGroupLabel>
         <SidebarGroupContent className="flex flex-col gap-2">
-          {/* <SidebarMenu>
-            <SidebarMenuItem className="flex items-center gap-2">
-              <SidebarMenuButton
-                tooltip="Quick Create"
-                className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-              >
-                <PlusCircleIcon />
-                <span>Quick Create</span>
-              </SidebarMenuButton>
-              <Button
-                size="icon"
-                className="h-9 w-9 shrink-0 group-data-[collapsible=icon]:opacity-0"
-                variant="outline"
-              >
-                <MailIcon />
-                <span className="sr-only">Inbox</span>
-              </Button>
-            </SidebarMenuItem>
-          </SidebarMenu> */}
           <SidebarMenu>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton tooltip={item.title}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {items.map((item) => <SidebarItemAdminSidebar item={item} key={item.title} />)}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
@@ -206,16 +169,7 @@ function NavMain({
       <SidebarGroup {...props}>
         <SidebarGroupContent>
           <SidebarMenu>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <a href={item.url}>
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {items.map((item) => <SidebarItemAdminSidebar item={item} key={item.title} />)}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
@@ -225,57 +179,17 @@ function NavMain({
     items,
   }: {
     items: {
-      name: string
+      title: string
       url: string
       icon: LucideIcon
     }[]
   }) {
-    const { isMobile } = useSidebar()
     return (
       <SidebarGroup className="group-data-[collapsible=icon]:hidden">
         <SidebarGroupLabel>Airline Level</SidebarGroupLabel>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.name}>
-              <SidebarMenuButton asChild>
-                <a href={item.url}>
-                  <item.icon />
-                  <span>{item.name}</span>
-                </a>
-              </SidebarMenuButton>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuAction
-                    showOnHover
-                    className="rounded-sm data-[state=open]:bg-accent"
-                  >
-                    <MoreHorizontalIcon />
-                    <span className="sr-only">More</span>
-                  </SidebarMenuAction>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-24 rounded-lg"
-                  side={isMobile ? "bottom" : "right"}
-                  align={isMobile ? "end" : "start"}
-                >
-                  <DropdownMenuItem>
-                    <FolderIcon />
-                    <span>Open</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <ShareIcon />
-                    <span>Share</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
-          ))}
-          <SidebarMenuItem>
-            <SidebarMenuButton className="text-sidebar-foreground/70">
-              <MoreHorizontalIcon className="text-sidebar-foreground/70" />
-              <span>More</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {items.map((item) => <SidebarItemAdminSidebar item={item} key={item.title} />)}
+          {/* <SidebarItemAdminSidebar item={{ title: "More", url: "#", icon: MoreHorizontalIcon }} /> */}
         </SidebarMenu>
       </SidebarGroup>
     )
@@ -298,11 +212,11 @@ function NavMain({
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
                 <Avatar className="h-8 w-8 rounded-lg grayscale">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">SV</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
@@ -310,7 +224,7 @@ function NavMain({
                     {user.email}
                   </span>
                 </div>
-                <MoreVerticalIcon className="ml-auto size-4" />
+                <ChevronsUpDown className="ml-auto size-4" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -323,7 +237,7 @@ function NavMain({
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                    <AvatarFallback className="rounded-lg">SV</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{user.name}</span>
@@ -335,15 +249,15 @@ function NavMain({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
                   <UserCircle2Icon />
                   Account
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
                   <CreditCardIcon />
                   Billing
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
                   <BellIcon />
                   Notifications
                 </DropdownMenuItem>
@@ -351,7 +265,7 @@ function NavMain({
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <LogOutIcon />
-                Log out
+                Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -384,5 +298,20 @@ export function AdminSideBar({ ...props }: React.ComponentProps<typeof Sidebar>)
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+export const AdminHeader = ({title}:{title:string})=>{
+  return (
+    <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
+      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+          orientation="vertical"
+          className="mx-2 data-[orientation=vertical]:h-4"
+          />
+          <h1 className="text-base font-medium">{title}</h1>
+      </div>
+    </header>
   )
 }

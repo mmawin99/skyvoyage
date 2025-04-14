@@ -8,13 +8,31 @@ const countries = require("i18n-iso-countries");
 export const flightModule = new Elysia({
     prefix: '/flight',
     })
-    .post("/autocomplete/:kind/:search", async({params:{kind, search}}:{params:{kind:string,search:string}})=>{
+    .post("/autocomplete/:kind/:search", async({body, params:{kind, search}}:{body:{lat?:number,lon?:number},params:{kind:string,search:string}})=>{
         if(kind == "airport"){
             //html decode the search string
             let searchstring = decodeURIComponent(search)
             let airportList: Airport[];
             let a:boolean = false
-            if(search == "popular_airport"){
+            const {lat, lon} = body
+            if(search == "nearby_airport"){
+                airportList = await prisma.$queryRaw`SELECT
+                    \`airportCode\`,
+                    \`name\`,
+                    latitude,
+                    longitude,
+                    (
+                        6371 * ACOS(
+                            COS(RADIANS(18.807320)) * COS(RADIANS(latitude)) *
+                            COS(RADIANS(longitude) - RADIANS(98.631830)) +
+                            SIN(RADIANS(18.807320)) * SIN(RADIANS(latitude))
+                        )
+                    ) AS distance_km
+                FROM airport
+                HAVING distance_km < 100
+                ORDER BY distance_km ASC
+                LIMIT 10;`
+            }else if(search == "popular_airport"){
                 airportList = await prisma.$queryRaw`
                     SELECT airportCode, \`name\`, country, city FROM airport
                     WHERE airportCode IN (
@@ -60,7 +78,7 @@ export const flightModule = new Elysia({
                 return {
                     code: airport.airportCode,
                     name: airport.name,
-                    short_country: countries.getName(airport.country, 'en', {select: 'alias'}) || airport.country,
+                    short_country: countries.getName(airport.country, 'en', {select: ''}) || airport.country,
                     country: airport.country,
                     city: airport.city
                 }

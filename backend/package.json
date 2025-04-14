@@ -10,7 +10,7 @@
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/jwt": "^1.2.0",
     "@elysiajs/swagger": "^1.2.2",
-    "@prisma/client": "6.5.0",
+    "@prisma/client": "^6.6.0",
     "arctic": "^3.6.0",
     "bcryptjs": "^3.0.2",
     "country-to-iso": "^1.6.0",
@@ -19,11 +19,11 @@
     "elysia-oauth2": "^2.0.0",
     "elysia-rate-limit": "^4.2.1",
     "i18n-iso-countries": "^7.14.0",
-    "jose": "^6.0.10",
-    "prisma": "^6.5.0"
+    "jose": "^6.0.10"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "prisma": "^6.6.0"
   },
   "module": "src/index.js"
 }

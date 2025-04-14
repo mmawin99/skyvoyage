@@ -15,15 +15,15 @@ datasource db {
 
 model admin {
   id         Int      @id @default(autoincrement())
-  username   String   @db.VarChar(50)
+  username   String   @db.VarChar(40)
   password   String   @db.LongText
-  fullname   String?  @db.VarChar(30) @default("Admin")
+  fullname   String?  @db.VarChar(30)
   permission Permission
 }
 
 model airline {
-  airlineCode  String    @id @db.VarChar(3)
-  airlineName  String    @db.VarChar(50)
+  airlineCode String     @id @db.VarChar(3)
+  airlineName String     @db.VarChar(50)
   aircraft     aircraft[]
   aircraftCost aircraftCost[]
   flight       flight[]
@@ -33,8 +33,10 @@ model aircraft {
   aircraftId       String        @id @db.VarChar(13)
   ownerAirlineCode String        @db.VarChar(3)
   model            String        @db.VarChar(10)
+  seatMapId        String        @db.VarChar(32)
   airline          airline       @relation(fields: [ownerAirlineCode], references: [airlineCode])
-  flights          flight[]
+  flightOperate    flightOperate[]
+  aircraftSeatmap  aircraft_seatmap[]
 }
 
 model aircraftCost {
@@ -42,83 +44,88 @@ model aircraftCost {
   ownerAirlineCode String   @db.VarChar(3)
   costPerMile      Float
   airline          airline  @relation(fields: [ownerAirlineCode], references: [airlineCode])
+
   @@id([model, ownerAirlineCode])
 }
 
 model airport {
-  airportCode      String   @id @db.VarChar(4)
-  name             String   @db.VarChar(100)
-  country          String   @db.VarChar(100)
-  city             String   @db.VarChar(100)
-  timezone         String   @db.VarChar(30)
-  latitude         Float?
-  longitude        Float?
-  altitude         Int?
-  departureFlights flight[] @relation("departAirport")
-  arrivalFlights   flight[] @relation("arriveAirport")
+  airportCode String    @id @db.VarChar(4)
+  name        String    @db.VarChar(100)
+  country     String    @db.VarChar(100)
+  city        String    @db.VarChar(100)
+  timezone    String    @db.VarChar(30)
+  latitude    Float?
+  longitude   Float?
+  altitude    Int?
+
+  departFlights flight[] @relation("DepartAirport")
+  arriveFlights flight[] @relation("ArriveAirport")
 }
 
 model booking {
-  bookingId         String           @id @db.VarChar(36)
-  bookingDate       DateTime         @default(now()) @db.DateTime(3)
-  status            BookingStatus    @default(UNPAID)
-  userId            String           @db.VarChar(36)
-  user              user             @relation(fields: [userId], references: [uuid])
-  bookingFlights    booking_flight[]
+  bookingId   String       @id @db.VarChar(36)
+  bookingDate DateTime     @default(now()) @db.DateTime(3)
+  status      BookingStatus @default(UNPAID)
+  userId      String       @db.VarChar(36)
+  user        user         @relation(fields: [userId], references: [uuid])
+  bookingFlights booking_flight[]
   passengerBookings passenger_booking[]
-  payment           payment?
-  tickets           ticket[]
+  tickets     ticket[]
+  payment     payment?
 }
 
 model booking_flight {
   bookingId String  @db.VarChar(36)
   flightId  String  @db.VarChar(36)
   booking   booking @relation(fields: [bookingId], references: [bookingId])
-  flight    flight  @relation(fields: [flightId], references: [flightId])
+  flight    flightOperate @relation(fields: [flightId], references: [flightId])
+
   @@id([bookingId, flightId])
 }
 
 model flight {
-  flightId        String               @id @db.VarChar(36)
-  flightNum       String               @db.VarChar(10)
-  departAirportId String               @db.VarChar(4)
-  arriveAirportId String               @db.VarChar(4)
-  aircraftId      String               @db.VarChar(13)
-  airlineCode     String               @db.VarChar(3)
-  airline         airline              @relation(fields: [airlineCode], references: [airlineCode])
-  aircraft        aircraft             @relation(fields: [aircraftId], references: [aircraftId])
-  departAirport   airport              @relation("departAirport", fields: [departAirportId], references: [airportCode])
-  arriveAirport   airport              @relation("arriveAirport", fields: [arriveAirportId], references: [airportCode])
-  bookings        booking_flight[]
-  operations      flightOperate[]
-  seats           seat[]
-  tickets         ticket[]
-  transitsFrom    transit[]            @relation("flightFrom")
-  transitsTo      transit[]            @relation("flightTo")
-  @@unique([flightNum, airlineCode])
+  flightNum        String        @db.VarChar(10)
+  airlineCode      String        @db.VarChar(3)
+  departAirportId  String        @db.VarChar(4)
+  arriveAirportId  String        @db.VarChar(4)
+  airline          airline       @relation(fields: [airlineCode], references: [airlineCode])
+  departAirport    airport       @relation("DepartAirport", fields: [departAirportId], references: [airportCode])
+  arriveAirport    airport       @relation("ArriveAirport", fields: [arriveAirportId], references: [airportCode])
+  flightOperates   flightOperate[]
+  transitFrom      transit[]     @relation("FromFlight")
+  transitTo        transit[]     @relation("ToFlight")
+
+  @@id([flightNum, airlineCode])
 }
 
 model flightOperate {
-  flightId         String        @db.VarChar(36)
-  departureGate    String        @db.VarChar(5)
-  departureTime    DateTime      @db.DateTime(3)
-  arrivalTime      DateTime      @db.DateTime(3)
-  flight           flight        @relation(fields: [flightId], references: [flightId])
-  @@id([flightId, departureTime])
+  flightId       String      @id @db.VarChar(36)
+  flightNum      String      @db.VarChar(10)
+  airlineCode    String      @db.VarChar(3)
+  departureTime  DateTime    @db.DateTime(3)
+  arrivalTime    DateTime    @db.DateTime(3)
+  departureGate  String      @db.VarChar(5)
+  aircraftId     String      @db.VarChar(13)
+  aircraft       aircraft    @relation(fields: [aircraftId], references: [aircraftId])
+  flight         flight      @relation(fields: [flightNum, airlineCode], references: [flightNum, airlineCode])
+  bookingFlights booking_flight[]
+  tickets        ticket[]
+
+  @@unique([flightNum, airlineCode, departureTime])
 }
 
 model passenger {
-  passportNum      String   @id @db.VarChar(9)
-  passportCountry  String   @db.VarChar(30)
-  passportExpiry   DateTime @db.DateTime(3)
-  firstName        String   @db.VarChar(30)
-  lastName         String   @db.VarChar(30)
-  dateOfBirth      DateTime @db.DateTime(3)
-  nationality      String   @db.VarChar(100)
+  passportNum      String    @id @db.VarChar(9)
+  passportCountry  String    @db.VarChar(30)
+  passportExpiry   DateTime  @db.DateTime(3)
+  firstName        String    @db.VarChar(30)
+  lastName         String    @db.VarChar(30)
+  dateOfBirth      DateTime  @db.DateTime(3)
+  nationality      String    @db.VarChar(100)
   ageRange         AgeRange
-  userId           String   @db.VarChar(36)
-  user             user     @relation(fields: [userId], references: [uuid])
-  bookings         passenger_booking[]
+  userId           String    @db.VarChar(36)
+  user             user      @relation(fields: [userId], references: [uuid])
+  passengerBookings passenger_booking[]
   tickets          ticket[]
 }
 
@@ -127,57 +134,79 @@ model passenger_booking {
   passportNum String    @db.VarChar(9)
   booking     booking   @relation(fields: [bookingId], references: [bookingId])
   passenger   passenger @relation(fields: [passportNum], references: [passportNum])
+
   @@id([bookingId, passportNum])
 }
 
 model payment {
-  paymentId   String   @id @db.VarChar(36)
-  amount      Float    @default(0)
-  method      String   @db.VarChar(30)
+  paymentId  String   @id @db.VarChar(36)
+  amount     Float    @default(0)
+  method     String   @db.VarChar(30)
   paymentDate DateTime @default(now()) @db.DateTime(3)
-  bookingId   String   @unique @db.VarChar(36)
-  booking     booking  @relation(fields: [bookingId], references: [bookingId])
+  bookingId  String   @unique @db.VarChar(36)
+  booking    booking  @relation(fields: [bookingId], references: [bookingId])
+}
+
+model aircraft_seatmap {
+  aircraftId     String       @db.VarChar(13)
+  seatMapId      String       @db.VarChar(32)
+  aircraft       aircraft     @relation(fields: [aircraftId], references: [aircraftId])
+  seatmap        seatmap_info @relation(fields: [seatMapId], references: [seatMapId])
+  @@id([aircraftId, seatMapId])
+}
+
+model seatmap_info {
+  seatMapId     String    @id @db.VarChar(32)
+  airlineCode   String    @db.VarChar(3)
+  aircraftModel String    @db.VarChar(10)
+  version       String    @db.VarChar(10)
+  seat          seat[]
+  aircraft      aircraft_seatmap[]
 }
 
 model seat {
-  seatNum   String   @db.VarChar(4)
-  row       Int      @default(1)
-  class     Class    @default(Y)
-  price     Float    @default(0)
-  reserved  Boolean  @default(false)
-  features  String   @db.MediumText
-  floor     Int      @default(1)
-  flightId  String   @db.VarChar(36)
-  flight    flight   @relation(fields: [flightId], references: [flightId])
+  seatMapId String    @db.VarChar(32)
+  seatId    String    @unique @db.VarChar(16)
+  seatNum   String    @db.VarChar(4)
+  row       Int       @default(1)
+  class     SeatClass @default(Y)
+  price     Float     @default(0)
+  features  String    @db.MediumText
+  floor     Int       @default(1)
   tickets   ticket[]
-  @@id([flightId, seatNum])
+  seatmap   seatmap_info @relation(fields: [seatMapId], references: [seatMapId])
+  @@id([seatMapId, seatId])
 }
 
 model ticket {
-  ticketNum             String        @id @db.VarChar(13)
-  farePackage           FarePackage   @default(STANDARD)
+  ticketNum             String       @id @db.VarChar(13)
+  farePackage           FarePackage  @default(STANDARD)
   baggageAllowanceWeight Int         @default(0)
   baggageAllowancePrice  Float       @default(0)
-  mealSelection         String        @db.VarChar(10)
-  mealPrice             Float         @default(0)
-  ticketPrice           Float         @default(0)
-  bookingId             String        @db.VarChar(36)
-  flightId              String        @db.VarChar(36)
-  passportNum           String        @db.VarChar(9)
-  seatNum               String        @db.VarChar(4)
-  booking               booking       @relation(fields: [bookingId], references: [bookingId])
-  flight                flight        @relation(fields: [flightId], references: [flightId])
-  passenger             passenger     @relation(fields: [passportNum], references: [passportNum])
-  seat                  seat          @relation(fields: [flightId, seatNum], references: [flightId, seatNum])
+  mealSelection         String       @db.VarChar(10)
+  mealPrice             Float        @default(0)
+  ticketPrice           Float        @default(0)
+  bookingId             String       @db.VarChar(36)
+  flightId              String       @db.VarChar(36)
+  passportNum           String       @db.VarChar(9)
+  seatNum               String       @db.VarChar(4)
+
+  booking     booking       @relation(fields: [bookingId], references: [bookingId])
+  passenger   passenger     @relation(fields: [passportNum], references: [passportNum])
+  flight      flightOperate @relation(fields: [flightId], references: [flightId])
+  seat        seat          @relation(fields: [seatNum], references: [seatId])
 }
 
 model transit {
-  transitTime DateTime @db.DateTime(3)
-  flightFrom  String   @db.VarChar(36)
-  flightTo    String   @db.VarChar(36)
-  from        flight   @relation("flightFrom", fields: [flightFrom], references: [flightId])
-  to          flight   @relation("flightTo", fields: [flightTo], references: [flightId])
-  @@id([transitTime, flightFrom, flightTo])
+  flightNumFrom    String
+  airlineCodeFrom  String
+  flightNumTo      String
+  airlineCodeTo    String
+
+  from             flight    @relation("FromFlight", fields: [flightNumFrom, airlineCodeFrom], references: [flightNum, airlineCode])
+  to               flight    @relation("ToFlight", fields: [flightNumTo, airlineCodeTo], references: [flightNum, airlineCode])
+
+  @@id([flightNumFrom, airlineCodeFrom, flightNumTo, airlineCodeTo])
 }
 
 model user {
@@ -186,7 +215,7 @@ model user {
   firstname    String     @db.VarChar(50)
   lastname     String     @db.VarChar(50)
   email        String     @db.VarChar(50)
-  phone        String     @db.VarChar(15)
+  phone        String     @db.VarChar(20)
   registerDate DateTime   @default(now()) @db.DateTime(3)
   bookings     booking[]
   passengers   passenger[]
@@ -209,7 +238,7 @@ enum AgeRange {
   Infant
 }
 
-enum Class {
+enum SeatClass {
   F
   C
   Y

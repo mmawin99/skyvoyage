@@ -171,13 +171,6 @@ model seat {
   @@id([seatMapId, seatId])
 }
 
-model seatClassLabel {
-  airlineCode String      @db.VarChar(3)
-  class       SeatClass    
-  label       String      @db.VarChar(40)
-  @@id([airlineCode, class])
-}
-
 model ticket {
   ticketNum             String       @id @db.VarChar(13)
   farePackage           FarePackage  @default(STANDARD)

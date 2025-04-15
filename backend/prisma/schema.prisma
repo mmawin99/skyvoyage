@@ -34,9 +34,10 @@ model aircraft {
   aircraftId       String        @id @db.VarChar(13)
   ownerAirlineCode String        @db.VarChar(3)
   model            String        @db.VarChar(10)
+  seatMapId        String        @db.VarChar(32)
   airline          airline       @relation(fields: [ownerAirlineCode], references: [airlineCode])
+  seatmap          seatmap_info  @relation(fields: [seatMapId], references: [seatMapId]) 
   flightOperate    flightOperate[]
-  aircraftSeatmap  aircraft_seatmap[]
 }
 
 model aircraftCost {
@@ -63,11 +64,11 @@ model airport {
 }
 
 model booking {
-  bookingId   String       @id @db.VarChar(36)
-  bookingDate DateTime     @default(now()) @db.DateTime(3)
+  bookingId   String        @id @db.VarChar(36)
+  bookingDate DateTime      @default(now()) @db.DateTime(3)
   status      BookingStatus @default(UNPAID)
-  userId      String       @db.VarChar(36)
-  user        user         @relation(fields: [userId], references: [uuid])
+  userId      String        @db.VarChar(36)
+  user        user          @relation(fields: [userId], references: [uuid])
   bookingFlights booking_flight[]
   passengerBookings passenger_booking[]
   tickets     ticket[]
@@ -147,21 +148,13 @@ model payment {
   booking    booking  @relation(fields: [bookingId], references: [bookingId])
 }
 
-model aircraft_seatmap {
-  aircraftId     String       @db.VarChar(13)
-  seatMapId      String       @db.VarChar(32)
-  aircraft       aircraft     @relation(fields: [aircraftId], references: [aircraftId])
-  seatmap        seatmap_info @relation(fields: [seatMapId], references: [seatMapId])
-  @@id([aircraftId, seatMapId])
-}
-
 model seatmap_info {
   seatMapId     String    @id @db.VarChar(32)
   airlineCode   String    @db.VarChar(3)
   aircraftModel String    @db.VarChar(10)
   version       String    @db.VarChar(10)
   seat          seat[]
-  aircraft      aircraft_seatmap[]
+  aircraft      aircraft[]
 }
 
 model seat {
@@ -176,6 +169,13 @@ model seat {
   tickets   ticket[]
   seatmap   seatmap_info @relation(fields: [seatMapId], references: [seatMapId])
   @@id([seatMapId, seatId])
+}
+
+model seatClassLabel {
+  airlineCode String      @db.VarChar(3)
+  class       SeatClass    
+  label       String      @db.VarChar(40)
+  @@id([airlineCode, class])
 }
 
 model ticket {

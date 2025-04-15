@@ -33,7 +33,6 @@ model aircraft {
   aircraftId       String        @id @db.VarChar(13)
   ownerAirlineCode String        @db.VarChar(3)
   model            String        @db.VarChar(10)
-  seatMapId        String        @db.VarChar(32)
   airline          airline       @relation(fields: [ownerAirlineCode], references: [airlineCode])
   flightOperate    flightOperate[]
   aircraftSeatmap  aircraft_seatmap[]

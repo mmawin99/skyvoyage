@@ -16,6 +16,9 @@ export const flightModule = new Elysia({
             let a:boolean = false
             const {lat, lon} = body
             if(search == "nearby_airport"){
+                if(!lat || !lon){
+                    return error(400, "geolocation_required")
+                }
                 airportList = await prisma.$queryRaw`SELECT
                     \`airportCode\`,
                     \`name\`,
@@ -23,9 +26,9 @@ export const flightModule = new Elysia({
                     longitude,
                     (
                         6371 * ACOS(
-                            COS(RADIANS(18.807320)) * COS(RADIANS(latitude)) *
-                            COS(RADIANS(longitude) - RADIANS(98.631830)) +
-                            SIN(RADIANS(18.807320)) * SIN(RADIANS(latitude))
+                            COS(RADIANS(${lat})) * COS(RADIANS(latitude)) *
+                            COS(RADIANS(longitude) - RADIANS(${lon})) +
+                            SIN(RADIANS(${lat})) * SIN(RADIANS(latitude))
                         )
                     ) AS distance_km
                 FROM airport

@@ -115,3 +115,6 @@ export const flightModule = new Elysia({
             }
         }
     })
+    .post("/addschedule", async()=>{
+        return "Schedule route"
+    })

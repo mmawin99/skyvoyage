@@ -42,12 +42,14 @@ cd ..
 ```
 To run the backend development server, Ensure that `.env` file on folder `backend` contains your database URL.
 If file `.env` isn't exist on your backend folder, Create new one.
-Or you can copy file `.env.example` and rename it into `.env`.
+Or you can **copy** and rename file `.env.example` it into `.env`.
 ```env
-DATABASE_URL="mysql://<your_database_user>:<your_database_password>@<your_database_host>:<your_database_port>/skyvoyage"
+DATABASE_URL="mysql://<your_database_user>:<your_database_password>@<your_database_host>:<your_database_port>/skyvoyage_prod"
 JWT_SECRET="<SECRET_CODE_FOR_JWT_TOKEN_ENCRYPTION>"
 ```
-Push your schema into mysql database.
+Push your schema into mysql database. 
+> If only change to my aiven's database (URL is on discords), no need to push a schema again.
+> Skip to generate prisma client when successfully configure your `.env` file.
 ```bash
 cd backend
 bun prisma db push
@@ -74,6 +76,8 @@ bun backend
 #### Additional
 To make SkyVoyage operate smoothly, please run the Backend before running the Frontend. 
 
-By default, the Backend is set to run on port 4000. **No configuration is required on the Frontend.** Some parts of the Frontend are **hardcoded** for API routes (will be fixed later).
+By default, the Backend is set to run on port 4000.
 
-You need to create 2 terminals in VS Code to run the Frontend and Backend separately.
+> **Fixed:** we have `api/init` route to provide backend_url to any visitor on frontend (not a hardcoded one used before).
+
+> You need to create 2 terminals in VS Code to run the Frontend and Backend separately.

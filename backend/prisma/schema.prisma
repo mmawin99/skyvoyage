@@ -89,8 +89,8 @@ model flight {
   airlineCode      String        @db.VarChar(3)
   departAirportId  String        @db.VarChar(4)
   arriveAirportId  String        @db.VarChar(4)
-  departureTime    String
-  arrivalTime      String
+  departureTime    String        @db.VarChar(8)
+  arrivalTime      String        @db.VarChar(8)
   airline          airline       @relation(fields: [airlineCode], references: [airlineCode])
   departAirport    airport       @relation("DepartAirport", fields: [departAirportId], references: [airportCode])
   arriveAirport    airport       @relation("ArriveAirport", fields: [arriveAirportId], references: [airportCode])

@@ -16,7 +16,7 @@ datasource db {
 
 model admin {
   id         Int      @id @default(autoincrement())
-  username   String   @db.VarChar(40)
+  username   String   @unique @db.VarChar(40)
   password   String   @db.LongText
   fullname   String?  @db.VarChar(30)
   permission Permission
@@ -209,7 +209,7 @@ model user {
   password     String     @db.LongText
   firstname    String     @db.VarChar(50)
   lastname     String     @db.VarChar(50)
-  email        String     @db.VarChar(50)
+  email        String     @unique @db.VarChar(50)
   phone        String     @db.VarChar(20)
   registerDate DateTime   @default(now()) @db.DateTime(3)
   bookings     booking[]

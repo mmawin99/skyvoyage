@@ -3,12 +3,10 @@ import { Elysia } from "elysia";
 import { swagger } from '@elysiajs/swagger'
 import { cors } from '@elysiajs/cors'
 import { bearer } from '@elysiajs/bearer'
-import { PrismaClient } from '@prisma/client'
 import { userModule } from "./module.user";
 import { adminAuthModule } from "./module.admin_auth";
 import { flightModule } from "./module.flight";
 
-const prisma = new PrismaClient()
 const app = new Elysia()
       .use(cors({
         origin: [
@@ -60,8 +58,11 @@ const app = new Elysia()
       .use(flightModule)     //See module.flight.ts
       ;
       app.listen(4000, ()=>{
-        console.log(`🦊 Serving Elysia at http://${app.server?.hostname}:${app.server?.port}`);
-        console.log(`🦊 Serving Elysia Swagger at http://${app.server?.hostname}:${app.server?.port}/v1/docs`);
+        console.log(`| CPE241 Term Project - SkyVoyage API`);
+        console.log(`| -----------------------------------`);
+        console.log(`| 🦊 Serving Elysia at http://${app.server?.hostname}:${app.server?.port}`);
+        console.log(`| 😺 Serving Elysia Swagger at http://${app.server?.hostname}:${app.server?.port}/v1/docs`);
+        console.log(`| -----------------------------------`);
       });
       
       

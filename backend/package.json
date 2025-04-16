@@ -10,7 +10,7 @@
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/jwt": "^1.2.0",
     "@elysiajs/swagger": "^1.2.2",
-    "@prisma/client": "^6.6.0",
+    "@prisma/client": "6.6.0",
     "arctic": "^3.6.0",
     "bcryptjs": "^3.0.2",
     "country-to-iso": "^1.6.0",

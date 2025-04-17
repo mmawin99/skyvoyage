@@ -102,7 +102,7 @@ export function FlightSearchPanel() {
 
     try {
       // In a real app, this would be a fetch to your API
-      const response = await fetch(`${backendURL}/flight/autocomplete/airport/${query}`, { method:"POST", signal })
+      const response = await fetch(`${backendURL}/autocomplete/airport/${query}`, { method:"POST", signal })
       const data = await response.json()
 
       // console.log("Fetched airports:", data)

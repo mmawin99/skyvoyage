@@ -17,6 +17,13 @@ const AdminSignin = () => {
     const [error, setError] = useState<string>("")
     const [isError, setIsError] = useState<boolean>(false)
     const handleSignin = async () => {
+        if(username === "" || password === "") {
+            setIsLoading(true)
+            setIsError(true)
+            setError("no_input")
+            setIsLoading(false)
+            return
+        }
         setIsLoading(true)
         setError("")
         setIsError(false)
@@ -31,6 +38,8 @@ const AdminSignin = () => {
         if(signinData?.error) {
             setIsError(true)
             setError(signinData.error)
+            setUsername("")
+            setPassword("")
         }else{
 
         }
@@ -93,7 +102,8 @@ const AdminSignin = () => {
                     <Alert variant='destructive' className={`transition-all duration-300 ${isError ? "opacity-100" : "opacity-0"}`}>
                         <TriangleAlert className='h-4 w-4' />
                         <AlertTitle className='text-sm font-medium'>Error</AlertTitle>
-                        <AlertDescription className='text-sm'>{error == "CredentialsSignin" ? "Invalid Username or Password" : ""}</AlertDescription>
+                        <AlertDescription className='text-sm'>{error == "CredentialsSignin" ? "Invalid Username or Password" : 
+                        error == "no_input" ? "Please enter your username and password" : ""}</AlertDescription>
                     </Alert>
                 }
                 <div className="grid gap-6">

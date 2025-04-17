@@ -276,7 +276,7 @@ function NavMain({
 
 export function AdminSideBar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="offcanvas" variant='inset' {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

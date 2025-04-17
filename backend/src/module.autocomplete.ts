@@ -5,10 +5,27 @@ import { countryToAlpha2 } from "country-to-iso";
 import { flight as Flight, airport as Airport, PrismaClient, airline } from "../prisma-client";
 const prisma = new PrismaClient()
 const countries = require("i18n-iso-countries");
-export const flightModule = new Elysia({
-    prefix: '/flight',
+
+interface Schedule {
+    flightId: string,
+    flightNum: string,
+    airlineCode: string,
+    airlineName: string,
+    departureTime: string,
+    arrivalTime: string,
+    departureGate: string,
+    aircraftId: string,
+    aircraftModel: string,
+    departureAirport: string,
+    departureAirportCode: string,
+    arrivalAirport: string,
+    arrivalAirportCode: string
+}
+
+export const autocompleteModule = new Elysia({
+    prefix: '/autocomplete',
     })
-    .post("/autocomplete/airport/:search", async({body, params:{search}}:{body:{lat?:number,lon?:number},params:{search:string}})=>{
+    .post("/airport/:search", async({body, params:{search}}:{body:{lat?:number,lon?:number},params:{search:string}})=>{
         //html decode the search string
         let searchstring = decodeURIComponent(search)
         let airportList: Airport[];
@@ -116,7 +133,7 @@ export const flightModule = new Elysia({
             }
         }
     })
-    .post("/autocomplete/airline/:search", async({body, params:{search}}:{body:{lat?:number,lon?:number},params:{search:string}})=>{
+    .post("/airline/:search", async({body, params:{search}}:{body:{lat?:number,lon?:number},params:{search:string}})=>{
         //html decode the search string
         let searchstring = decodeURIComponent(search)
         let airlineList:airline[] = []
@@ -154,7 +171,7 @@ export const flightModule = new Elysia({
         })
         return airlineReturn
     })
-    .post("/autocomplete/flight/:airline", async({body, params:{airline}}:{body:{origin?:string,destination?:string},params:{airline:string}})=>{
+    .post("/flight/:airline", async({body, params:{airline}}:{body:{origin?:string,destination?:string},params:{airline:string}})=>{
         //html decode the search string
         let airlineCode = decodeURIComponent(airline)
         const {origin, destination} = body //origin and destination are airport codes
@@ -177,6 +194,87 @@ export const flightModule = new Elysia({
             }
         })
         return flightReturn
+    })
+    .post("/schedule/:airline/:page", async({params:{airline, page}}:{params:{airline:string,page:number}})=>{
+        //html decode the search string
+        try{
+
+            let airlineCode = decodeURIComponent(airline)
+            //check if airlineCode is valid
+            if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
+                if(!page || page < 1 || typeof page != "number") return error(400, "invalid_page_number")
+                    const pageSize = 25
+                const offset = (page - 1) * pageSize
+
+                let flightList: Schedule[] = await prisma.$queryRaw`
+                SELECT 
+                    fo.flightId,
+                    fo.flightNum,
+                    fo.airlineCode,
+                    al.airlineName,
+                    fo.departureTime,
+                    fo.arrivalTime,
+                    fo.departureGate,
+                    fo.aircraftId,
+                    ac.model AS aircraftModel,
+                    dap.name AS departureAirport,
+                    dap.code AS departureAirportCode,
+                    aap.name AS arrivalAirport
+                    aap.code AS arrivalAirportCode
+                FROM flightOperate fo
+                JOIN (SELECT model, aircraftId FROM aircraft WHERE ownerAirlineCode = ${airlineCode}) ac 
+                    ON fo.aircraftId = ac.aircraftId
+                JOIN (SELECT airlineName, airlineCode FROM airline WHERE airlineCode = ${airlineCode}) al 
+                    ON fo.airlineCode = al.airlineCode
+                JOIN flight f 
+                    ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
+                JOIN airport dap 
+                    ON f.departAirportId = dap.airportCode
+                JOIN airport aap 
+                    ON f.arriveAirportId = aap.airportCode
+                WHERE fo.airlineCode = ${airlineCode}
+                LIMIT ${pageSize} OFFSET ${offset};
+            `
+
+            return flightList
+        }catch(e){
+            console.error(e)
+            return error(500, "internal_server_error")
+        }
+    },{
+        detail:{
+            tags: ['Flight'],
+            description: "This endpoint is used to get the autocomplete data for the flight search.",
+            responses:{
+                200:{
+                    description: "Successfully fetched autocomplete data",
+                    content:{
+                        "application/json": {
+                            schema: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        flightId: {type: "string"},
+                                        flightNum: {type: "string"},
+                                        airlineCode: {type: "string"},
+                                        airlineName: {type: "string"},
+                                        departureTime: {type: "string"},
+                                        arrivalTime: {type: "string"},
+                                        departureGate: {type: "string"},
+                                        aircraftId: {type: "string"},
+                                        aircraftModel:{type:"string"}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                400:{
+                    description: "Bad request",
+                }
+            }
+        }
     })
     .post("/addschedule", async()=>{
         return "Schedule route"

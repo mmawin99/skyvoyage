@@ -142,8 +142,59 @@ export interface Schedule {
     departureGate: string,
     aircraftId: string,
     aircraftModel: string,
+    aircraftModelName: string,
     departureAirport: string,
     departureAirportCode: string,
     arrivalAirport: string,
     arrivalAirportCode: string
+}
+
+export interface Airport {
+    code: string,
+    name: string,
+    country: string,
+    short_country: string,
+    city: string,
+}
+
+export interface Airline {
+    code: string,
+    name: string
+}
+export interface Flight {
+    flight_number: string,
+    airline_code: string,
+    depart_airport: string,
+    arrive_airport: string,
+    arrival_time: string,
+    departure_time: string,
+}
+
+export interface AircraftModel {
+    model: string,
+    model_name: string,
+    airline_code: string,
+}
+
+export interface AircraftRegistration {
+    registration: string,
+    model: string,
+    airline_code: string,
+}
+
+export interface SubmitSchedule {
+    type: "recurring" | "single",
+    flightNum: string,
+    airlineCode: string,
+    model: string,
+    //For single flights
+    registration?: string,
+    departureDate?: string,
+    arrivalDate?: string,
+    //End for single flights
+    //For recurring flights
+    daysofweek?: string,
+    startDate?: string,
+    endDate?: string,
+    //End for recurring flights
 }

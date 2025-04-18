@@ -30,6 +30,7 @@ const app = new Elysia()
             {name: 'Auth', description: 'Authentication for user to sign in and sign up'},
             {name: 'User', description: 'User Endpoints'},
             {name: 'Admin', description: 'Admin Endpoints'},
+            {name: 'Autocomplete', description: 'Autocomplete Endpoints'},
             {name: 'Flight', description: 'Flight Search Endpoints'},
           ]
         }

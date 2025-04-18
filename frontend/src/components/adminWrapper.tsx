@@ -3,6 +3,7 @@ import { useRouter } from "next/router"
 import { Loader2, LockKeyhole } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import React from "react"
+// import { BackendURLType, useBackendURL } from "./backend-url-provider"
 
 interface AdminWrapperProps {
     children: React.ReactNode
@@ -10,6 +11,7 @@ interface AdminWrapperProps {
 
 export const AdminWrapper: React.FC<AdminWrapperProps> = ({ children }) => {
     const { data: session, status } = useSession()
+    // const { backend, setBackend, status:backendStatus }: BackendURLType = useBackendURL();
     const router = useRouter()
 
     if (status === "loading") {

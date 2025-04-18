@@ -11,13 +11,16 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { format, addDays } from "date-fns"
+import { format, addDays, set } from "date-fns"
 import { CalendarIcon, ChevronDown, ChevronUp, Info, Loader2, MapPin, Plane, Search, Users, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { DateRange, DayProps } from "react-day-picker"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
-import { Airport } from "../../type"
+import { Airport } from "@/types/type"
 import { useBackendURL } from "./backend-url-provider"
+import { DebouncedSearch } from "./reusable/search"
+import { useSession } from "next-auth/react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog"
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
 interface PassengerType {
   type: "adult" | "child" | "infant"
   count: number
@@ -27,19 +30,26 @@ interface PassengerType {
 export function FlightSearchPanel() {
   const router = useRouter();
   const {backend:backendURL, setBackend, status} = useBackendURL(); 
+  const { data: sessionData, status:authStatus } = useSession()
   const [tripType, setTripType] = useState("roundtrip")
+  
   const [origin, setOrigin] = useState<Airport | null>(null)
-  const [destination, setDestination] = useState<Airport | null>(null)
-  const [originSearch, setOriginSearch] = useState("")
-  const [destinationSearch, setDestinationSearch] = useState("")
-  const [loadingOrigin, setLoadingOrigin] = useState(false)
-  const [loadingDestination, setLoadingDestination] = useState(false)
+  const [loadingOrigin, setLoadingOrigin] = useState<boolean>(false)
   const [originAirports, setOriginAirports] = useState<Airport[]>([])
+  
+  const [destination, setDestination] = useState<Airport | null>(null)
+  const [loadingDestination, setLoadingDestination] = useState<boolean>(false)
   const [destinationAirports, setDestinationAirports] = useState<Airport[]>([])
+  
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [openDepartureDate, setOpenDepartureDate] = useState(false)
   const [openReturnDate, setOpenReturnDate] = useState(false)
   const [cabinClass, setCabinClass] = useState("economy")
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false)
+
+  const [alertOpen, setAlertOpen] = useState<boolean>(false)
+  const [alertCode, setAlertCode] = useState<string>("")
+
   // Remove the expanded state and related code
   // const [expanded, setExpanded] = useState(false)
   // const [activeField, setActiveField] = useState<string | null>(null)
@@ -65,109 +75,6 @@ export function FlightSearchPanel() {
   const adultCount = passengers.find((p) => p.type === "adult")?.count || 1
   const childCount = passengers.find((p) => p.type === "child")?.count || 0
   const infantCount = passengers.find((p) => p.type === "infant")?.count || 0
-
-  // Refs for fetch abort controllers
-  const originAbortController = useRef<AbortController | null>(null)
-  const destinationAbortController = useRef<AbortController | null>(null)
-
-  // Debounce timers
-  const originDebounceTimer = useRef<NodeJS.Timeout | null>(null)
-  const destinationDebounceTimer = useRef<NodeJS.Timeout | null>(null)
-
-  // Mock airport search function with cancellation support
-  const searchAirports = async (
-    query: string,
-    setLoading: (loading: boolean) => void,
-    setResults: (airports: Airport[]) => void,
-    abortControllerRef: React.MutableRefObject<AbortController | null>,
-  ) => {
-    // console.log("searchAirports triggered with query:", query); // Debug log
-  
-    if (query.length < 2) {
-      // console.log("Query too short, clearing results.");
-      // setResults([]);
-      return;
-    }
-
-    // Cancel previous request if it exists
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
-
-    // Create new abort controller
-    abortControllerRef.current = new AbortController()
-    const signal = abortControllerRef.current.signal
-
-    setLoading(true)
-
-    try {
-      // In a real app, this would be a fetch to your API
-      const response = await fetch(`${backendURL}/autocomplete/airport/${query}`, { method:"POST", signal })
-      const data = await response.json()
-
-      // console.log("Fetched airports:", data)
-
-      if (!signal.aborted) {
-        setResults(data)
-        setLoading(false)
-      }
-    } catch (err) {
-      if ((err as Error).name !== "AbortError") {
-        console.error("Error searching airports:", err)
-      }
-    } finally {
-      if (!signal.aborted) {
-        setLoading(false)
-      }
-    }
-  }
-
-  // Debounced search for origin
-  const debouncedSearchOrigin = (query: string) => {
-    setOriginSearch(query)
-
-    if (originDebounceTimer.current) {
-      clearTimeout(originDebounceTimer.current)
-    }
-
-    originDebounceTimer.current = setTimeout(() => {
-      searchAirports(query, setLoadingOrigin, setOriginAirports, originAbortController)
-      // console.log("Origin search:", query, originAirports)
-    }, 300)
-  }
-
-  // Debounced search for destination
-  const debouncedSearchDestination = (query: string) => {
-    setDestinationSearch(query)
-
-    if (destinationDebounceTimer.current) {
-      clearTimeout(destinationDebounceTimer.current)
-    }
-
-    destinationDebounceTimer.current = setTimeout(() => {
-      searchAirports(query, setLoadingDestination, setDestinationAirports, destinationAbortController)
-    }, 300)
-  }
-
-  // Clean up abort controllers on unmount
-  useEffect(() => {
-    const originAbortControllerSnapshot = originAbortController.current;
-    const destinationAbortControllerSnapshot = destinationAbortController.current;
-    return () => {
-      if (originAbortControllerSnapshot) {
-        originAbortControllerSnapshot.abort();
-      }
-      if (destinationAbortControllerSnapshot) {
-        destinationAbortControllerSnapshot.abort();
-      }
-      if (originDebounceTimer.current) {
-        clearTimeout(originDebounceTimer.current);
-      }
-      if (destinationDebounceTimer.current) {
-        clearTimeout(destinationDebounceTimer.current);
-      }
-    };
-  }, [])
 
   const handleDepartureDateSelect = (newDateRange: DateRange | undefined) => {
     if (!newDateRange) return
@@ -196,46 +103,46 @@ export function FlightSearchPanel() {
 
   // Update the handlePassengerChange function to implement the correct constraints
   const handlePassengerChange = (type: "adult" | "child" | "infant", increment: boolean) => {
-    setPassengers((prev) => {
-      const updatedPassengers = [...prev]
-      const passengerToUpdate = updatedPassengers.find((p) => p.type === type)
-      const adultPassenger = updatedPassengers.find((p) => p.type === "adult")
-      const childPassenger = updatedPassengers.find((p) => p.type === "child")
-      const infantPassenger = updatedPassengers.find((p) => p.type === "infant")
-
-      if (!passengerToUpdate || !adultPassenger || !childPassenger || !infantPassenger) return prev
-
-      let newCount = increment ? passengerToUpdate.count + 1 : passengerToUpdate.count - 1
-
-      // Apply constraints based on passenger type
-      if (type === "adult") {
-        // At least 1 adult required
-        newCount = Math.max(1, newCount)
-
-        // If reducing adult count, ensure infant count doesn't exceed new adult count
-        if (!increment && infantPassenger.count > newCount) {
-          infantPassenger.count = newCount
-        }
-      } else if (type === "child") {
-        // Can't have negative counts for children
-        newCount = Math.max(0, newCount)
-
-        // Ensure adults + children don't exceed 9
-        const adultChildrenTotal = adultPassenger.count + newCount
-        if (adultChildrenTotal > 9) {
-          newCount = 9 - adultPassenger.count
-        }
-      } else if (type === "infant") {
-        // Can't have negative counts for infants
-        newCount = Math.max(0, newCount)
-
-        // Infants cannot exceed adult count
-        newCount = Math.min(newCount, adultPassenger.count)
-      }
-
-      passengerToUpdate.count = newCount
-      return updatedPassengers
-    })
+    // console.log("Passenger type:", type, "Increment:", increment)
+    console.log("triggered")
+    setPassengers((prev) =>
+          prev.map((p) => {
+            let newCount = p.count;
+    
+            if (p.type === type) {
+              if (increment) {
+                newCount += 1;
+              } else {
+                newCount -= 1;
+              }
+    
+              // Constraints
+              if (type === "adult") {
+                newCount = Math.max(1, newCount);
+                const infant = prev.find((x) => x.type === "infant");
+                if (!increment && infant && infant.count > newCount) {
+                  // Adjust infants
+                  return prev.map((x) =>
+                    x.type === "infant" ? { ...x, count: newCount } : x
+                  );
+                }
+              } else if (type === "child") {
+                newCount = Math.max(0, newCount);
+                const adult = prev.find((x) => x.type === "adult");
+                const total = (adult?.count || 0) + newCount;
+                if (total > 9) newCount = 9 - (adult?.count || 0);
+              } else if (type === "infant") {
+                newCount = Math.max(0, newCount);
+                const adult = prev.find((x) => x.type === "adult");
+                newCount = Math.min(newCount, adult?.count || 0);
+              }
+    
+              return { ...p, count: newCount };
+            }
+    
+            return p;
+          }).flat()
+        );
   }
   const [fromAirportOpen, setFromAirportOpen] = useState<boolean>(false)
   const [toAirportOpen, setToAirportOpen] = useState<boolean>(false)
@@ -243,18 +150,29 @@ export function FlightSearchPanel() {
     e.preventDefault()
 
     if (!origin || !destination) {
-      alert("Please select both origin and destination airports")
+      setAlertCode("origin-destination")
+      setAlertOpen(true)
       return
     }
 
     if (!dateRange?.from) {
-      alert("Please select a departure date")
+      setAlertCode("departure-date")
+      setAlertOpen(true)
       return
     }
 
     if (tripType === "roundtrip" && !dateRange.to) {
-      alert("Please select a return date")
+      setAlertCode("return-date")
+      setAlertOpen(true)
       return
+    }
+
+    if(tripType === "roundtrip") {
+      if(dateRange?.from && dateRange?.to && dateRange.from > dateRange.to) {
+        setAlertCode("return-date-invalid")
+        setAlertOpen(true)
+        return
+      }
     }
 
     // Format passenger data for URL
@@ -265,11 +183,15 @@ export function FlightSearchPanel() {
     const passengersParam = `${adultsCount},${childrenCount},${infantsCount}`
 
     // Navigate to search results with query params
-    router.push(
-      `/search-results?origin=${origin.code}&destination=${destination.code}&departDate=${dateRange.from.toISOString()}&returnDate=${
-        dateRange.to ? dateRange.to.toISOString() : ""
-      }&passengers=${passengersParam}&cabinClass=${cabinClass}&tripType=${tripType}`,
-    )
+    if (!sessionData || sessionData.user.role === "user"){
+      router.push(
+        `/search-results?origin=${origin.code}&destination=${destination.code}&departDate=${dateRange.from.toISOString()}&returnDate=${
+          dateRange.to ? dateRange.to.toISOString() : ""
+        }&passengers=${passengersParam}&cabinClass=${cabinClass}&tripType=${tripType}`,
+      )
+    }else{
+      setDialogOpen(true)
+    }
   }
 
   useEffect(() => {
@@ -295,8 +217,82 @@ export function FlightSearchPanel() {
       }
   }, [tripType, dateRange])
 
+  const handleDialogOpenChange = (newOpen: boolean) => {
+    setDialogOpen(newOpen)
+  }
+  const handleAlertOpenChange = (newOpen: boolean) => {
+    setAlertOpen(newOpen)
+  }
+
   return (
     <div className="w-full max-w-5xl mx-auto bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-6 md:p-8">
+      <AlertDialog open={alertOpen} onOpenChange={handleAlertOpenChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle><span className="text-red-500">Error! </span>
+              {
+                alertCode === "origin-destination" && (
+                  <span>Origin and Destination</span>
+                )  
+              }
+              {
+                alertCode === "departure-date" && (
+                  <span>Departure Date</span>
+                )  
+              }
+              {
+                alertCode === "return-date" && (
+                  <span>Return Date</span>
+                )  
+              }
+              {
+                alertCode === "return-date-invalid" && (
+                  <span>Return Date</span>
+                )  
+              }
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {
+                alertCode === "origin-destination" && (
+                  <p>Please select both origin and destination airports.</p>
+                )
+              }
+              {
+                alertCode === "departure-date" && (
+                  <p>Please select a departure date.</p>
+                )
+              }
+              {
+                alertCode === "return-date" && (
+                  <p>Please select a return date.</p>
+                )
+              }
+              {
+                alertCode === "return-date-invalid" && (
+                  <p>Please select a valid return date.</p>
+                )
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Sign in is required</DialogTitle>
+            <DialogDescription>Please sign in to complete your journey.</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-row gap-2 w-full">
+            <Button variant={"secondary"} onClick={()=>{ handleDialogOpenChange(false) }}>Go back</Button>
+            <Button variant={"default"} onClick={()=>{ router.push("/account/signin") }}>Sign In</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <form onSubmit={handleSearch} className="space-y-6">
         <Tabs defaultValue="roundtrip" onValueChange={setTripType}>
           <TabsList className="grid w-full grid-cols-2">
@@ -317,96 +313,23 @@ export function FlightSearchPanel() {
               From
             </Label>
             <div className="relative">
-              <Popover open={fromAirportOpen} onOpenChange={setFromAirportOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={fromAirportOpen}
-                  className="w-full justify-between"
-                  onClick={() => setFromAirportOpen(true)}
-                >
-                  <div className="flex items-center">
-                    <MapPin className="mr-2 h-4 w-4 text-gray-400" />
-                    {origin ? (
-                      <span>
-                        {origin.name}, {origin.short_country} ({origin.code})
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">Search for airport or city</span>
-                    )}
+              <DebouncedSearch<Airport>
+                title="Airport or city"
+                selected={origin}
+                onSelect={setOrigin}
+                results={originAirports}
+                setResults={setOriginAirports}
+                loading={loadingOrigin}
+                setLoading={setLoadingOrigin}
+                fetchUrl={(q) => `${backendURL}/autocomplete/airport/${q}`}
+                renderItem={(airport) => (
+                  <div className="flex flex-col">
+                    <span className="font-medium">{airport.name} ({airport.code})</span>
+                    <span className="text-xs text-gray-500">{airport.city}, {airport.country}</span>
                   </div>
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command className="md:min-w-[450px]" shouldFilter={false}>
-                  <div className="flex items-center border-b px-3 w-full">
-                    {/* <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" /> */}
-                    <CommandInput
-                      placeholder="City or Airport"
-                      value={originSearch}
-                      onValueChange={debouncedSearchOrigin}
-                      className="md:min-w-[370px]"
-                    />
-                    {originSearch && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          setOriginSearch("")
-                          // setOriginAirports([])
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <CommandList>
-                    {loadingOrigin && (
-                      <div className="flex items-center justify-center py-6">
-                        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                      </div>
-                    )}
-                    {!loadingOrigin && originSearch.length > 0 && originAirports.length <= 0 ? (
-                      <CommandEmpty>No airports found</CommandEmpty>
-                    ) : null}
-                    {!loadingOrigin && originAirports.length > 0 ? (
-                      <CommandGroup>
-                        {originAirports.map((airport) => {
-                          return (
-                            <CommandItem
-                            key={airport.code}
-                            value={`${airport.city} ${airport.code} ${airport.name} ${airport.country}`}
-                            onSelect={() => {
-                              setOrigin(airport)
-                              setFromAirportOpen(false)
-                            }}
-                            >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {airport.name} ({airport.code})
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {airport.city}, {airport.country}
-                              </span>
-                            </div>
-                          </CommandItem>
-                          )
-                        })}
-                      </CommandGroup>
-                    ) : null}
-
-                    {!loadingOrigin && originSearch.length < 2 && (
-                      <div className="px-3 py-6 text-center text-sm text-gray-500">
-                        Type at least 2 characters to search for airports
-                      </div>
-                    )}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                )}
+                renderSelectedItem={(airport) => <span className="font-medium">{airport.name} ({airport.code})</span>}
+              />
             </div>
           </div>
 
@@ -415,93 +338,23 @@ export function FlightSearchPanel() {
               To
             </Label>
             <div className="relative">
-            <Popover open={toAirportOpen} onOpenChange={setToAirportOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={toAirportOpen}
-                  className="w-full justify-between"
-                  onClick={() => setToAirportOpen(true)}
-                >
-                  <div className="flex items-center">
-                    <MapPin className="mr-2 h-4 w-4 text-gray-400" />
-                    {destination ? (
-                      <span>
-                        {destination.name} {destination.short_country} ({destination.code})
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">Search for airport or city</span>
-                    )}
+              <DebouncedSearch<Airport>
+                title="Airport or city"
+                selected={destination}
+                onSelect={setDestination}
+                results={destinationAirports}
+                setResults={setDestinationAirports}
+                loading={loadingDestination}
+                setLoading={setLoadingDestination}
+                fetchUrl={(q) => `${backendURL}/autocomplete/airport/${q}`}
+                renderItem={(airport) => (
+                  <div className="flex flex-col">
+                    <span className="font-medium">{airport.name} ({airport.code})</span>
+                    <span className="text-xs text-gray-500">{airport.city}, {airport.country}</span>
                   </div>
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command className='md:min-w-[450px]' shouldFilter={false}>
-                  <div className="flex items-center border-b px-3 w-full">
-                    {/* <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" /> */}
-                    <CommandInput
-                      placeholder="City or Airport"
-                      value={destinationSearch}
-                      onValueChange={debouncedSearchDestination}
-                      className="md:min-w-[370px]"
-                    />
-                    {destinationSearch && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          setDestinationSearch("")
-                          setDestinationAirports([])
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <CommandList>
-                    {loadingDestination && (
-                      <div className="flex items-center justify-center py-6">
-                        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                      </div>
-                    )}
-                    {!loadingDestination && destinationSearch.length > 0 && destinationAirports.length === 0 && (
-                      <CommandEmpty>No airports found</CommandEmpty>
-                    )}
-                    {!loadingDestination && destinationAirports.length > 0 && (
-                      <CommandGroup>
-                        {destinationAirports.map((airport) => (
-                          <CommandItem
-                            key={airport.code}
-                            value={`${airport.city} ${airport.code} ${airport.name} ${airport.country}`}
-                            onSelect={() => {
-                              setDestination(airport)
-                              setToAirportOpen(false)
-                            }}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {airport.name} ({airport.code})
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {airport.city}, {airport.country}
-                              </span>
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    )}
-                    {!loadingDestination && destinationSearch.length < 2 && (
-                      <div className="px-3 py-6 text-center text-sm text-gray-500">
-                        Type at least 2 characters to search for airports
-                      </div>
-                    )}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                )}
+                renderSelectedItem={(airport) => <span className="font-medium">{airport.name} ({airport.code})</span>}
+              />
             </div>
           </div>
         </div>
@@ -607,16 +460,16 @@ export function FlightSearchPanel() {
                 <PopoverContent className="w-auto p-0" align="end">
                   <Calendar
                   mode="single"
-                  selected={dateRange?.from}
+                  selected={dateRange?.to}
                   onSelect={(date) => {
                     if (date) {
-                       handleDepartureDateSelect({ from: date, to: dateRange?.to })
+                       handleReturnDateSelect({ from: dateRange?.from, to: date })
                     }
                   }}
                   numberOfMonths={2}
                   pagedNavigation
                   showOutsideDays={true}
-                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  disabled={(date) => date < new Date(new Date(dateRange?.from || "").setHours(0, 0, 0, 0))}
                   defaultMonth={dateRange?.to || new Date()}
                   components={{
                     Day: ({ day, modifiers,...props }: DayProps) => {
@@ -626,7 +479,7 @@ export function FlightSearchPanel() {
                           onClick={(e)=>{
                             if (modifiers.disabled) return
                             if(modifiers.outside) return
-                            handleDepartureDateSelect({ from: day.date, to: dateRange?.to })
+                            handleReturnDateSelect({ from: dateRange?.from, to: day.date })
                           }}
                           className={cn(
                             "text-[1rem] flex flex-col items-center justify-center w-12 h-12 rounded-md p-2 cursor-pointer",

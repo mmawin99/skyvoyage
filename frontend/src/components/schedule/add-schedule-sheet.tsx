@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -9,175 +10,146 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { format, addDays } from "date-fns"
-import { CalendarIcon, Check, ChevronsUpDown, Loader2 } from "lucide-react"
+import { CalendarIcon, Check, ChevronsUpDown, Loader2, Terminal } from "lucide-react"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
-import { Schedule } from "@/types/type"
+import { AircraftModel, AircraftRegistration, Airline, Flight, Schedule, SubmitSchedule } from "@/types/type"
+import { DebouncedSearch } from "../reusable/search"
+import { BackendURLType, useBackendURL } from "../backend-url-provider"
+import { Card, CardContent, CardHeader } from "../ui/card"
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
 
 interface AddScheduleSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAddFlight: (flight: Schedule) => void
+  onAddFlight: (flight: SubmitSchedule) => void
   isLoading: boolean
 }
 
 export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLoading }: AddScheduleSheetProps) {
   const [scheduleType, setScheduleType] = useState("single")
-  const [selectedCarrier, setSelectedCarrier] = useState("")
-  const [selectedFlight, setSelectedFlight] = useState("")
-  const [selectedModel, setSelectedModel] = useState("")
-  const [selectedRegistration, setSelectedRegistration] = useState("")
-  const [openCarrierCommand, setOpenCarrierCommand] = useState(false)
-  const [openFlightCommand, setOpenFlightCommand] = useState(false)
-  const [openModelCommand, setOpenModelCommand] = useState(false)
-  const [openRegistrationCommand, setOpenRegistrationCommand] = useState(false)
+  
+  const { backend, setBackend, status }: BackendURLType = useBackendURL();
 
-  const [flightData, setFlightData] = useState({
+  const [selectedCarrier, setSelectedCarrier] = useState<Airline>()
+  const [carriers, setCarriers] = useState<Airline[]>([])
+  const [loadingCarrier, setLoadingCarrier] = useState<boolean>(false)
+
+  const [selectedFlight, setSelectedFlight] = useState<Flight>()
+  const [carrierFlights, setCarrierFlights] = useState<Flight[]>([])
+  const [loadingFlight, setLoadingFlight] = useState<boolean>(false)
+
+  const [selectedModel, setSelectedModel] = useState<AircraftModel>()
+  const [aircraftModels, setAircraftModels] = useState<AircraftModel[]>([])
+  const [loadingModel, setLoadingModel] = useState<boolean>(false)
+
+  const [selectedRegistration, setSelectedRegistration] = useState<AircraftRegistration>()
+  const [aircraftRegistrations, setAircraftRegistrations] = useState<AircraftRegistration[]>([])
+  const [loadingRegistration, setLoadingRegistration] = useState<boolean>(false)
+  
+  const [flightData, setFlightData] = useState<Schedule>({
+    flightId: "",
     flightNum: "",
-    carrier: "",
-    iata_from: "",
-    iata_to: "",
-    utc_dep_time: new Date().toISOString(),
-    utc_arr_time: addDays(new Date(), 1).toISOString(),
-    aircraft_model: "",
-    aircraft_registration: "",
+    airlineCode: "",
+    airlineName: "",
+    departureTime: new Date().toISOString(),
+    arrivalTime: addDays(new Date(), 1).toISOString(),
+    departureGate: "",
+    aircraftId: "",
+    aircraftModel: "",
+    aircraftModelName: "",
+    departureAirport: "",
+    departureAirportCode: "",
+    arrivalAirport: "",
+    arrivalAirportCode: "",
   })
 
   const [depDate, setDepDate] = useState<Date | undefined>(new Date())
   const [arrDate, setArrDate] = useState<Date | undefined>(addDays(new Date(), 1))
-  const [depTime, setDepTime] = useState("12:00")
-  const [arrTime, setArrTime] = useState("14:00")
+  const [depTime, setDepTime] = useState(selectedFlight?.departure_time || "12:00")
+  const [arrTime, setArrTime] = useState(selectedFlight?.arrival_time   || "14:00")
+
+  useEffect(() => {
+    if (selectedFlight) {
+      // setDepDate(new Date(selectedFlight.departure_time))
+      // setArrDate(new Date(selectedFlight.arrival_time))
+      setDepTime(selectedFlight.departure_time.split(":").slice(0, 2).join(":"))
+      setArrTime(selectedFlight.arrival_time.split(":").slice(0, 2).join(":"))
+    }
+  }
+  , [selectedFlight])
+
+  useEffect(() => {
+    
+    if(isOvernightFlight(depTime, arrTime)) {
+      const nextDay = new Date(depDate!)
+      nextDay.setDate(nextDay.getDate() + 1)
+      setArrDate(nextDay)
+    }else{
+      setArrDate(depDate)
+    }
+
+  }, [depDate, depTime, arrTime])
 
   // For recurring schedules
   const [startDate, setStartDate] = useState<Date | undefined>(new Date())
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 30))
   const [daysOfWeek, setDaysOfWeek] = useState<string[]>([])
 
-  // Reset form when opening the sheet
-  useEffect(() => {
-    if (open) {
-      setSelectedCarrier("")
-      setSelectedFlight("")
-      setSelectedModel("")
-      setSelectedRegistration("")
-      setFlightData({
-        flightNum: "",
-        carrier: "",
-        iata_from: "",
-        iata_to: "",
-        utc_dep_time: new Date().toISOString(),
-        utc_arr_time: addDays(new Date(), 1).toISOString(),
-        aircraft_model: "",
-        aircraft_registration: "",
-      })
-      setDepDate(new Date())
-      setArrDate(addDays(new Date(), 1))
-      setDepTime("12:00")
-      setArrTime("14:00")
-      setStartDate(new Date())
-      setEndDate(addDays(new Date(), 30))
-      setDaysOfWeek([])
-    }
-  }, [open])
-
-  // Update flight data when carrier is selected
-  useEffect(() => {
-    if (selectedCarrier) {
-      setFlightData((prev) => ({
-        ...prev,
-        carrier: selectedCarrier,
-        flightNum: "",
-        iata_from: "",
-        iata_to: "",
-      }))
-      setSelectedFlight("")
-      setSelectedModel("")
-      setSelectedRegistration("")
-    }
-  }, [selectedCarrier])
-
-  // Update flight data when flight is selected
-  useEffect(() => {
-    if (selectedCarrier && selectedFlight) {
-      const flight = carrierFlights[selectedCarrier].find((f) => f.flightNum === selectedFlight)
-      if (flight) {
-        setDepTime(flight.depTime)
-        setArrTime(flight.arrTime)
-        setFlightData((prev) => ({
-          ...prev,
-          flightNum: selectedCarrier + selectedFlight,
-          iata_from: flight.from,
-          iata_to: flight.to,
-        }))
-      }
-    }
-  }, [selectedFlight, selectedCarrier])
-
-  // Update aircraft model when selected
-  useEffect(() => {
-    if (selectedModel) {
-      const model = aircraftModels.find((m) => m.id === selectedModel)
-      if (model) {
-        setFlightData((prev) => ({
-          ...prev,
-          aircraft_model: model.name,
-        }))
-      }
-      setSelectedRegistration("")
-    }
-  }, [selectedModel])
-
-  // Update aircraft registration when selected
-  useEffect(() => {
-    if (selectedRegistration) {
-      const registration = aircraftRegistrations.find((r) => r.id === selectedRegistration)
-      if (registration) {
-        setFlightData((prev) => ({
-          ...prev,
-          aircraft_registration: registration.registration,
-        }))
-      }
-    }
-  }, [selectedRegistration])
-
+  const [loadingSubmit, setLoadingSubmit] = useState<boolean>(false)
+  const [errorSubmit, setErrorSubmit] = useState<string>("")
+  const [isError, setIsError] = useState<boolean>(false)
   const handleSubmit = () => {
     // Combine date and time for departure and arrival
-    const depDateTime = new Date(depDate!)
-    const arrDateTime = new Date(arrDate!)
+    setLoadingSubmit(true)
+    if(scheduleType == "single"){
+      const depDateTime = new Date(depDate!.toISOString().split("T")[0] + "T" + depTime + "Z")
+      const arrDateTime = new Date(arrDate!.toISOString().split("T")[0] + "T" + arrTime + "Z")
 
-    const [depHours, depMinutes] = depTime.split(":").map(Number)
-    const [arrHours, arrMinutes] = arrTime.split(":").map(Number)
+      console.log("Departure DateTime:", depDateTime.toISOString())
+      console.log("Arrival DateTime:", arrDateTime.toDateString())
+      console.log("Selected Flight:", selectedFlight?.flight_number)
+      console.log("Selected Carrier:", selectedCarrier?.code)
+      console.log("Selected Model:", selectedModel?.model)
+      console.log("Selected Registration:", selectedRegistration?.registration)
 
-    depDateTime.setHours(depHours, depMinutes)
-    arrDateTime.setHours(arrHours, arrMinutes)
+      onAddFlight({
+        type: "single",
+        flightNum: selectedFlight?.flight_number || "",
+        airlineCode: selectedCarrier?.code || "",
+        model: selectedModel?.model || "",
+        registration: selectedRegistration?.registration || "",
+        departureDate: depDateTime.toISOString(),
+        arrivalDate: arrDateTime.toISOString(),
+      })
 
-    // For single flights, if it's an overnight flight and the user hasn't already
-    // set the arrival date to the next day, adjust it automatically
-    if (
-      scheduleType === "single" &&
-      isOvernightFlight(depTime, arrTime) &&
-      depDate &&
-      arrDate &&
-      depDate.getTime() === arrDate.getTime()
-    ) {
-      const nextDay = new Date(arrDateTime)
-      nextDay.setDate(nextDay.getDate() + 1)
-      arrDateTime.setTime(nextDay.getTime())
+    }else{
+
+      const startDateTime = new Date(startDate!)
+      const endDateTime = new Date(endDate!)
+
+      console.log("Start Date:", startDateTime?.toISOString())
+      console.log("End Date:", endDateTime?.toISOString())
+      console.log("Days of Week:", daysOfWeek.join(", "))
+      console.log("Selected Flight:", selectedFlight?.flight_number)
+      console.log("Selected Carrier:", selectedCarrier?.code)
+      console.log("Selected Model:", selectedModel?.model)
+      
+      onAddFlight({
+        type: "recurring",
+        flightNum: selectedFlight?.flight_number || "",
+        airlineCode: selectedCarrier?.code || "",
+        model: selectedModel?.model || "",
+        daysofweek: daysOfWeek.join(", "),
+        startDate: startDateTime.toISOString(),
+        endDate: endDateTime.toISOString(),
+      })
     }
-
-    const newFlight: Flight = {
-      ...flightData,
-      id: Math.random().toString(36).substring(2, 9),
-      utc_dep_time: depDateTime.toISOString(),
-      utc_arr_time: arrDateTime.toISOString(),
-    }
-
-    onAddFlight(newFlight)
-
+    
     // Close sheet after submission
-    if (!isLoading) {
-      onOpenChange(false)
-    }
+    // if (!isLoading) {
+    //   onOpenChange(false)
+    // }
   }
 
   const toggleDayOfWeek = (day: string) => {
@@ -198,23 +170,14 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
     return arrMinutesTotal < depMinutesTotal
   }
 
-  // Get available models for selected carrier
-  const availableModels = selectedCarrier ? aircraftModels.filter((model) => model.carrier === selectedCarrier) : []
-
-  // Get available registrations for selected model and carrier
-  const availableRegistrations =
-    selectedModel && selectedCarrier
-      ? aircraftRegistrations.filter((reg) => reg.model_id === selectedModel && reg.carrier === selectedCarrier)
-      : []
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md md:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>Add Flight Schedule</SheetTitle>
+      <SheetContent className="sm:max-w-md md:max-w-lg px-4">
+        <SheetHeader className="mt-7">
+          <SheetTitle>Add New Flight Schedule</SheetTitle>
           <SheetDescription>Create a new flight schedule. Fill in the details below.</SheetDescription>
         </SheetHeader>
-        <div className="mt-6 space-y-6">
+        <div className="space-y-4">
           <Tabs value={scheduleType} onValueChange={setScheduleType} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="single">Single Flight</TabsTrigger>
@@ -223,97 +186,54 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
 
             <TabsContent value="single" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label>Carrier</Label>
-                <Popover open={openCarrierCommand} onOpenChange={setOpenCarrierCommand}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openCarrierCommand}
-                      className="w-full justify-between"
-                    >
-                      {selectedCarrier
-                        ? carriers.find((carrier) => carrier.code === selectedCarrier)?.name
-                        : "Select carrier..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Search carrier..." className="h-9" />
-                      <CommandList>
-                        <CommandEmpty>No carrier found.</CommandEmpty>
-                        <CommandGroup>
-                          {carriers.map((carrier) => (
-                            <CommandItem
-                              key={carrier.code}
-                              value={carrier.code}
-                              onSelect={(currentValue) => {
-                                setSelectedCarrier(currentValue)
-                                setOpenCarrierCommand(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedCarrier === carrier.code ? "opacity-100" : "opacity-0",
-                                )}
-                              />
-                              {carrier.name} ({carrier.code})
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Label>Airlines Carrier</Label>
+                <DebouncedSearch<Airline>
+                  title="Airlines Carrier"
+                  selected={selectedCarrier ?? null}
+                  onSelect={setSelectedCarrier}
+                  results={carriers}
+                  setResults={setCarriers}
+                  loading={loadingCarrier}
+                  setLoading={setLoadingCarrier}
+                  fetchUrl={(q) => `${backend}/autocomplete/airline/${q}`}
+                  renderItem={(airline) => (
+                    <div>
+                      {airline.name}, ({airline.code})
+                    </div>
+                  )}
+                  renderSelectedItem={(airline) => (
+                    <div>
+                    {airline.name}, ({airline.code})
+                    </div>
+                  )}
+                />
               </div>
 
               {selectedCarrier && (
                 <div className="space-y-2">
                   <Label>Flight Number</Label>
-                  <Popover open={openFlightCommand} onOpenChange={setOpenFlightCommand}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openFlightCommand}
-                        className="w-full justify-between"
-                      >
-                        {selectedFlight ? `${selectedCarrier}${selectedFlight}` : "Select flight number..."}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput placeholder="Search flight..." className="h-9" />
-                        <CommandList>
-                          <CommandEmpty>No flight found.</CommandEmpty>
-                          <CommandGroup>
-                            {carrierFlights[selectedCarrier]?.map((flight) => (
-                              <CommandItem
-                                key={flight.flightNum}
-                                value={flight.flightNum}
-                                onSelect={(currentValue) => {
-                                  setSelectedFlight(currentValue)
-                                  setOpenFlightCommand(false)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedFlight === flight.flightNum ? "opacity-100" : "opacity-0",
-                                  )}
-                                />
-                                {selectedCarrier}
-                                {flight.flightNum} ({flight.from} → {flight.to})
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <DebouncedSearch<Flight>
+                    title="Flight Number"
+                    selected={selectedFlight ?? null}
+                    onSelect={setSelectedFlight}
+                    results={carrierFlights}
+                    setResults={setCarrierFlights}
+                    loading={loadingFlight}
+                    setLoading={setLoadingFlight}
+                    fetchUrl={(q) => `${backend}/autocomplete/flight/${selectedCarrier?.code}/${q}`}
+                    renderItem={(flight) => (
+                      <div className="flex flex-col">
+                        <span className="text-base font-medium">{flight.airline_code} {flight.flight_number}</span>
+                        <span className="text-xs text-gray-500">{flight.depart_airport} → {flight.arrive_airport}</span>
+                        <span className="text-xs text-gray-500">{flight.departure_time} UTC → {flight.arrival_time} UTC</span>
+                      </div>
+                    )}
+                    renderSelectedItem={(flight) => (
+                      <div>
+                        <span className="text-base font-medium">{flight.airline_code} {flight.flight_number} ({flight.depart_airport} → {flight.arrive_airport})</span>
+                      </div>
+                    )}
+                  />
                 </div>
               )}
 
@@ -336,13 +256,16 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <Calendar mode="single" selected={depDate} onSelect={setDepDate} initialFocus />
+                          <Calendar mode="single" 
+                          selected={depDate} 
+                          disabled={(date) => date.getTime() < new Date().setHours(0, 0, 0, 0)} // Disable dates before today
+                          onSelect={setDepDate} initialFocus />
                         </PopoverContent>
                       </Popover>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="dep_time">Departure Time (UTC)</Label>
-                      <Input id="dep_time" type="time" value={depTime} onChange={(e) => setDepTime(e.target.value)} />
+                      <Input id="dep_time" type="time" value={depTime} disabled onChange={(e) => setDepTime(e.target.value)} />
                     </div>
                   </div>
 
@@ -363,13 +286,19 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <Calendar mode="single" selected={arrDate} onSelect={setArrDate} initialFocus />
+                        <Alert variant={"destructive"}>
+                          <Terminal className="h-4 w-4" />
+                          <AlertTitle>Please note!</AlertTitle>
+                          <AlertDescription>
+                          Single flight is automatically calculate arrival date based on departure date and time.
+                          </AlertDescription>
+                        </Alert>
                         </PopoverContent>
                       </Popover>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="arr_time">Arrival Time (UTC)</Label>
-                      <Input id="arr_time" type="time" value={arrTime} onChange={(e) => setArrTime(e.target.value)} />
+                      <Input id="arr_time" type="time" value={arrTime} disabled onChange={(e) => setArrTime(e.target.value)} />
                     </div>
                   </div>
 
@@ -383,97 +312,51 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
 
                   <div className="space-y-2">
                     <Label>Aircraft Model</Label>
-                    <Popover open={openModelCommand} onOpenChange={setOpenModelCommand}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={openModelCommand}
-                          className="w-full justify-between"
-                        >
-                          {selectedModel
-                            ? aircraftModels.find((model) => model.id === selectedModel)?.name
-                            : "Select aircraft model..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput placeholder="Search model..." className="h-9" />
-                          <CommandList>
-                            <CommandEmpty>No model found.</CommandEmpty>
-                            <CommandGroup>
-                              {availableModels.map((model) => (
-                                <CommandItem
-                                  key={model.id}
-                                  value={model.id}
-                                  onSelect={(currentValue) => {
-                                    setSelectedModel(currentValue)
-                                    setOpenModelCommand(false)
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      selectedModel === model.id ? "opacity-100" : "opacity-0",
-                                    )}
-                                  />
-                                  {model.name}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <DebouncedSearch<AircraftModel>
+                      title="Aircraft Model"
+                      selected={selectedModel ?? null}
+                      onSelect={setSelectedModel}
+                      results={aircraftModels}
+                      setResults={setAircraftModels}
+                      loading={loadingModel}
+                      setLoading={setLoadingModel}
+                      fetchUrl={(q) => `${backend}/autocomplete/model/${selectedCarrier?.code}`}
+                      renderItem={(model) => (
+                        <div>
+                          {model.model_name}, ({model.model})
+                        </div>
+                      )}
+                      renderSelectedItem={(model) => (
+                        <div>
+                          {model.model_name}, ({model.model})
+                        </div>
+                      )}
+                    />
                   </div>
 
                   {selectedModel && (
                     <div className="space-y-2">
                       <Label>Aircraft Registration</Label>
-                      <Popover open={openRegistrationCommand} onOpenChange={setOpenRegistrationCommand}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={openRegistrationCommand}
-                            className="w-full justify-between"
-                          >
-                            {selectedRegistration
-                              ? aircraftRegistrations.find((reg) => reg.id === selectedRegistration)?.registration
-                              : "Select aircraft registration..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
-                          <Command>
-                            <CommandInput placeholder="Search registration..." className="h-9" />
-                            <CommandList>
-                              <CommandEmpty>No registration found.</CommandEmpty>
-                              <CommandGroup>
-                                {availableRegistrations.map((reg) => (
-                                  <CommandItem
-                                    key={reg.id}
-                                    value={reg.id}
-                                    onSelect={(currentValue) => {
-                                      setSelectedRegistration(currentValue)
-                                      setOpenRegistrationCommand(false)
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        selectedRegistration === reg.id ? "opacity-100" : "opacity-0",
-                                      )}
-                                    />
-                                    {reg.registration}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                      <DebouncedSearch<AircraftRegistration>
+                        title="Aircraft Registration"
+                        selected={selectedRegistration ?? null}
+                        onSelect={setSelectedRegistration}
+                        results={aircraftRegistrations}
+                        setResults={setAircraftRegistrations}
+                        loading={loadingRegistration}
+                        setLoading={setLoadingRegistration}
+                        fetchUrl={(q) => `${backend}/autocomplete/registration/${selectedCarrier?.code}/${selectedModel?.model}`}
+                        renderItem={(registration) => (
+                          <div>
+                            {registration.registration}, ({registration.model} {registration.airline_code})
+                          </div>
+                        )}
+                        renderSelectedItem={(registration) => (
+                          <div>
+                            {registration.registration}, ({registration.model} {registration.airline_code})
+                          </div>
+                        )}
+                      />
                     </div>
                   )}
                 </>
@@ -482,97 +365,54 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
 
             <TabsContent value="recurring" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label>Carrier</Label>
-                <Popover open={openCarrierCommand} onOpenChange={setOpenCarrierCommand}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openCarrierCommand}
-                      className="w-full justify-between"
-                    >
-                      {selectedCarrier
-                        ? carriers.find((carrier) => carrier.code === selectedCarrier)?.name
-                        : "Select carrier..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Search carrier..." className="h-9" />
-                      <CommandList>
-                        <CommandEmpty>No carrier found.</CommandEmpty>
-                        <CommandGroup>
-                          {carriers.map((carrier) => (
-                            <CommandItem
-                              key={carrier.code}
-                              value={carrier.code}
-                              onSelect={(currentValue) => {
-                                setSelectedCarrier(currentValue)
-                                setOpenCarrierCommand(false)
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedCarrier === carrier.code ? "opacity-100" : "opacity-0",
-                                )}
-                              />
-                              {carrier.name} ({carrier.code})
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Label>Airline Carrier</Label>
+                <DebouncedSearch<Airline>
+                  title="Airlines Carrier"
+                  selected={selectedCarrier ?? null}
+                  onSelect={setSelectedCarrier}
+                  results={carriers}
+                  setResults={setCarriers}
+                  loading={loadingCarrier}
+                  setLoading={setLoadingCarrier}
+                  fetchUrl={(q) => `${backend}/autocomplete/airline/${q}`}
+                  renderItem={(airline) => (
+                    <div>
+                      {airline.name}, ({airline.code})
+                    </div>
+                  )}
+                  renderSelectedItem={(airline) => (
+                    <div>
+                    {airline.name}, ({airline.code})
+                    </div>
+                  )}
+                />
               </div>
 
               {selectedCarrier && (
                 <div className="space-y-2">
                   <Label>Flight Number</Label>
-                  <Popover open={openFlightCommand} onOpenChange={setOpenFlightCommand}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openFlightCommand}
-                        className="w-full justify-between"
-                      >
-                        {selectedFlight ? `${selectedCarrier}${selectedFlight}` : "Select flight number..."}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput placeholder="Search flight..." className="h-9" />
-                        <CommandList>
-                          <CommandEmpty>No flight found.</CommandEmpty>
-                          <CommandGroup>
-                            {carrierFlights[selectedCarrier]?.map((flight) => (
-                              <CommandItem
-                                key={flight.flightNum}
-                                value={flight.flightNum}
-                                onSelect={(currentValue) => {
-                                  setSelectedFlight(currentValue)
-                                  setOpenFlightCommand(false)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedFlight === flight.flightNum ? "opacity-100" : "opacity-0",
-                                  )}
-                                />
-                                {selectedCarrier}
-                                {flight.flightNum} ({flight.from} → {flight.to})
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <DebouncedSearch<Flight>
+                    title="Flight Number"
+                    selected={selectedFlight ?? null}
+                    onSelect={setSelectedFlight}
+                    results={carrierFlights}
+                    setResults={setCarrierFlights}
+                    loading={loadingFlight}
+                    setLoading={setLoadingFlight}
+                    fetchUrl={(q) => `${backend}/autocomplete/flight/${selectedCarrier?.code}/${q}`}
+                    renderItem={(flight) => (
+                      <div className="flex flex-col">
+                        <span className="text-base font-medium">{flight.airline_code} {flight.flight_number}</span>
+                        <span className="text-xs text-gray-500">{flight.depart_airport} → {flight.arrive_airport}</span>
+                        <span className="text-xs text-gray-500">{flight.departure_time} UTC → {flight.arrival_time} UTC</span>
+                      </div>
+                    )}
+                    renderSelectedItem={(flight) => (
+                      <div>
+                        <span className="text-base font-medium">{flight.airline_code} {flight.flight_number} ({flight.depart_airport} → {flight.arrive_airport})</span>
+                      </div>
+                    )}
+                    />
                 </div>
               )}
 
@@ -595,7 +435,10 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                          <Calendar mode="single" selected={startDate} 
+                          disabled={(date) => date.getTime() < new Date().setHours(0, 0, 0, 0)} // Disable dates before today
+                          onSelect={setStartDate}
+                           initialFocus />
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -615,7 +458,9 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                          <Calendar mode="single" selected={endDate} 
+                          disabled={(date) => startDate ? date.getTime() < new Date(startDate).setHours(0, 0, 0, 0) : date.getTime() < new Date().setHours(0, 0, 0, 0)} // Disable dates before start date
+                          onSelect={setEndDate} initialFocus />
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -641,11 +486,11 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="dep_time">Departure Time (UTC)</Label>
-                      <Input id="dep_time" type="time" value={depTime} onChange={(e) => setDepTime(e.target.value)} />
+                      <Input id="dep_time" type="time" value={depTime} disabled onChange={(e) => setDepTime(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="arr_time">Arrival Time (UTC)</Label>
-                      <Input id="arr_time" type="time" value={arrTime} onChange={(e) => setArrTime(e.target.value)} />
+                      <Input id="arr_time" type="time" value={arrTime} disabled onChange={(e) => setArrTime(e.target.value)} />
                     </div>
                   </div>
 
@@ -659,49 +504,26 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
 
                   <div className="space-y-2">
                     <Label>Aircraft Model</Label>
-                    <Popover open={openModelCommand} onOpenChange={setOpenModelCommand}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={openModelCommand}
-                          className="w-full justify-between"
-                        >
-                          {selectedModel
-                            ? aircraftModels.find((model) => model.id === selectedModel)?.name
-                            : "Select aircraft model..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput placeholder="Search model..." className="h-9" />
-                          <CommandList>
-                            <CommandEmpty>No model found.</CommandEmpty>
-                            <CommandGroup>
-                              {availableModels.map((model) => (
-                                <CommandItem
-                                  key={model.id}
-                                  value={model.id}
-                                  onSelect={(currentValue) => {
-                                    setSelectedModel(currentValue)
-                                    setOpenModelCommand(false)
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      selectedModel === model.id ? "opacity-100" : "opacity-0",
-                                    )}
-                                  />
-                                  {model.name}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <DebouncedSearch<AircraftModel>
+                      title="Aircraft Model"
+                      selected={selectedModel ?? null}
+                      onSelect={setSelectedModel}
+                      results={aircraftModels}
+                      setResults={setAircraftModels}
+                      loading={loadingModel}
+                      setLoading={setLoadingModel}
+                      fetchUrl={(q) => `${backend}/autocomplete/model/${selectedCarrier?.code}`}
+                      renderItem={(model) => (
+                        <div>
+                          {model.model_name}, ({model.model})
+                        </div>
+                      )}
+                      renderSelectedItem={(model) => (
+                        <div>
+                          {model.model_name}, ({model.model})
+                        </div>
+                      )}
+                    />
                   </div>
                 </>
               )}
@@ -709,7 +531,15 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
           </Tabs>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline"
+              disabled={
+                isLoading ||
+                !selectedCarrier ||
+                !selectedFlight ||
+                !selectedModel ||
+                (scheduleType === "single" && !selectedRegistration)
+              }
+              onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button

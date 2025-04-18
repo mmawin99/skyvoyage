@@ -45,7 +45,7 @@ export const AppFooter = () => {
                 <h4 className="text-blue-400 font-semibold mb-3">About us</h4>
                 <p>Created by SkyVoyage group</p>
                 <p className="mt-2">1002, 1011, 1018, 1020, 1029</p>
-                <p>&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</p>
+                <p className='line-through'>&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</p>
                 </div>
 
                 {/* Partnership */}

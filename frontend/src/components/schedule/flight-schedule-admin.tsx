@@ -7,19 +7,22 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 import FlightScheduleTable from "@/components/schedule/flight-schedule-table"
 import AddScheduleSheet from "./add-schedule-sheet"
-import { Schedule } from "@/types/type"
+import { Schedule, SubmitSchedule } from "@/types/type"
+import { BackendURLType, useBackendURL } from "../backend-url-provider"
 
 
 export default function FlightScheduleAdmin() {
+  const { backend:backendURL }: BackendURLType = useBackendURL();
   const [flights, setFlights] = useState<Schedule[]>([])
   const [isAddScheduleOpen, setIsAddScheduleOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleAddFlight = (newFlight: Schedule) => {
+  const handleAddFlight = (newFlight: SubmitSchedule) => {
     setIsLoading(true)
     // Simulate API call
     setTimeout(() => {
-      setFlights([...flights, { ...newFlight}])
+      console.log("New flight added:", newFlight)
+      // fetch(`${backendURL}/flight/addSchedule`)
       setIsLoading(false)
     }, 1500)
   }

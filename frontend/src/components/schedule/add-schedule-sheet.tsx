@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { format, addDays } from "date-fns"
-import { CalendarIcon, Check, ChevronsUpDown, Loader2, Terminal } from "lucide-react"
+import { format, addDays, intlFormat } from "date-fns"
+import { CalendarIcon, Check, ChevronsUpDown, Loader2, Terminal, TriangleAlert } from "lucide-react"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
 import { AircraftModel, AircraftRegistration, Airline, Flight, Schedule, SubmitSchedule } from "@/types/type"
@@ -22,7 +22,7 @@ import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
 interface AddScheduleSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAddFlight: (flight: SubmitSchedule) => void
+  onAddFlight: (flight: SubmitSchedule, onSuccess: () => void, onError: () => void) => void
   isLoading: boolean
 }
 
@@ -99,13 +99,26 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
   const [loadingSubmit, setLoadingSubmit] = useState<boolean>(false)
   const [errorSubmit, setErrorSubmit] = useState<string>("")
   const [isError, setIsError] = useState<boolean>(false)
-  const handleSubmit = () => {
+  const [needSubmit, setNeedSubmit] = useState<boolean>(false)
+  const handleSubmit = useCallback(() => {
     // Combine date and time for departure and arrival
     setLoadingSubmit(true)
-    if(scheduleType == "single"){
-      const depDateTime = new Date(depDate!.toISOString().split("T")[0] + "T" + depTime + "Z")
-      const arrDateTime = new Date(arrDate!.toISOString().split("T")[0] + "T" + arrTime + "Z")
-
+    setIsError(false)
+    setErrorSubmit("")
+    let submission: SubmitSchedule;
+    if (scheduleType === "single") {
+      if(!depDate || !arrDate) {
+        return
+      }
+      console.log("Single flight schedule")
+      // depDate is in user's local timezone, convert to UTC
+      // const utcDepDate = new Date(depDate!.toISOString().split("T")[0] + "T" + depTime + "Z") // not in UTC
+      const utcDepDate = new Date(depDate!.getTime() - depDate!.getTimezoneOffset() * 60000)
+      const utcArrDate = new Date(arrDate!.getTime() - arrDate!.getTimezoneOffset() * 60000)
+      // console.log("UTC Departure Date:", utcDepDate.toISOString(), depDate!.toISOString())
+      // console.log("UTC Arrival Date:", utcArrDate.toISOString(), arrDate!.toISOString())
+      const depDateTime = new Date(utcDepDate.toISOString().split("T")[0] + "T" + depTime + "Z")
+      const arrDateTime = new Date(utcArrDate.toISOString().split("T")[0] + "T" + arrTime + "Z")
       console.log("Departure DateTime:", depDateTime.toISOString())
       console.log("Arrival DateTime:", arrDateTime.toDateString())
       console.log("Selected Flight:", selectedFlight?.flight_number)
@@ -113,7 +126,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
       console.log("Selected Model:", selectedModel?.model)
       console.log("Selected Registration:", selectedRegistration?.registration)
 
-      onAddFlight({
+      submission = {
         type: "single",
         flightNum: selectedFlight?.flight_number || "",
         airlineCode: selectedCarrier?.code || "",
@@ -121,12 +134,17 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
         registration: selectedRegistration?.registration || "",
         departureDate: depDateTime.toISOString(),
         arrivalDate: arrDateTime.toISOString(),
-      })
+      }
 
-    }else{
+    } else {
+      if(!startDate || !endDate) {
+        return
+      }
+      // const startDateTime = new Date(startDate!)
+      // const endDateTime = new Date(endDate!)
 
-      const startDateTime = new Date(startDate!)
-      const endDateTime = new Date(endDate!)
+      const startDateTime = new Date(startDate!.getTime() - startDate!.getTimezoneOffset() * 60000)
+      const endDateTime = new Date(endDate!.getTime() - endDate!.getTimezoneOffset() * 60000)
 
       console.log("Start Date:", startDateTime?.toISOString())
       console.log("End Date:", endDateTime?.toISOString())
@@ -134,24 +152,40 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
       console.log("Selected Flight:", selectedFlight?.flight_number)
       console.log("Selected Carrier:", selectedCarrier?.code)
       console.log("Selected Model:", selectedModel?.model)
-      
-      onAddFlight({
+
+      submission = {
         type: "recurring",
         flightNum: selectedFlight?.flight_number || "",
         airlineCode: selectedCarrier?.code || "",
         model: selectedModel?.model || "",
-        daysofweek: daysOfWeek.join(", "),
-        startDate: startDateTime.toISOString(),
-        endDate: endDateTime.toISOString(),
+        daysofweek: daysOfWeek.join(","),
+        startDate: startDateTime.toISOString().split("T")[0], // Extract only the date part
+        endDate: endDateTime.toISOString().split("T")[0], // Extract only the date part
+        depTime: depTime,
+        arrTime: arrTime,
+      }
+    }
+    if (submission) {
+      console.log("Submission:", submission)
+      onAddFlight(submission, () => {
+        setLoadingSubmit(false)
+        setIsError(false)
+        setErrorSubmit("")
+        onOpenChange(false)
+      }, () => {
+        setLoadingSubmit(false)
+        setIsError(true)
+        setErrorSubmit("Failed to add flight schedule")
       })
     }
-    
-    // Close sheet after submission
-    // if (!isLoading) {
-    //   onOpenChange(false)
-    // }
-  }
+  }, [scheduleType, depDate, depTime, arrDate, arrTime, selectedFlight, selectedCarrier, selectedModel, selectedRegistration, startDate, endDate, daysOfWeek, onAddFlight, onOpenChange])
+  
+  useEffect(() => {
+    if(needSubmit) handleSubmit()
+    return () => setNeedSubmit(false)
 
+  }, [needSubmit, handleSubmit])
+  
   const toggleDayOfWeek = (day: string) => {
     if (daysOfWeek.includes(day)) {
       setDaysOfWeek(daysOfWeek.filter((d) => d !== day))
@@ -177,6 +211,13 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
           <SheetTitle>Add New Flight Schedule</SheetTitle>
           <SheetDescription>Create a new flight schedule. Fill in the details below.</SheetDescription>
         </SheetHeader>
+        {isError && (
+          <Alert variant="destructive" className="mb-4">
+            <TriangleAlert className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{errorSubmit}</AlertDescription>
+          </Alert>
+        )}
         <div className="space-y-4">
           <Tabs value={scheduleType} onValueChange={setScheduleType} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
@@ -259,7 +300,11 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                           <Calendar mode="single" 
                           selected={depDate} 
                           disabled={(date) => date.getTime() < new Date().setHours(0, 0, 0, 0)} // Disable dates before today
-                          onSelect={setDepDate} initialFocus />
+                          onSelect={(date) => {
+                            console.log("Selected date from calendar:", date?.toISOString())
+                            setDepDate(date)
+                          }} 
+                          initialFocus />
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -543,7 +588,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
               Cancel
             </Button>
             <Button
-              onClick={handleSubmit}
+              onClick={() => setNeedSubmit(true)}
               disabled={
                 isLoading ||
                 !selectedCarrier ||

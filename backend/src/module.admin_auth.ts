@@ -24,14 +24,14 @@ export const adminAuthModule = new Elysia({
         if(admin.length != 0){
             return error(400, {
                 message: "Username already exists",
-                success: false,
+                status: false,
             })
         }else{
             try {
                 await prisma.$executeRaw`
                     INSERT INTO admin (username, password, permission) VALUES (${username}, ${hashedPassword}, ${permission})`
                 return {
-                    success: true,
+                    status: true,
                     message: "User added successfully",
                 }
             }catch(err){
@@ -39,7 +39,7 @@ export const adminAuthModule = new Elysia({
                 return error(500, {
                     error: err,
                     message: "Internal server error",
-                    success: false,
+                    status: false,
                 })
             }
         }
@@ -70,7 +70,7 @@ export const adminAuthModule = new Elysia({
                             schema: {
                                 type: "object",
                                 properties: {
-                                    success: { type: "boolean" , default: true },
+                                    status: { type: "boolean" , default: true },
                                     message: { type: "string" , default: "User added successfully" },
                                 }
                             }
@@ -85,7 +85,7 @@ export const adminAuthModule = new Elysia({
                                 type:"object",
                                 properties:{
                                     message:{type:"string", default:"Username already exists"},
-                                    success:{type:"boolean", default:false}
+                                    status:{type:"boolean", default:false}
                                 }
                             }
                         }
@@ -99,7 +99,7 @@ export const adminAuthModule = new Elysia({
                                 type:"object",
                                 properties:{
                                     message:{type:"string", default:"Internal server error"},
-                                    success:{type:"boolean", default:false}
+                                    status:{type:"boolean", default:false}
                                 }
                             }
                         }
@@ -135,7 +135,7 @@ export const adminAuthModule = new Elysia({
             console.log("Admin not found", username, password)
             return error(401, {
                 message: "Invalid username or password",
-                success: false,
+                status: false,
             })
         }else{
             console.log("Admin found")
@@ -144,7 +144,7 @@ export const adminAuthModule = new Elysia({
             if(comparePassword){
                 console.log("Password match")
                 return {
-                    success: true,
+                    status: true,
                     message: "Login success",
                     admin: {
                         id: adminData.id,
@@ -155,7 +155,7 @@ export const adminAuthModule = new Elysia({
             }else{
                 return error(401, {
                     message: "Invalid username or password",
-                    success: false,
+                    status: false,
                 })
             }
         }
@@ -185,7 +185,7 @@ export const adminAuthModule = new Elysia({
                             schema: {
                                 type: "object",
                                 properties: {
-                                    success: { type: "boolean" , default: true },
+                                    status: { type: "boolean" , default: true },
                                     message: { type: "string" , default: "Login success" },
                                     admin: {
                                         type: "object",
@@ -208,7 +208,7 @@ export const adminAuthModule = new Elysia({
                                 type: "object",
                                 properties: {
                                     message: { type: "string", default: "Invalid username or password" },
-                                    success: { type: "boolean", default: false },
+                                    status: { type: "boolean", default: false },
                                 },
                             }
                         }

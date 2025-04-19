@@ -6,6 +6,7 @@ import { bearer } from '@elysiajs/bearer'
 import { userModule } from "./module.user";
 import { adminAuthModule } from "./module.admin_auth";
 import { autocompleteModule } from "./module.autocomplete";
+import { flightModule } from "./module.flight";
 
 const app = new Elysia()
       .use(cors({
@@ -57,6 +58,7 @@ const app = new Elysia()
       .use(userModule)            //See module.user.ts       for more information about the api. (Just a simple module to split the code)
       .use(adminAuthModule)       //See module.admin_auth.ts
       .use(autocompleteModule)    //See module.autocomplete.ts
+      .use(flightModule)          //See module.flight.ts
       ;
       app.listen(4000, ()=>{
         console.log(`| CPE241 Term Project - SkyVoyage API`);

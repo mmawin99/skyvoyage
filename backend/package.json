@@ -19,7 +19,8 @@
     "elysia-oauth2": "^2.0.0",
     "elysia-rate-limit": "^4.2.1",
     "i18n-iso-countries": "^7.14.0",
-    "jose": "^6.0.10"
+    "jose": "^6.0.10",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "bun-types": "latest",

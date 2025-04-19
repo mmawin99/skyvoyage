@@ -59,7 +59,7 @@ export default NextAuth({
         })
 
         const data = await res.json()
-        if (res.ok && data.success) {
+        if (res.ok && data.status) {
           return {
             role: "admin",
             id: data.admin.id,
@@ -79,21 +79,25 @@ export default NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const res = await fetch(`${BackendBaseURL}/api/user/login`, {
+        const res = await fetch(`${BackendBaseURL}/api/user/signin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(credentials),
+          body: JSON.stringify({
+            email: credentials?.email,
+            password: credentials?.password,
+          }),
         })
 
         const data = await res.json()
-        if (res.ok && data.success) {
+        // console.log(data)
+        if (res.ok && data.status) {
           return {
-            id: data.user.uuid, // Add 'id' property to conform to User type
+            id: data.data.uuid, // Add 'id' property to conform to User type
             role: "user",
-            uuid: data.user.uuid,
-            email: data.user.email,
-            firstname: data.user.firstname,
-            lastname: data.user.lastname,
+            uuid: data.data.uuid,
+            email: data.data.email,
+            firstname: data.data.firstname,
+            lastname: data.data.lastname,
           }
         }
 

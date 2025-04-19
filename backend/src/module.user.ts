@@ -16,31 +16,39 @@ export const userModule = new Elysia({
             phone: string
         }
     })=>{
-        const { email, password, firstname, lastname, phone } = context.body
-        const user:User[] = await prisma.$queryRaw`SELECT email FROM user WHERE email = ${email}`
-        if(user.length > 0) return error(401, {
-            msg: 'User already exists',
-            status: false,
-        })
+        try{
+            const { email, password, firstname, lastname, phone } = context.body
+            const user:User[] = await prisma.$queryRaw`SELECT email FROM user WHERE email = ${email}`
+            if(user.length > 0) return error(401, {
+                message: 'User already exists',
+                status: false,
+            })
 
-        const hashedPassword = await hashDataWithSHA256AndSalt(password)
+            const hashedPassword = await hashDataWithSHA256AndSalt(password)
 
-        const newUser = await prisma.$executeRaw<User>`
-            INSERT INTO user (uuid, email, \`password\`, firstname, lastname, phone) 
-            VALUES (UUID(), ${email}, ${hashedPassword}, ${firstname}, ${lastname}, ${phone})`
-        if(!newUser) return error(500, {
-            msg: 'Failed to create user',
-            status: false
-        })
-        const created_user:User = await prisma.$queryRaw`SELECT uuid,email,firstname,lastname,phone FROM user WHERE email = ${email}`
-        if(!created_user) return error(500, {
-            msg: 'Failed to create user',
-            status: false
-        })
-        return {
-            status: true,
-            msg: 'User created successfully',
-            data: created_user
+            const newUser = await prisma.$executeRaw<User>`
+                INSERT INTO user (uuid, email, \`password\`, firstname, lastname, phone) 
+                VALUES (UUID(), ${email}, ${hashedPassword}, ${firstname}, ${lastname}, ${phone})`
+            if(!newUser) return error(500, {
+                message: 'Failed to create user',
+                status: false
+            })
+            const created_user:User = await prisma.$queryRaw`SELECT uuid,email,firstname,lastname,phone FROM user WHERE email = ${email}`
+            if(!created_user) return error(500, {
+                message: 'Failed to create user',
+                status: false
+            })
+            return {
+                status: true,
+                message: 'User created successfully',
+                data: created_user
+            }
+        }catch(err){
+            console.log(err)
+            return error(500, {
+                message: 'Failed to create user',
+                status: false
+            })
         }
     }, {
         detail: {
@@ -122,7 +130,7 @@ export const userModule = new Elysia({
     .post("/verify", async({ cookie: {skyvoyage_auth}, body }: { cookie:{ skyvoyage_auth: any }, body: { } })=>{
         const cookie_skyvoyage_auth = skyvoyage_auth.value
         if(!cookie_skyvoyage_auth) return error(401, {
-            msg: 'Unauthorized',
+            message: 'Unauthorized',
             status: false,
         })
         
@@ -133,19 +141,19 @@ export const userModule = new Elysia({
         })
 
         if(!jwt) return error(401, {
-            msg: 'Invalid Authorization Token',
+            message: 'Invalid Authorization Token',
             status: false,
         })
         // get uuid from jwt token and fetch user data from database
         const uuid = jwt.payload.uuid
         const user:User[] = await prisma.$queryRaw`SELECT uuid,email,firstname,lastname,phone FROM user WHERE uuid = ${uuid}`
         if(user.length === 0) return error(404, {
-            msg: 'User not found',
+            message: 'User not found',
             status: false,
         })
         return {
             status: true,
-            msg: 'User verified successfully',
+            message: 'User verified successfully',
             data: user[0]
         }
     }, {
@@ -221,39 +229,49 @@ export const userModule = new Elysia({
             }
         }
     })
-    .post('/signin', async({ cookie: { skyvoyage_auth }, body }: { cookie:{ skyvoyage_auth: any }, body: { email: string, password: string } })=>{
+    .post('/signin', async({ body }: { body: { email: string, password: string } })=>{
         const { email, password } = body
-        const user:User[] = await prisma.$queryRaw`SELECT uuid,email,\`password\` FROM user WHERE email = ${email}`
-        if(user.length === 0) return error(404, {
-            msg: 'User not found',
-            status: false,
-        })
+        const user:User[] = await prisma.$queryRaw`SELECT * FROM user WHERE email = ${email}`
+        // console.log(email, password)
+        // console.log(user)
+        if(user.length === 0) {
+            console.log('User not found')
+            return error(404, {
+                message: 'User not found',
+                status: false,
+            })
+        }
         const isPasswordMatch = await checkPasswordWithHash(password, user[0].password)
-        if(!isPasswordMatch) return error(401, {
-            msg: 'Invalid password or email',
-            status: false,
-        })
+        if(!isPasswordMatch){ 
+            console.log('Invalid password')
+            return error(401, {
+                message: 'Invalid password or email',
+                status: false,
+            })
+        }
         // const cred_login = await jwt.sign({ uuid: user[0].uuid })
-        const cred_login = await new jose.SignJWT({ uuid: user[0].uuid, email: user[0].email }).setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setIssuer('skyvoyage:v1:signin')
-        .setAudience('skyvoyage:user:auth')
-        .setExpirationTime('30d')
-        .sign(JWT_SECRET)
+        // const cred_login = await new jose.SignJWT({ uuid: user[0].uuid, email: user[0].email }).setProtectedHeader({ alg: 'HS256' })
+        // .setIssuedAt()
+        // .setIssuer('skyvoyage:v1:signin')
+        // .setAudience('skyvoyage:user:auth')
+        // .setExpirationTime('30d')
+        // .sign(JWT_SECRET)
 
-        skyvoyage_auth.set({
-            maxAge: 30 * 24 * 60 * 60,
-            value: cred_login,
-            httpOnly: true,
-            secure: true
-        })
+        // skyvoyage_auth.set({
+        //     maxAge: 30 * 24 * 60 * 60,
+        //     value: cred_login,
+        //     httpOnly: true,
+        //     secure: true
+        // })
 
         return {
             status: true,
-            msg: 'Login successful',
+            message: 'Login successful',
             data: {
                 uuid: user[0].uuid,
-                email: user[0].email
+                email: user[0].email,
+                firstname: user[0].firstname,
+                lastname: user[0].lastname,
             }
         }
     }, {
@@ -342,7 +360,7 @@ export const userModule = new Elysia({
         if(cookie_forgot_session){
             const { new_password } = body
             if(!new_password) return error(400, {
-                msg: 'New password is required',
+                message: 'New password is required',
                 status: false,
             })
 
@@ -352,7 +370,7 @@ export const userModule = new Elysia({
                 audience: 'skyvoyage:user:auth'
             })
             if(!jwt) return error(401, {
-                msg: 'Invalid token',
+                message: 'Invalid token',
                 status: false,
             })
             // get uuid from jwt token and update password in database
@@ -360,7 +378,7 @@ export const userModule = new Elysia({
             const hashedPassword = await hashDataWithSHA256AndSalt(new_password)
             const updatePassword = await prisma.$executeRaw`UPDATE user SET \`password\` = ${hashedPassword} WHERE uuid = ${uuid}`
             if(!updatePassword) return error(500, {
-                msg: 'Failed to update password',
+                message: 'Failed to update password',
                 status: false,
             })
             // delete cookie_forgot_session
@@ -372,7 +390,7 @@ export const userModule = new Elysia({
             })
             return {
                 status: true,
-                msg: 'Password updated successfully',
+                message: 'Password updated successfully',
                 data: {
                     uuid: uuid,
                     email: jwt.payload.email
@@ -383,11 +401,11 @@ export const userModule = new Elysia({
             const { email, phone } = body
             const user:User[] = await prisma.$queryRaw`SELECT uuid,email,\`password\`,phone FROM user WHERE email = ${email}`
             if(user.length === 0) return error(404, {
-                msg: 'User not found',
+                message: 'User not found',
                 status: false,
             })
             if(user[0].phone !== phone) return error(401, {
-                msg: 'Invalid phone number',
+                message: 'Invalid phone number',
                 status: false,
             })
             // Generate JWT token for forgot password session
@@ -409,7 +427,7 @@ export const userModule = new Elysia({
 
             return {
                 status: true,
-                msg: 'grant access to reset password',
+                message: 'grant access to reset password',
                 data: {
                     uuid: user[0].uuid,
                     cookie_forgot_session: cookie_forgot_session,

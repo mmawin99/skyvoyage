@@ -15,12 +15,12 @@ import { format, addDays, set } from "date-fns"
 import { CalendarIcon, ChevronDown, ChevronUp, Info, Loader2, MapPin, Plane, Search, Users, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { DateRange, DayProps } from "react-day-picker"
-import { Airport } from "@/types/type"
+import { Airport, AuthSession } from "@/types/type"
 import { useBackendURL } from "./backend-url-provider"
 import { DebouncedSearch } from "./reusable/search"
 import { useSession } from "next-auth/react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog"
-import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
 interface PassengerType {
   type: "adult" | "child" | "infant"
   count: number
@@ -30,7 +30,7 @@ interface PassengerType {
 export function FlightSearchPanel() {
   const router = useRouter();
   const {backend:backendURL, setBackend, status} = useBackendURL(); 
-  const { data: sessionData, status:authStatus } = useSession()
+  const { data: sessionData, status:authStatus } = useSession() as { data: AuthSession | null; status: string }
   const [tripType, setTripType] = useState("roundtrip")
   
   const [origin, setOrigin] = useState<Airport | null>(null)
@@ -44,7 +44,7 @@ export function FlightSearchPanel() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [openDepartureDate, setOpenDepartureDate] = useState(false)
   const [openReturnDate, setOpenReturnDate] = useState(false)
-  const [cabinClass, setCabinClass] = useState("economy")
+  const [cabinClass, setCabinClass] = useState("E")
   const [dialogOpen, setDialogOpen] = useState<boolean>(false)
 
   const [alertOpen, setAlertOpen] = useState<boolean>(false)
@@ -183,7 +183,7 @@ export function FlightSearchPanel() {
     const passengersParam = `${adultsCount},${childrenCount},${infantsCount}`
 
     // Navigate to search results with query params
-    if (!sessionData || sessionData.user.role === "user"){
+    if (sessionData && sessionData?.user?.role === "user") {
       router.push(
         `/search-results?origin=${origin.code}&destination=${destination.code}&departDate=${dateRange.from.toISOString()}&returnDate=${
           dateRange.to ? dateRange.to.toISOString() : ""
@@ -193,7 +193,7 @@ export function FlightSearchPanel() {
       setDialogOpen(true)
     }
   }
-
+  // console.log(authStatus)
   useEffect(() => {
       if (!dateRange) {
         const today = new Date()
@@ -279,20 +279,20 @@ export function FlightSearchPanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Sign in is required</DialogTitle>
-            <DialogDescription>Please sign in to complete your journey.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-row gap-2 w-full">
-            <Button variant={"secondary"} onClick={()=>{ handleDialogOpenChange(false) }}>Go back</Button>
-            <Button variant={"default"} onClick={()=>{ router.push("/account/signin") }}>Sign In</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
+      <AlertDialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Signin Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please sign in to complete your journey.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={()=>{ router.push("/account/auth") }}>Sign In</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <form onSubmit={handleSearch} className="space-y-6">
         <Tabs defaultValue="roundtrip" onValueChange={setTripType}>
           <TabsList className="grid w-full grid-cols-2">
@@ -615,10 +615,10 @@ export function FlightSearchPanel() {
                 <SelectValue placeholder="Select cabin class" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="economy">Economy</SelectItem>
-                <SelectItem value="premium_economy">Premium Economy</SelectItem>
-                <SelectItem value="business">Business</SelectItem>
-                <SelectItem value="first">First Class</SelectItem>
+                <SelectItem value="E">Economy</SelectItem>
+                <SelectItem value="W">Premium Economy</SelectItem>
+                <SelectItem value="C">Business</SelectItem>
+                <SelectItem value="F">First Class</SelectItem>
               </SelectContent>
             </Select>
           </div>

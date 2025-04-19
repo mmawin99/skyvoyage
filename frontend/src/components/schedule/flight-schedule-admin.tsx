@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { useState } from "react"
@@ -16,15 +17,31 @@ export default function FlightScheduleAdmin() {
   const [flights, setFlights] = useState<Schedule[]>([])
   const [isAddScheduleOpen, setIsAddScheduleOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-
-  const handleAddFlight = (newFlight: SubmitSchedule) => {
+  
+  //Pagination state
+  const [page, setPage] = useState<number>(1)
+  const handleAddFlight = async (newFlight: SubmitSchedule,onSuccess: ()=> void, onError: ()=> void) => {
     setIsLoading(true)
     // Simulate API call
-    setTimeout(() => {
-      console.log("New flight added:", newFlight)
-      // fetch(`${backendURL}/flight/addSchedule`)
-      setIsLoading(false)
-    }, 1500)
+    console.log("New flight added:", newFlight)
+    const response = await fetch(`${backendURL}/flight/addSchedule`,{
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newFlight),
+    })
+    
+    if(response.ok) {
+      const data = await response.json()
+      console.log(data)
+      onSuccess()
+    }else{
+      console.error("Error adding flight:", await response.json())
+      onError()
+    }
+
+    setIsLoading(false)
   }
 
   return (

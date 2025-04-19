@@ -13,13 +13,15 @@ import { BackendURLType, useBackendURL } from "@/components/backend-url-provider
 import { useEffect } from "react";
 import { AppFooter } from "@/components/footer";
 import TawkWidget from "@/components/tawk-widget";
+import { Navbar } from "@/components/navbar";
 export default function Home() {
   const { backend, setBackend, status }: BackendURLType = useBackendURL();
   if(status === 'loading') return <div className="flex justify-center items-center h-screen">Loading...</div>;
   if(status === 'error') return <div className="flex justify-center items-center h-screen">Error loading backend URL</div>;
   return (
     <main className="min-h-screen bg-white">
-    <TawkWidget />
+    <Navbar />
+    {/* <TawkWidget /> */}
     {/* Hero Section with Carousel and Overlapping Panel */}
     <div className="relative">
       <section className="w-full relative">

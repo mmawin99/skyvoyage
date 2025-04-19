@@ -196,5 +196,56 @@ export interface SubmitSchedule {
     daysofweek?: string,
     startDate?: string,
     endDate?: string,
+    depTime?: string,
+    arrTime?: string,
     //End for recurring flights
 }
+
+export interface AuthUser {
+    role: string,
+    id?: string, // Optional, only for admin
+    username?: string, // Optional, only for admin
+    permission?: string, // Optional, only for admin
+    uuid?: string, // Optional, only for user
+    email?: string, // Optional, only for user
+    firstname?: string, // Optional, only for user
+    lastname?: string, // Optional, only for user
+}
+
+export interface AuthToken {
+    role: string,
+    id?: string, // Optional, only for admin
+    username?: string, // Optional, only for admin
+    permission?: string, // Optional, only for admin
+    uuid?: string, // Optional, only for user
+    email?: string, // Optional, only for user
+    firstname?: string, // Optional, only for user
+    lastname?: string, // Optional, only for user
+}
+
+interface DefaultUserAuth {
+    id: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+}
+
+export interface AuthSession {
+    user: AuthUser & DefaultUserAuth & {
+      role: string,
+      id?: string,
+      username?: string,
+      permission?: string,
+      uuid?: string,
+      email?: string,
+      firstname?: string,
+      lastname?: string,
+    }
+}
+
+export type Country = {
+    iso2: string;
+    name: string;
+    dialCode: string;
+};
+  

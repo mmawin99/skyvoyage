@@ -1,6 +1,6 @@
 # SkyVoyage
 A Final Project of CPE241 Database Systems course.
-> SkyVoyage is a flight reservation platform with coverage more than 190 countries, over 500 airlines.
+> SkyVoyage is a flight reservation platform with coverage more than 190 countries, over 280 airlines.
 ## Development
 ### Pre-requisites
 - [Bun](https://bun.sh/)

@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid'
 import Elysia, { error, t } from "elysia";
 import { PrismaClient, user as User } from "../prisma-client";
 const prisma = new PrismaClient()
@@ -25,10 +26,10 @@ export const userModule = new Elysia({
             })
 
             const hashedPassword = await hashDataWithSHA256AndSalt(password)
-
+            const userUUID = uuidv4()
             const newUser = await prisma.$executeRaw<User>`
                 INSERT INTO user (uuid, email, \`password\`, firstname, lastname, phone) 
-                VALUES (UUID(), ${email}, ${hashedPassword}, ${firstname}, ${lastname}, ${phone})`
+                VALUES (${userUUID}, ${email}, ${hashedPassword}, ${firstname}, ${lastname}, ${phone})`
             if(!newUser) return error(500, {
                 message: 'Failed to create user',
                 status: false

@@ -99,6 +99,8 @@ model flight {
   transitTo        transit[]     @relation("ToFlight")
 
   @@id([flightNum, airlineCode])
+  @@index([departAirportId])
+  @@index([arriveAirportId])
 }
 
 model flightOperate {
@@ -115,6 +117,7 @@ model flightOperate {
   tickets        ticket[]
 
   @@unique([flightNum, airlineCode, departureTime])
+  @@index([flightNum, airlineCode, departureTime])
 }
 
 model passenger {
@@ -170,7 +173,9 @@ model seat {
   floor     Int       @default(1)
   tickets   ticket[]
   seatmap   seatmap_info @relation(fields: [seatMapId], references: [seatMapId])
+  
   @@id([seatMapId, seatId])
+  @@index([seatMapId, class])
 }
 
 model ticket {
@@ -190,6 +195,8 @@ model ticket {
   passenger   passenger     @relation(fields: [passportNum], references: [passportNum])
   flight      flightOperate @relation(fields: [flightId], references: [flightId])
   seat        seat          @relation(fields: [seatId], references: [seatId])
+
+  @@index([seatId, flightId])
 }
 
 model transit {

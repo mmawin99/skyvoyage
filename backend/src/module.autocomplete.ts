@@ -1,7 +1,4 @@
 import Elysia, { error, t } from "elysia";
-import * as jose from 'jose'
-import { checkPasswordWithHash, hashDataWithSHA256AndSalt, JWT_SECRET } from "../lib";
-import { countryToAlpha2 } from "country-to-iso";
 import { flight as Flight, airport as Airport, PrismaClient, airline as Airline, aircraft as Aircraft } from "../prisma-client";
 const prisma = new PrismaClient()
 const countries = require("i18n-iso-countries");

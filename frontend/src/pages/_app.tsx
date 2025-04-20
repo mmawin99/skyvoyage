@@ -9,7 +9,7 @@ import type { AppProps } from "next/app";
 export default function App({ Component, pageProps }: AppProps) {
     return (
         <SessionProvider session={pageProps.session} refetchInterval={0}>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
                 <BackendProvider>
                     <main className={`font-noto`}>
                         <Component {...pageProps} />

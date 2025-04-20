@@ -174,22 +174,22 @@ model seat {
 }
 
 model ticket {
-  ticketNum             String       @id @db.VarChar(13)
-  farePackage           FarePackage  @default(STANDARD)
-  baggageAllowanceWeight Int         @default(0)
-  baggageAllowancePrice  Float       @default(0)
-  mealSelection         String       @db.VarChar(10)
-  mealPrice             Float        @default(0)
-  ticketPrice           Float        @default(0)
-  bookingId             String       @db.VarChar(36)
-  flightId              String       @db.VarChar(36)
-  passportNum           String       @db.VarChar(9)
-  seatNum               String       @db.VarChar(4)
+  ticketId               String       @id @db.VarChar(13)
+  farePackage            FarePackage  @default(STANDARD)
+  baggageAllowanceWeight Int          @default(0)
+  baggageAllowancePrice  Float        @default(0)
+  mealSelection          String       @db.VarChar(10)
+  mealPrice              Float        @default(0)
+  ticketPrice            Float        @default(0)
+  bookingId              String       @db.VarChar(36)
+  flightId               String       @db.VarChar(36)
+  passportNum            String       @db.VarChar(9)
+  seatId                 String       @db.VarChar(16)
 
   booking     booking       @relation(fields: [bookingId], references: [bookingId])
   passenger   passenger     @relation(fields: [passportNum], references: [passportNum])
   flight      flightOperate @relation(fields: [flightId], references: [flightId])
-  seat        seat          @relation(fields: [seatNum], references: [seatId])
+  seat        seat          @relation(fields: [seatId], references: [seatId])
 }
 
 model transit {

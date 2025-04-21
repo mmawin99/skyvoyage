@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -42,18 +42,6 @@ export default function SearchResults() {
     tripType: 'roundtrip'
   });
   
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    setQueryParams({
-      origin: searchParams.get("origin") || '',
-      destination: searchParams.get("destination") || '',
-      departDateStr: searchParams.get("departDate") || '',
-      returnDateStr: searchParams.get("returnDate") || '',
-      passengersStr: searchParams.get("passengers") || "1,0,0",
-      cabinClass: searchParams.get("cabinClass") || "Y",
-      tripType: searchParams.get("tripType") || "roundtrip"
-    });
-  }, []);
   // Parse passenger counts
   const [adultCount] = queryParams.passengersStr.split(",").map(Number)
   const [childCount] = queryParams.passengersStr.split(",").map(Number).slice(1)
@@ -73,110 +61,130 @@ export default function SearchResults() {
   const [errorMessage, setErrorMessage] = useState("")
   const [maxPrice,setMaxPrice] = useState(0)
   const [minPrice,setMinPrice] = useState(0)
+  const refSearchParams = useRef(false)
   useEffect(() => {
-    // In a real app, we would fetch flights from an API
-    // For now, we'll use mock data
-    setLoading(true)
-    setTimeout(async () => {
-      if(backendURL === "" || backendURL === undefined) return
-      if(!queryParams.origin || !queryParams.destination || !queryParams.departDateStr || !queryParams.returnDateStr) return
-      const departData = await fetch(`${backendURL}/flight/flightList`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: queryParams.origin,
-          to: queryParams.destination,
-          passengerCount: totalPassengers,
-          date: queryParams.departDateStr.split("T")[0],
-          class: queryParams.cabinClass,
-          transitCount: flightType === 'direct' ? 0 : flightType === '1stop' ? 1 : 2,
-        })
-      })
-      let returnData;
-      if(queryParams.tripType !== "oneway") {
-        returnData = await fetch(`${backendURL}/flight/flightList`, {
+    const searParamsExecute = ()=>{
+      console.log("searchParams Finder")
+      const searchParams = new URLSearchParams(window.location.search);
+      setQueryParams({
+        origin: searchParams.get("origin") || '',
+        destination: searchParams.get("destination") || '',
+        departDateStr: searchParams.get("departDate") || '',
+        returnDateStr: searchParams.get("returnDate") || '',
+        passengersStr: searchParams.get("passengers") || "1,0,0",
+        cabinClass: searchParams.get("cabinClass") || "Y",
+        tripType: searchParams.get("tripType") || "roundtrip"
+      });
+      console.log("searchParams",queryParams)
+    }
+    if (!refSearchParams.current) {
+      searParamsExecute()
+      refSearchParams.current = true
+    }
+    return () => {
+      refSearchParams.current = true;
+    }
+  }, [queryParams]);
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (!backendURL) {
+        console.log("Backend URL is not set", backendURL);
+        return;
+      }
+      if (
+        !queryParams.origin ||
+        !queryParams.destination ||
+        !queryParams.departDateStr) {
+        console.log("Query parameters are not set", queryParams);
+        return;
+      }
+  
+      clearInterval(interval); // ✅ All checks passed, stop polling
+      setLoading(true);
+  
+      try {
+        const departData = await fetch(`${backendURL}/flight/flightList`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            from: queryParams.destination,
-            to: queryParams.origin,
+            from: queryParams.origin,
+            to: queryParams.destination,
             passengerCount: totalPassengers,
-            date: queryParams.returnDateStr.split("T")[0],
+            date: queryParams.departDateStr.split("T")[0],
             class: queryParams.cabinClass,
             transitCount: flightType === 'direct' ? 0 : flightType === '1stop' ? 1 : 2,
           })
-        })
+        });
+  
+        let returnData;
+        if (queryParams.tripType !== "oneway") {
+          returnData = await fetch(`${backendURL}/flight/flightList`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: queryParams.destination,
+              to: queryParams.origin,
+              passengerCount: totalPassengers,
+              date: queryParams.returnDateStr.split("T")[0],
+              class: queryParams.cabinClass,
+              transitCount: flightType === 'direct' ? 0 : flightType === '1stop' ? 1 : 2,
+            })
+          });
+        }
+  
+        if (!departData.ok || (queryParams.tripType !== "oneway" && !returnData?.ok)) {
+          setIsError(true);
+          setErrorMessage("Failed to fetch flight data");
+          return;
+        }
+  
+        const departJSON = await departData.json();
+        let returnJSON = null;
+        if (queryParams.tripType !== "oneway") returnJSON = await returnData?.json();
+  
+        setDepartFlights(departJSON["data"] || []);
+        setReturnFlights(returnJSON?.["data"] ?? []);
+        setDepartFilteredFlights(departJSON["data"] || []);
+        setReturnFilteredFlights(returnJSON?.["data"] ?? []);
+  
+        const allAirlines = [
+          ...departJSON["data"].flatMap((flight: UniversalFlightSchedule) =>
+            flight.segments.map((segment: UniversalFlightSegmentSchedule) => ({
+              code: segment.airlineCode,
+              name: segment.airlineName,
+            }))
+          ),
+          ...(returnJSON?.["data"]?.flatMap((flight: UniversalFlightSchedule) =>
+            flight.segments.map((segment: UniversalFlightSegmentSchedule) => ({
+              code: segment.airlineCode,
+              name: segment.airlineName,
+            }))
+          ) || []),
+        ];
+  
+        const uniqueAirlines = Array.from(
+          new Map(allAirlines.map(airline => [airline.code, airline])).values()
+        );
+        setAirlines(uniqueAirlines);
+        setSelectedAirlines(uniqueAirlines);
+  
+        const allFlights = [...departJSON["data"], ...(returnJSON?.["data"] || [])];
+        const prices = allFlights.map((flight: UniversalFlightSchedule) => flight.price);
+        if (prices.length > 0) {
+          setMinPrice(Math.min(...prices));
+          setMaxPrice(Math.max(...prices));
+        }
+      } catch (error) {
+        setIsError(true);
+        setErrorMessage("Something went wrong while fetching flights");
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
-
-      if(!departData.ok || (queryParams.tripType !== "oneway" && !returnData?.ok)) {
-        setLoading(false)
-        setIsError(true)
-        setErrorMessage("Failed to fetch flight data")
-        return
-      }
-
-      const departJSON = await departData.json()
-      let returnJSON;
-      if(queryParams.tripType !== "oneway") returnJSON = await returnData?.json()
-
-      console.log(departJSON, returnJSON)
-
-      setDepartFlights(departJSON["data"] || [])
-      setReturnFlights(returnJSON["data"] || [])
-      setDepartFilteredFlights(departJSON["data"] || [])
-      setReturnFilteredFlights(returnJSON?.["data"] || [])
-      // Extract unique airlines
-      const allAirlines = [
-        ...departJSON["data"].flatMap((flight: UniversalFlightSchedule) =>
-          flight.segments.map((segment: UniversalFlightSegmentSchedule) => ({
-            code: segment.airlineCode,
-            name: segment.airlineName,
-          }))
-        ),
-        ...returnJSON?.["data"].flatMap((flight: UniversalFlightSchedule) =>
-          flight.segments.map((segment: UniversalFlightSegmentSchedule) => ({
-            code: segment.airlineCode,
-            name: segment.airlineName,
-          }))
-        ) ?? [],
-      ];
-      
-      const uniqueAirlines = Array.from(
-        new Map(allAirlines.map(airline => [airline.code, airline])).values()
-      );
-      console.log(uniqueAirlines)
-      // const uniqueAirlines = Array.from(new Set(data.map((flight) => flight.airline)))
-      setAirlines(uniqueAirlines)
-      setSelectedAirlines(uniqueAirlines)
-
-      // Find min and max prices
-      const allFlights = [...departJSON["data"], ...returnJSON?.["data"]]
-      const prices = allFlights.map((flight: UniversalFlightSchedule) => flight.price)
-      if(prices.length > 0) {
-        setMinPrice(Math.min(...prices))
-        setMaxPrice(Math.max(...prices))
-      }
-      // if (data.length > 0) {
-      //   const prices = data.map((flight) => flight.price)
-      //   setPriceRange([Math.min(...prices), Math.max(...prices)])
-      // }
-
-      setLoading(false)
-    }, 1000)
-  }, [queryParams, flightType, backendURL, totalPassengers])
-
-  // useEffect(() => {
-  //   // Apply filters
-  //   const filtered = flights.filter(
-  //     (flight) =>
-  //       flight.price >= priceRange[0] && flight.price <= priceRange[1] && selectedAirlines.includes(flight.airline),
-  //   )
-  //   setFilteredFlights(filtered)
-  // }, [flights, priceRange, selectedAirlines])
+    }, 1000); // Check every second
+  
+    return () => clearInterval(interval); // Clean up interval on unmount
+  }, [backendURL, queryParams, flightType, totalPassengers]);
 
   const handleAirlineChange = (airline: {code:string, name:string}, checked: boolean) => {
     if (checked) {
@@ -185,11 +193,6 @@ export default function SearchResults() {
       setSelectedAirlines(selectedAirlines.filter((a) => a !== airline))
     }
   }
-
-  // const handleSelectFlight = (flightId: string) => {
-  //   // Navigate to flight details page with passenger breakdown
-  //   window.location.href = `/flight-details?flightId=${flightId}&passengers=${passengersStr}&cabinClass=${cabinClass}&tripType=${tripType}`
-  // }
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60)
@@ -296,7 +299,7 @@ export default function SearchResults() {
                 <Loader2 className="animate-spin h-12 w-12 mx-auto mb-4 text-blue-600" />
                 <p className="text-lg">Searching for the best flights...</p>
               </div>
-            ) : departFilteredFlights.length === 0 || returnFilteredFlights.length === 0 ? (
+            ) : departFilteredFlights.length === 0 || (returnFilteredFlights.length === 0 && queryParams.tripType == "roundtrip") ? (
               <div className="bg-white rounded-lg shadow p-8 text-center">
                 <Plane className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-xl font-semibold mb-2">No flights found</h3>

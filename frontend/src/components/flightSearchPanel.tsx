@@ -184,9 +184,17 @@ export function FlightSearchPanel() {
 
     // Navigate to search results with query params
     if (sessionData && sessionData?.user?.role === "user") {
+      // console.log(dateRange?.from.toUTCString())
+      // convert dateRange?.from to UTC string that same date as user local time
+      const fromDate = new Date(dateRange?.from)
+      const toDate = new Date(dateRange?.to || "")
+      const fromDateUTC = new Date(fromDate.getTime() - fromDate.getTimezoneOffset() * 60000)
+      const toDateUTC = new Date(toDate.getTime() - toDate.getTimezoneOffset() * 60000)
+      // console.log(fromDateUTC.toISOString())
+      // console.log(toDateUTC.toISOString())
       router.push(
-        `/search-results?origin=${origin.code}&destination=${destination.code}&departDate=${dateRange.from.toISOString()}&returnDate=${
-          dateRange.to ? dateRange.to.toISOString() : ""
+        `/search-results?origin=${origin.code}&destination=${destination.code}&departDate=${fromDateUTC.toISOString()}&returnDate=${
+          dateRange.to ? toDateUTC.toISOString() : ""
         }&passengers=${passengersParam}&cabinClass=${cabinClass}&tripType=${tripType}`,
       )
     }else{

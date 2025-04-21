@@ -271,3 +271,18 @@ export interface UniversalFlightSchedule {
     departureAirport: string;
     arrivalAirport: string;
 }
+
+export interface ScheduleListAdmin{
+    flightId: string
+    flightNum: string
+    airlineCode: string
+    airlineName: string
+    departureTime: string
+    arrivalTime: string
+    aircraftId: string
+    departAirportId: string
+    departureAirport: string
+    arriveAirportId: string
+    arrivalAirport: string
+    aircraftModel: string
+}

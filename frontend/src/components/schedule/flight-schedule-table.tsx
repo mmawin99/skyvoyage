@@ -8,19 +8,23 @@ import { Search, ArrowUpDown } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
-import { Schedule } from "@/types/type"
+import { ScheduleListAdmin } from "@/types/type"
 
 interface FlightScheduleTableProps {
-  flights: Schedule[]
+  flights: ScheduleListAdmin[]
   isLoading: boolean
+  searchQuery: string
+  setSearchQuery: (query: string) => void
 }
 
-export default function FlightScheduleTable({ flights, isLoading }: FlightScheduleTableProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [sortColumn, setSortColumn] = useState<keyof Schedule>("flightNum")
+export default function FlightScheduleTable({ flights, isLoading,
+  searchQuery,
+  setSearchQuery
+ }: FlightScheduleTableProps) {
+  const [sortColumn, setSortColumn] = useState<keyof ScheduleListAdmin>("flightNum")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
-  const handleSort = (column: keyof Schedule) => {
+  const handleSort = (column: keyof ScheduleListAdmin) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc")
     } else {
@@ -56,7 +60,7 @@ export default function FlightScheduleTable({ flights, isLoading }: FlightSchedu
     }
   }
 
-  const getFlightStatus = (flight: Schedule) => {
+  const getFlightStatus = (flight: ScheduleListAdmin) => {
     const now = new Date()
     const depTime = new Date(flight.departureTime)
     const arrTime = new Date(flight.arrivalTime)
@@ -91,7 +95,7 @@ export default function FlightScheduleTable({ flights, isLoading }: FlightSchedu
     }
   }
 
-  const isOvernightFlight = (flight: Schedule) => {
+  const isOvernightFlight = (flight: ScheduleListAdmin) => {
     const depTime = new Date(flight.departureTime)
     const arrTime = new Date(flight.arrivalTime)
 
@@ -184,7 +188,7 @@ export default function FlightScheduleTable({ flights, isLoading }: FlightSchedu
                   <TableCell className="font-medium">{flight.flightNum}</TableCell>
                   <TableCell>{flight.airlineName} ({flight.airlineCode})</TableCell>
                   <TableCell>
-                    {flight.departureAirportCode} → {flight.arrivalAirportCode}
+                    {flight.departAirportId} → {flight.arriveAirportId}
                     {isOvernightFlight(flight) && (
                       <Badge variant="outline" className="ml-2 bg-amber-50 text-amber-700 border-amber-200 text-xs">
                         +1

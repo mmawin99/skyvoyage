@@ -22,6 +22,7 @@ interface SubmitSchedule {
     arrTime?: string,
     //End for recurring flights
 }
+
 interface FlightSchedule {
     flightId: string;
     flightNum: string;
@@ -205,6 +206,22 @@ function formatterSQLTIME(date: string): string {
     return date.replace('T', ' ').replace('Z', '')
 }
 
+
+interface ScheduleListAdmin{
+    flightId: string
+    flightNum: string
+    airlineCode: string
+    airlineName: string
+    departureTime: Date
+    arrivalTime: Date
+    aircraftId: string
+    departAirportId: string
+    departureAirport: string
+    arriveAirportId: string
+    arrivalAirport: string
+    aircraftModel: string
+}
+
 export const flightModule = new Elysia({
         prefix: '/flight',
     })
@@ -359,8 +376,133 @@ export const flightModule = new Elysia({
             }
         }
     })
-    .get("/schedule", async ({body}:{body:{page:number,size:number, query: string}})=>{
+    .post("/schedule/:size/:page", async ({params,body}:{params:{ query: string, size:number, page:number }, body:{query:string}})=>{
 
+        const { size, page } = params
+        const { query } = body
+        if(!size || !page){
+            return error(400, {
+                status: false,
+                message: 'Missing required fields',
+            })
+        }
+        const offset = (page - 1) * size
+        const limit = size
+        const wildcard = `%${query}%`
+        let result: ScheduleListAdmin[] = []
+        let totalCount: { count: number }[] = []
+        try {
+            if(!query){
+                result = await prisma.$queryRaw<ScheduleListAdmin[]>`
+                    SELECT 
+                        fo.flightId,
+                        fo.flightNum,
+                        fo.airlineCode,
+                        a.airlineName,
+                        fo.departureTime,
+                        fo.arrivalTime,
+                        fo.aircraftId,
+                        f.departAirportId,
+                        da.name AS departureAirport,
+                        f.arriveAirportId,
+                        aa.name AS arrivalAirport,
+                        ac.model AS aircraftModel
+                    FROM flightOperate fo
+                    JOIN flight f ON f.flightNum = fo.flightNum AND f.airlineCode = fo.airlineCode
+                    JOIN aircraft ac ON ac.aircraftId = fo.aircraftId
+                    JOIN airport da ON f.departAirportId = da.airportCode
+                    JOIN airport aa ON f.arriveAirportId = aa.airportCode
+                    JOIN airline a ON a.airlineCode = f.airlineCode
+                    ORDER BY fo.departureTime ASC
+                    LIMIT ${limit} OFFSET ${offset}
+                `
+                totalCount = await prisma.$queryRaw<{ count: number }[]>`
+                    SELECT 
+                        COUNT(*) AS count 
+                    FROM flightOperate
+                `
+            }else{
+                result = await prisma.$queryRaw<ScheduleListAdmin[]>`
+                    SELECT 
+                        fo.flightId,
+                        fo.flightNum,
+                        fo.airlineCode,
+                        a.airlineName,
+                        fo.departureTime,
+                        fo.arrivalTime,
+                        fo.aircraftId,
+                        f.departAirportId,
+                        da.name AS departureAirport,
+                        f.arriveAirportId,
+                        aa.name AS arrivalAirport,
+                        ac.model AS aircraftModel
+                    FROM flightOperate fo
+                    JOIN flight f ON f.flightNum = fo.flightNum AND f.airlineCode = fo.airlineCode
+                    JOIN aircraft ac ON ac.aircraftId = fo.aircraftId
+                    JOIN airport da ON f.departAirportId = da.airportCode
+                    JOIN airport aa ON f.arriveAirportId = aa.airportCode
+                    JOIN airline a ON a.airlineCode = f.airlineCode
+                    WHERE fo.flightId LIKE ${wildcard}
+                    OR fo.flightNum LIKE ${wildcard}
+                    OR f.departAirportId LIKE ${wildcard}
+                    OR f.arriveAirportId LIKE ${wildcard}
+                    OR da.name LIKE ${wildcard}
+                    OR aa.name LIKE ${wildcard}
+                    OR da.city LIKE ${wildcard}
+                    OR aa.city LIKE ${wildcard}
+                    OR ac.model LIKE ${wildcard}
+                    OR ac.aircraftId LIKE ${wildcard}
+                    OR f.airlineCode LIKE ${wildcard}
+                    ORDER BY fo.departureTime ASC
+                    LIMIT ${limit} OFFSET ${offset}
+                `
+                totalCount = await prisma.$queryRaw<{ count: number }[]>`
+                    SELECT 
+                        COUNT(*) AS count 
+                    FROM flightOperate fo
+                    JOIN flight f ON f.flightNum = fo.flightNum AND f.airlineCode = fo.airlineCode
+                    JOIN aircraft ac ON ac.aircraftId = fo.aircraftId
+                    JOIN airport da ON f.departAirportId = da.airportCode
+                    JOIN airport aa ON f.arriveAirportId = aa.airportCode
+                    JOIN airline a ON a.airlineCode = f.airlineCode
+                    WHERE fo.flightId LIKE ${wildcard}
+                    OR fo.flightNum LIKE ${wildcard}
+                    OR f.departAirportId LIKE ${wildcard}
+                    OR f.arriveAirportId LIKE ${wildcard}
+                    OR da.name LIKE ${wildcard}
+                    OR aa.name LIKE ${wildcard}
+                    OR da.city LIKE ${wildcard}
+                    OR aa.city LIKE ${wildcard}
+                    OR ac.model LIKE ${wildcard}
+                    OR ac.aircraftId LIKE ${wildcard}
+                `
+            }
+            if (result.length === 0) {
+                return {
+                    status: false,
+                    message: 'No schedules found',
+                    totalCount: 0,
+                    page: page,
+                    size: size,
+                    data: [],
+                }
+            }
+            return {
+                status: true,
+                message: 'Schedules retrieved successfully',
+                totalCount: sanitizeBigInt(totalCount)[0].count,
+                page: page,
+                size: size,
+                data: sanitizeBigInt(result),
+            }
+        } catch (err) {
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
     })
     .post("/flightList", async ({ body }:{
         body:{
@@ -410,14 +552,22 @@ export const flightModule = new Elysia({
                         0 AS stopCount,
                         TIMESTAMPDIFF(MINUTE, fo.departureTime, fo.arrivalTime) AS estimatedDurationMinutes,
                         ABS(ROUND(
-                        (
-                            6371 * acos(
-                            cos(radians(da.latitude)) * cos(radians(aa.latitude)) *
-                            cos(radians(aa.longitude) - radians(da.longitude)) +
-                            sin(radians(da.latitude)) * sin(radians(aa.latitude))
-                            ) * 0.621371
-                        ) * (acs.costPerMile / 71) / LEAST(2, 1 + (7 - DATEDIFF(fo.departureTime, CURDATE())) * 0.2),
-                        2
+                            (
+                                6371 * acos(
+                                cos(radians(da.latitude)) * cos(radians(aa.latitude)) *
+                                cos(radians(aa.longitude) - radians(da.longitude)) +
+                                sin(radians(da.latitude)) * sin(radians(aa.latitude))
+                                ) * 0.621371
+                            ) * (acs.costPerMile / 71) * 
+                            CASE 
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 1 THEN 2
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 3 THEN 1.8
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 5 THEN 1.6
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 7 THEN 1.4
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 9 THEN 1.2
+                                ELSE 1
+                            END,
+                            2
                         )) AS estimatedPriceUSD
                     FROM flightOperate fo
                     JOIN flight f ON f.flightNum = fo.flightNum AND f.airlineCode = fo.airlineCode
@@ -476,7 +626,14 @@ export const flightModule = new Elysia({
                                 cos(radians(ta.longitude) - radians(da.longitude)) +
                                 sin(radians(da.latitude)) * sin(radians(ta.latitude))
                             ) * 0.621371
-                            ) * (acs1.costPerMile / 71) / LEAST(2, 1 + (7 - DATEDIFF(fo1.departureTime, CURDATE())) * 0.2),
+                            ) * (acs1.costPerMile / 71) * CASE 
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 1 THEN 2
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 3 THEN 1.8
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 5 THEN 1.6
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 7 THEN 1.4
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 9 THEN 1.2
+                                ELSE 1
+                            END,
                             2
                         )) + 
                         ABS(ROUND(
@@ -486,7 +643,14 @@ export const flightModule = new Elysia({
                                 cos(radians(aa.longitude) - radians(ta.longitude)) +
                                 sin(radians(ta.latitude)) * sin(radians(aa.latitude))
                             ) * 0.621371
-                            ) * (acs2.costPerMile / 71) / LEAST(2, 1 + (7 - DATEDIFF(fo2.departureTime, CURDATE())) * 0.2),
+                            ) * (acs2.costPerMile / 71) * CASE 
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 1 THEN 2
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 3 THEN 1.8
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 5 THEN 1.6
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 7 THEN 1.4
+                                WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 9 THEN 1.2
+                                ELSE 1
+                            END,
                             2
                         )) AS estimatedPriceUSD
                     FROM 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { useState } from "react"
@@ -7,12 +6,13 @@ import { ChevronDown, ChevronUp, Plane, Check, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { UniversalFlightSchedule } from "@/types/type"
+import { FareType, UniversalFlightSchedule } from "@/types/type"
 
 
 interface FlightCardProps {
   flight: UniversalFlightSchedule
   cabinclass: "Y" | "W" | "C" | "F"
+  onSelect: ({selectedFare, flightId}: { selectedFare: FareType | null; flightId: string }) => void
 }
 
 const formatInTimeZone = (date: Date, timeZone: string, format: string): string => {
@@ -48,7 +48,6 @@ const formatInTimeZone = (date: Date, timeZone: string, format: string): string 
 };
 
 // Fare package types
-type FareType = "SUPER_SAVER" | "SAVER" | "STANDARD" | "FLEXI" | "FULL_FLEX"
 
 interface FarePackage {
   type: FareType
@@ -58,16 +57,16 @@ interface FarePackage {
   seatSelection: boolean
   changes: string
   cancellation: string
-  mealOption: boolean
   priorityBoarding: boolean
   recommended?: boolean
   label?: string
   mileage?: string
   refundable?: boolean
   loungeAccess?: boolean
+  available?: boolean
 }
 
-export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
+export default function FlightCard({ flight, cabinclass, onSelect }: FlightCardProps) {
   // State to track if this flight card is expanded
   const [isExpanded, setIsExpanded] = useState(false)
   // State to track if fare selection is visible
@@ -124,14 +123,14 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
   const farePackages: FarePackage[] = [
     {
       type: "SUPER_SAVER",
-      price: flight.price,
+      price: flight.price.SUPER_SAVER,
+      available: cabinclass === "Y",
       baggage: "1 x 23kg",
       carryOn: "1 x 7kg",
       mileage: "Not eligible",
       seatSelection: false,
       changes: "Not allowed",
       cancellation: "Not allowed",
-      mealOption: false,
       priorityBoarding: false,
       label: "Economy",
       refundable: false,
@@ -139,14 +138,14 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
     },
     {
       type: "SAVER",
-      price: flight.price + 50,
+      price: flight.price.SAVER,
+      available: cabinclass === "Y" || cabinclass === "W",
       baggage: "1 x 23kg",
       carryOn: "1 x 7kg",
       mileage: "0 - 25%",
       seatSelection: false,
       changes: "Fee applies",
       cancellation: "Not allowed",
-      mealOption: false,
       priorityBoarding: false,
       label: "Value",
       refundable: false,
@@ -154,14 +153,14 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
     },
     {
       type: "STANDARD",
-      price: flight.price + 100,
+      price: flight.price.STANDARD,
+      available: cabinclass === "Y" || cabinclass === "W",
       baggage: "1 x 25kg",
       carryOn: "1 x 7kg",
       mileage: "25 - 75%",
       seatSelection: true,
       changes: "Fee applies",
       cancellation: "Fee applies",
-      mealOption: true,
       priorityBoarding: false,
       recommended: true,
       label: "Popular",
@@ -170,14 +169,14 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
     },
     {
       type: "FLEXI",
-      price: flight.price + 150,
+      price: flight.price.FLEXI,
+      available: cabinclass === "Y" || cabinclass === "W" || cabinclass === "C" || cabinclass === "F",
       baggage: "1 x 30kg",
       carryOn: "1 x 7kg",
       mileage: "75 - 100%",
       seatSelection: true,
       changes: "Free",
       cancellation: "Fee applies",
-      mealOption: true,
       priorityBoarding: true,
       label: "Business",
       refundable: false,
@@ -185,14 +184,14 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
     },
     {
       type: "FULL_FLEX",
-      price: flight.price + 200,
+      price: flight.price.FULL_FLEX,
+      available: cabinclass === "Y" || cabinclass === "W" || cabinclass === "C" || cabinclass === "F",
       baggage: "2 x 32kg",
       carryOn: "1 x 7kg",
       mileage: "100 - 125%",
       seatSelection: true,
       changes: "Free",
       cancellation: "Free",
-      mealOption: true,
       priorityBoarding: true,
       label: "Premium",
       refundable: true,
@@ -225,19 +224,27 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
               {firstSegment.airlineCode} {firstSegment.flightNum.split("-")[0]}
               {flight.segments.length > 1 ? ` (${flight.segments.length} segments)` : ""}
             </Badge>
+            <Badge variant="secondary" className="text-xs">
+              {cabinclass == "Y" ? "Economy" : cabinclass === "W" ? "Premium Economy" : cabinclass === "C" ? "Business" : "First Class"}
+            </Badge>
           </CardTitle>
-          <div className="text-2xl font-bold">${flight.price.toFixed(2)}</div>
+          <div className="text-2xl font-bold">Start at ${(
+            cabinclass === "Y" ? flight.price.SUPER_SAVER :
+            cabinclass === "W" ? flight.price.SAVER :
+            cabinclass === "C" ? flight.price.FLEXI :
+            cabinclass === "F" ? flight.price.FLEXI : 0
+          ).toFixed(2)}</div>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-6">
+      <CardContent className="">
         {/* Flight route summary - always visible */}
         <div className="flex justify-between items-center">
           <div className="flex flex-col">
             <span className="text-xl font-bold">
               {formatLocalTime(firstSegment.departureTime, firstSegment.departTimezone)}
             </span>
-            <span className="text-sm text-muted-foreground">{firstSegment.departureAirport}</span>
+            <span className="text-sm text-muted-foreground font-bold">{firstSegment.departureAirport}</span>
             <span className="text-xs text-muted-foreground">
               {formatLocalDate(firstSegment.departureTime, firstSegment.departTimezone)}
             </span>
@@ -259,7 +266,7 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
             <span className="text-xl font-bold">
               {formatLocalTime(lastSegment.arrivalTime, lastSegment.arriveTimezone)}
             </span>
-            <span className="text-sm text-muted-foreground">{lastSegment.arrivalAirport}</span>
+            <span className="text-sm text-muted-foreground font-bold">{lastSegment.arrivalAirport}</span>
             <span className="text-xs text-muted-foreground">
               {formatLocalDate(lastSegment.arrivalTime, lastSegment.arriveTimezone)}
             </span>
@@ -311,7 +318,7 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
                   <div className="flex-1">
                     <div className="flex justify-between mb-1">
                       <div>
-                        <span className="font-medium">{segment.airlineName}</span>
+                        <span className="font-medium">Operate by <span className="font-bold">{segment.airlineName}</span></span>
                         <span className="text-sm text-muted-foreground ml-2">
                           {segment.airlineCode} {segment.flightNum.split("-")[0]}
                         </span>
@@ -319,7 +326,7 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
                           Segment {index + 1}
                         </Badge>
                       </div>
-                      <div className="text-sm text-muted-foreground">Aircraft: {segment.aircraftModel}</div>
+                      <div className="text-sm text-muted-foreground">Aircraft {segment.aircraftModel}</div>
                     </div>
 
                     <div className="flex justify-between">
@@ -356,9 +363,11 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
             <h3 className="text-lg font-semibold mb-6">Select Fare Package</h3>
 
             <div className="overflow-x-auto pb-2">
-              <div className="grid grid-cols-5 gap-3 min-w-[800px]">
-                {farePackages.map((fare) => (
-                  <div
+              <div className={`grid ${cabinclass == "Y" ? "grid-cols-5" : "grid-cols-4"} gap-3 min-w-[800px]`}>
+                {farePackages.map((fare) =>{
+                  if(fare.available === false) return null
+                  return (
+                    <div
                     key={fare.type}
                     className={`relative flex flex-col border rounded-lg overflow-hidden ${
                       fare.recommended
@@ -402,6 +411,19 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
                         <div>
                           <p className="font-medium">Baggage</p>
                           <p className="text-sm text-muted-foreground">{fare.baggage}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="w-5 h-5 mt-0.5 flex-shrink-0">
+                          {fare.carryOn ? (
+                            <Check className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <X className="h-5 w-5 text-red-500" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">Carry on</p>
+                          <p className="text-sm text-muted-foreground">{fare.carryOn}</p>
                         </div>
                       </div>
 
@@ -451,16 +473,16 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
 
                       <div className="flex items-start gap-2">
                         <div className="w-5 h-5 mt-0.5 flex-shrink-0">
-                          {fare.mealOption ? (
+                          {fare.refundable ? (
                             <Check className="h-5 w-5 text-green-500" />
                           ) : (
                             <X className="h-5 w-5 text-red-500" />
                           )}
                         </div>
                         <div>
-                          <p className="font-medium">Meal</p>
+                          <p className="font-medium">Refund</p>
                           <p className="text-sm text-muted-foreground">
-                            {fare.mealOption ? "Included" : "Not included"}
+                            {fare.refundable ? "Free" : "Fee applies"}
                           </p>
                         </div>
                       </div>
@@ -480,6 +502,22 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
                           </p>
                         </div>
                       </div>
+
+                      <div className="flex items-start gap-2">
+                        <div className="w-5 h-5 mt-0.5 flex-shrink-0">
+                          {fare.loungeAccess ? (
+                            <Check className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <X className="h-5 w-5 text-red-500" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">Lounge Access</p>
+                          <p className="text-sm text-muted-foreground">
+                            {fare.loungeAccess ? "Included" : "Not included"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     {/* CTA Button */}
@@ -493,7 +531,8 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
                       </Button>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
@@ -502,7 +541,11 @@ export default function FlightCard({ flight, cabinclass }: FlightCardProps) {
                 <Button
                   variant="default"
                   size="lg"
-                  onClick={() => alert(`Proceeding with ${formatFareType(selectedFare)} fare for flight ${flight.id}`)}
+                  onClick={() => {
+                    // console.log(`Selected fare: ${selectedFare}`)
+                    // alert(`Proceeding with ${formatFareType(selectedFare)} fare for flight ${flight.id}`)
+                    onSelect({selectedFare: selectedFare, flightId: flight.id})
+                  }}
                 >
                   Continue with {formatFareType(selectedFare)}
                 </Button>

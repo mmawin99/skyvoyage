@@ -264,7 +264,13 @@ export interface UniversalFlightSegmentSchedule{
 }
 export interface UniversalFlightSchedule {
     id: string;
-    price: number;
+    price: {
+        SUPER_SAVER: number;
+        SAVER: number;
+        STANDARD: number;
+        FLEXI: number;
+        FULL_FLEX: number;
+    };
     duration: number;
     stopCount: number;
     segments: UniversalFlightSegmentSchedule[];
@@ -286,3 +292,5 @@ export interface ScheduleListAdmin{
     arrivalAirport: string
     aircraftModel: string
 }
+
+export type FareType = "SUPER_SAVER" | "SAVER" | "STANDARD" | "FLEXI" | "FULL_FLEX"

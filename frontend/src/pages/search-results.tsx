@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Slider } from "@/components/ui/slider"
 import { ArrowRight, Clock, Filter, Loader2, Plane, TriangleAlert } from "lucide-react"
-import { UniversalFlightSchedule, UniversalFlightSegmentSchedule } from "@/types/type"
+import { FareType, UniversalFlightSchedule, UniversalFlightSegmentSchedule } from "@/types/type"
 import { NextRouter, useRouter } from "next/router"
 import { useBackendURL } from "@/components/backend-url-provider"
 import { useSession } from "next-auth/react"
@@ -17,6 +17,15 @@ import { Navbar } from "@/components/navbar"
 import { AppFooter } from "@/components/footer"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import FlightCard from "@/components/flight-card"
+import { cabinClassPrice } from "@/lib/price"
+import { Badge } from "@/components/ui/badge"
+
+interface searchSelectedFlight {
+  selectedFare:FareType, 
+  flightId: string, 
+  flight:UniversalFlightSchedule
+  price: number
+}
 
 export default function SearchResults() {
   const router:NextRouter = useRouter()
@@ -62,6 +71,12 @@ export default function SearchResults() {
   const [maxPrice,setMaxPrice] = useState(0)
   const [minPrice,setMinPrice] = useState(0)
   const refSearchParams = useRef(false)
+  
+  
+  const [selectedDepartureFlight, setSelectedDepartureFlight] = useState<searchSelectedFlight>()
+  const [isSelectedDepartureFlight, setIsSelectedDepartureFlight] = useState<boolean>(false)
+  const [selectedReturnFlight, setSelectedReturnFlight] = useState<searchSelectedFlight>()
+  const [isSelectedReturnFlight, setIsSelectedReturnFlight] = useState<boolean>(false)
   useEffect(() => {
     const searParamsExecute = ()=>{
       console.log("searchParams Finder")
@@ -112,7 +127,7 @@ export default function SearchResults() {
             passengerCount: totalPassengers,
             date: queryParams.departDateStr.split("T")[0],
             class: queryParams.cabinClass,
-            transitCount: flightType === 'direct' ? 0 : flightType === '1stop' ? 1 : 2,
+            transitCount: flightType === 'direct' ? 0 : 1,
           })
         });
   
@@ -127,7 +142,7 @@ export default function SearchResults() {
               passengerCount: totalPassengers,
               date: queryParams.returnDateStr.split("T")[0],
               class: queryParams.cabinClass,
-              transitCount: flightType === 'direct' ? 0 : flightType === '1stop' ? 1 : 2,
+              transitCount: flightType === 'direct' ? 0 : 1,
             })
           });
         }
@@ -169,7 +184,7 @@ export default function SearchResults() {
         setSelectedAirlines(uniqueAirlines);
   
         const allFlights = [...departJSON["data"], ...(returnJSON?.["data"] || [])];
-        const prices = allFlights.map((flight: UniversalFlightSchedule) => flight.price);
+        const prices = allFlights.map((flight: UniversalFlightSchedule) => flight.price.SUPER_SAVER).filter((price: number) => price !== -1);
         if (prices.length > 0) {
           setMinPrice(Math.min(...prices));
           setMaxPrice(Math.max(...prices));
@@ -186,6 +201,21 @@ export default function SearchResults() {
     return () => clearInterval(interval); // Clean up interval on unmount
   }, [backendURL, queryParams, flightType, totalPassengers]);
 
+
+  const flightInfo = (flight: searchSelectedFlight | undefined, cabinClass: "Y" | "C" | "W" | "F") => {
+    if (!flight) return null
+    return flight.flight.segments.map((segment: UniversalFlightSegmentSchedule, index: number) => (
+      <div key={index} className="flex items-center gap-2 pl-3">
+        <div className="text-sm text-gray-600 flex flex-row items-center gap-2">
+          {segment.airlineName} ({segment.airlineCode} {segment.flightNum.split("-")[0]})
+          <Badge variant="outline">{flight.flight.segments.length == 1 ? "Direct Flight" : "Flight Segments "+index + 1}</Badge>
+          <Badge variant="default">
+            {cabinClass === "Y" ? "Economy Class" : cabinClass === "C" ? "Business Class" : cabinClass === "F" ? "First Class" : cabinClass === "W" ? "Premium Economy" : ""}
+          </Badge>
+        </div>
+      </div>
+    ))
+  }
   const handleAirlineChange = (airline: {code:string, name:string}, checked: boolean) => {
     if (checked) {
       setSelectedAirlines([...selectedAirlines, airline])
@@ -201,6 +231,19 @@ export default function SearchResults() {
   }
 
   // Format passenger information for display
+  const calculateTotalPrice = (total_price: number) => {
+    let totalPrice = 0
+    if (adultCount > 0) {
+      totalPrice += adultCount * total_price
+    }
+    if (childCount > 0) {
+      totalPrice += Math.floor(childCount * (total_price * 0.75))
+    }
+    if (infantCount > 0) {
+      totalPrice += Math.floor(infantCount * (total_price * 0.2377))
+    }
+    return totalPrice
+  }
   const formatPassengerInfo = () => {
     const parts = []
     if (adultCount > 0) parts.push(`${adultCount} ${adultCount === 1 ? "Adult" : "Adults"}`)
@@ -219,8 +262,8 @@ export default function SearchResults() {
 
         <div className="flex flex-col md:flex-row gap-6">
           {/* Filters */}
-          <div className="w-full md:w-1/4">
-            <Card>
+          <div className="w-full md:w-1/4 md:sticky md:top-20 self-start h-fit">
+            <Card className="max-h-screen overflow-auto">
               <CardHeader className="pb-3">
                 <div className="flex items-center">
                   <Filter className="mr-2 h-5 w-5" />
@@ -256,10 +299,6 @@ export default function SearchResults() {
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="1stop" id="r2" />
                       <Label htmlFor="r2">Transit (1 Stop)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="2stop" id="r3" />
-                      <Label htmlFor="r3">Transit (2 stop)</Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -307,6 +346,7 @@ export default function SearchResults() {
                 <Button onClick={() => window.history.back()}>Go Back</Button>
               </div>
             ) : (
+              !isSelectedDepartureFlight ? 
               <div className="space-y-4">
                 <div className="">
                   <h2 className="mb-2 font-bold">Departure Flight</h2>
@@ -314,15 +354,102 @@ export default function SearchResults() {
                     departFilteredFlights.map((flight) => {
                       return (
                         <FlightCard
-                          key={flight.id + '_flight' }
+                          key={flight.id + '_flightdepart' }
                           flight={flight}
+                          onSelect={({ selectedFare, flightId }: { selectedFare: FareType | null, flightId: string }) => {
+                            if (selectedFare) {
+                              setSelectedDepartureFlight({
+                                selectedFare: selectedFare,
+                                flightId,
+                                flight,
+                                price: cabinClassPrice(flight.price[selectedFare], queryParams.cabinClass as "Y" | "C" | "F" | "W", 
+                                  selectedFare)
+                              });
+                              setIsSelectedDepartureFlight(true);
+                            }
+                          }}
                           cabinclass={queryParams.cabinClass as "Y" | "W" | "C" | "F"}
                         />
                       )
                     })
                   }
                 </div>
+              </div> : queryParams.tripType === "roundtrip" && !isSelectedReturnFlight ? (
+              <div className="space-y-4">
+                <div className="">
+                  <h2 className="mb-2 font-bold">Return Flight</h2>
+                  {
+                    returnFilteredFlights.map((flight) => {
+                      return (
+                        <FlightCard
+                          key={flight.id + '_flightreturn' }
+                          flight={flight}
+                          onSelect={({ selectedFare, flightId }: { selectedFare: FareType | null, flightId: string }) => {
+                            if (selectedFare) {
+                              setSelectedReturnFlight({
+                                selectedFare: selectedFare,
+                                flightId,
+                                flight,
+                                price: cabinClassPrice(flight.price[selectedFare], queryParams.cabinClass as "Y" | "C" | "F" | "W", 
+                                  selectedFare)
+                              });
+                              setIsSelectedReturnFlight(true);
+                            }
+                          }}
+                          cabinclass={queryParams.cabinClass as "Y" | "W" | "C" | "F"}
+                        />
+                      )
+                    })
+                  }
+                </div>
+              </div>) :(
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="flex items-center justify-between">
+                    <h3 className="font-bold text-xl">Summarize your journey {queryParams.origin} → {queryParams.destination}{queryParams.tripType == "roundtrip" ? " and back!" : "!"} </h3>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-7">
+                      <div className="text-gray-500 col-span-3 flex flex-col gap-2">
+                        <span>Departure Flight ({queryParams.origin} → {queryParams.destination})</span>
+                        <div>{flightInfo(selectedDepartureFlight, queryParams?.cabinClass as "Y" | "C" | "W" | "F")}</div>  
+                      </div>
+                      <div className="font-semibold col-span-2 text-center">{formatDuration(selectedDepartureFlight?.flight.duration ?? 0)}</div>
+                      <div className="font-semibold col-span-2 text-right">${selectedDepartureFlight?.price}</div>
+                    </div>
+                    {
+                      queryParams.tripType == "roundtrip" ? 
+                        <div className="grid grid-cols-7">
+                          <div className="text-gray-500 col-span-3 flex flex-col gap-2">
+                            <span>Return Flight ({queryParams.destination} → {queryParams.origin})</span>
+                            <div>{flightInfo(selectedReturnFlight, queryParams?.cabinClass as "Y" | "C" | "W" | "F")}</div>  
+                          </div>
+                          <div className="font-semibold col-span-2 text-center">{formatDuration(selectedReturnFlight?.flight.duration ?? 0)}</div>
+                          <div className="font-semibold col-span-2 text-right">${selectedReturnFlight?.price}</div>
+                        </div>
+                      : null
+                    }
+                    <Separator />
+                    <div className="grid grid-cols-7">
+                      <div className="text-gray-500 col-span-5 text-right">Passenger Information</div>
+                      <div className="font-semibold col-span-2 text-right">{formatPassengerInfo()}</div>
+                    </div>
+                    <div className="grid grid-cols-7">
+                      <div className="text-gray-500 col-span-5 text-right">Total Fare: </div>
+                      <div className="font-semibold col-span-2 text-right">${calculateTotalPrice((selectedDepartureFlight?.price ?? 0) + (selectedReturnFlight?.price ?? 0))}</div>
+                    </div>
+                    <div className="grid grid-cols-7">
+                      <div className="text-gray-500 col-span-7 text-right text-xs">{queryParams.tripType == "roundtrip" ? "Round trip" : "One way"} price for all passengers (including taxes, fees and discounts).
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Button onClick={() => router.push("/checkout")}>
+                  Fill out Passenger Information
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
+              )
             )}
           </div>
         </div>

@@ -70,7 +70,13 @@ interface FlightScheduleTransit1 {
 
 interface UniversalFlightSchedule {
     id: string;
-    price: number;
+    price: {
+        SUPER_SAVER: number;
+        SAVER: number;
+        STANDARD: number;
+        FLEXI: number;
+        FULL_FLEX: number;
+    };
     duration: number;
     stopCount: number;
     segments: {
@@ -90,7 +96,83 @@ interface UniversalFlightSchedule {
     arrivalAirport: string;
 }
 
+function calculatePrice(flightClass: string, basePrice: number): number {
+    const classMultiplier: Record<string, number> = {
+        Y: 1.1333,
+        W: 1.3333,
+        C: 1.5533,
+        F: 2.1333,
+    };
+    const multiplier = classMultiplier[flightClass] || 1;
+    return Math.round(basePrice * multiplier);
+}
+type FareType = "SUPER_SAVER" | "SAVER" | "STANDARD" | "FLEXI" | "FULL_FLEX"
+const cabinClassPrice = (price:number, cabinClass: "Y" | "F" | "C" | "W" , FarePackage: FareType)=>{
+    if(cabinClass === "Y"){
+        switch(FarePackage){
+            case "SUPER_SAVER":
+                return price
+            case "SAVER":
+                return price + 50
+            case "STANDARD":
+                return price + 100
+            case "FLEXI":
+                return price + 150
+            case "FULL_FLEX":
+                return price + 200
+            default:
+                return price
+        }
+    }else if(cabinClass === "W"){
+        switch(FarePackage){
+            case "SUPER_SAVER":
+                return -1
+            case "SAVER":
+                return price
+            case "STANDARD":
+                return price + 50
+            case "FLEXI":
+                return price + 100
+            case "FULL_FLEX":
+                return price + 150
+            default:
+                return price
+        }
+    }else if(cabinClass === "C"){
+        switch(FarePackage){
+            case "SUPER_SAVER":
+                return -1
+            case "SAVER":
+                return -1
+            case "STANDARD":
+                return -1
+            case "FLEXI":
+                return price
+            case "FULL_FLEX":
+                return price + 125
+            default:
+                return price
+        }
+    }else if(cabinClass === "F"){
+        switch(FarePackage){
+            case "SUPER_SAVER":
+                return -1
+            case "SAVER":
+                return -1
+            case "STANDARD":
+                return -1
+            case "FLEXI":
+                return price + 100
+            case "FULL_FLEX":
+                return price + 200
+            default:
+                return price
+        }
+    }
+    return -1
+}
 function convertToUniversalFormat(
+    flightClass: string,
     directFlights: FlightSchedule[] = [], 
     transitFlights: FlightScheduleTransit1[] = []
 ): UniversalFlightSchedule[] {
@@ -100,7 +182,13 @@ function convertToUniversalFormat(
     for (const flight of directFlights) {
         universalFlights.push({
             id: flight.flightId,
-            price: parseInt(String(flight.estimatedPriceUSD)),
+            price: {
+                SUPER_SAVER: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "SUPER_SAVER"),
+                SAVER: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "SAVER"),
+                STANDARD: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "STANDARD"),
+                FLEXI: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "FLEXI"),
+                FULL_FLEX: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "FULL_FLEX")
+            },
             duration: parseInt(String(flight.estimatedDurationMinutes)),
             stopCount: parseInt(String(flight.stopCount)),
             segments: [
@@ -127,7 +215,13 @@ function convertToUniversalFormat(
     for (const flight of transitFlights) {
         universalFlights.push({
             id: `${flight.flightId1}_${flight.flightId2}`,
-            price: parseInt(String(flight.estimatedPriceUSD)),
+            price: {
+                SUPER_SAVER: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "SUPER_SAVER"),
+                SAVER: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "SAVER"),
+                STANDARD: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "STANDARD"),
+                FLEXI: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "FLEXI"),
+                FULL_FLEX: cabinClassPrice(calculatePrice(flightClass,parseInt(String(flight.estimatedPriceUSD))), flightClass as "Y" | "C" | "W" | "F", "FULL_FLEX")
+            },
             duration: parseInt(String(flight.estimatedDurationMinutes)),
             stopCount: parseInt(String(flight.stopCount)),
             segments: [
@@ -511,7 +605,7 @@ export const flightModule = new Elysia({
             passengerCount: number,
             date: string,
             class: string,
-            transitCount: 0 | 1 | 2
+            transitCount: 0 | 1 
         }
     }) => {
         const {
@@ -591,7 +685,7 @@ export const flightModule = new Elysia({
                 return {
                     status: true,
                     message: 'Flight list retrieved successfully',
-                    data: convertToUniversalFormat(sanitizeBigInt(result)),
+                    data: convertToUniversalFormat(flightClass, sanitizeBigInt(result)),
                 };
             }else if (transitCount == 1) {
                 result1 = await prisma.$queryRaw`
@@ -749,13 +843,10 @@ export const flightModule = new Elysia({
                 return {
                     status: true,
                     message: 'Flight list retrieved successfully',
-                    data: convertToUniversalFormat([], sanitizeBigInt(result1)),
+                    data: convertToUniversalFormat(flightClass, [], sanitizeBigInt(result1)),
                 }
-            }else if(transitCount == 2){
-
             }
     
-
         } catch (err) {
             console.error('Flight query error:', err);
             return error(500, {

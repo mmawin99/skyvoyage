@@ -243,9 +243,31 @@ export interface AuthSession {
     }
 }
 
-export type Country = {
+export interface Country {
     iso2: string;
     name: string;
     dialCode: string;
 };
-  
+
+export interface UniversalFlightSegmentSchedule{
+    flightId: string;
+    flightNum: string;
+    airlineCode: string;
+    airlineName: string;
+    departureTime: string;
+    arrivalTime: string;
+    aircraftModel: string;
+    departureAirport: string;
+    arrivalAirport: string;
+    departTimezone: string;
+    arriveTimezone: string;
+}
+export interface UniversalFlightSchedule {
+    id: string;
+    price: number;
+    duration: number;
+    stopCount: number;
+    segments: UniversalFlightSegmentSchedule[];
+    departureAirport: string;
+    arrivalAirport: string;
+}

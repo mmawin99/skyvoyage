@@ -99,9 +99,9 @@ function convertToUniversalFormat(
     for (const flight of directFlights) {
         universalFlights.push({
             id: flight.flightId,
-            price: flight.estimatedPriceUSD,
-            duration: flight.estimatedDurationMinutes,
-            stopCount: flight.stopCount,
+            price: parseInt(String(flight.estimatedPriceUSD)),
+            duration: parseInt(String(flight.estimatedDurationMinutes)),
+            stopCount: parseInt(String(flight.stopCount)),
             segments: [
                 {
                     flightId: flight.flightId,
@@ -126,9 +126,9 @@ function convertToUniversalFormat(
     for (const flight of transitFlights) {
         universalFlights.push({
             id: `${flight.flightId1}_${flight.flightId2}`,
-            price: flight.estimatedPriceUSD,
-            duration: flight.estimatedDurationMinutes,
-            stopCount: flight.stopCount,
+            price: parseInt(String(flight.estimatedPriceUSD)),
+            duration: parseInt(String(flight.estimatedDurationMinutes)),
+            stopCount: parseInt(String(flight.stopCount)),
             segments: [
                 {
                     flightId: flight.flightId1,
@@ -395,46 +395,48 @@ export const flightModule = new Elysia({
             // Direct flights (0 stop)
             if (transitCount === 0) {
                 result = await prisma.$queryRaw`
-                SELECT
-                    fo.flightId,
-                    fo.flightNum,
-                    a.airlineCode,
-                    a.airlineName,
-                    fo.departureTime,
-                    fo.arrivalTime,
-                    ac.model AS aircraftModel,
-                    da.airportCode AS departureAirport,
-                    aa.airportCode AS arrivalAirport,
-                    da.timezone AS departTimezone,
-                    aa.timezone AS arriveTimezone,
-                    0 AS stopCount,
-                    TIMESTAMPDIFF(MINUTE, fo.departureTime, fo.arrivalTime) AS estimatedDurationMinutes,
-                    ABS(ROUND(
-                    (
-                        6371 * acos(
-                        cos(radians(da.latitude)) * cos(radians(aa.latitude)) *
-                        cos(radians(aa.longitude) - radians(da.longitude)) +
-                        sin(radians(da.latitude)) * sin(radians(aa.latitude))
-                        ) * 0.621371
-                    ) * (acs.costPerMile / 71) / LEAST(2, 1 + (7 - DATEDIFF(fo.departureTime, CURDATE())) * 0.2),
-                    2
-                    )) AS estimatedPriceUSD
-                FROM flightOperate fo
-                JOIN flight f ON f.flightNum = fo.flightNum AND f.airlineCode = fo.airlineCode
-                JOIN airline a ON a.airlineCode = f.airlineCode
-                JOIN aircraft ac ON ac.aircraftId = fo.aircraftId
-                JOIN aircraftCost acs ON ac.model = acs.model AND acs.ownerAirlineCode = a.airlineCode
-                JOIN airport da ON f.departAirportId = da.airportCode
-                JOIN airport aa ON f.arriveAirportId = aa.airportCode
-                JOIN seatmap_info sm ON ac.seatMapId = sm.seatMapId
-                JOIN seat s ON s.seatMapId = sm.seatMapId AND s.class = ${flightClass}
-                LEFT JOIN ticket t ON t.seatId = s.seatId AND t.flightId = fo.flightId
-                WHERE
-                    f.departAirportId = ${depAirport}
-                    AND f.arriveAirportId = ${arrAirport}
-                    AND DATE(fo.departureTime) = ${depDate}
-                GROUP BY fo.flightId
-                HAVING COUNT(s.seatId) > COUNT(t.ticketId) AND COUNT(s.seatId) - COUNT(t.ticketId) > ${passengerCount};
+                    SELECT
+                        fo.flightId,
+                        fo.flightNum,
+                        a.airlineCode,
+                        a.airlineName,
+                        fo.departureTime,
+                        fo.arrivalTime,
+                        ac.model AS aircraftModel,
+                        da.airportCode AS departureAirport,
+                        aa.airportCode AS arrivalAirport,
+                        da.timezone AS departTimezone,
+                        aa.timezone AS arriveTimezone,
+                        0 AS stopCount,
+                        TIMESTAMPDIFF(MINUTE, fo.departureTime, fo.arrivalTime) AS estimatedDurationMinutes,
+                        ABS(ROUND(
+                        (
+                            6371 * acos(
+                            cos(radians(da.latitude)) * cos(radians(aa.latitude)) *
+                            cos(radians(aa.longitude) - radians(da.longitude)) +
+                            sin(radians(da.latitude)) * sin(radians(aa.latitude))
+                            ) * 0.621371
+                        ) * (acs.costPerMile / 71) / LEAST(2, 1 + (7 - DATEDIFF(fo.departureTime, CURDATE())) * 0.2),
+                        2
+                        )) AS estimatedPriceUSD
+                    FROM flightOperate fo
+                    JOIN flight f ON f.flightNum = fo.flightNum AND f.airlineCode = fo.airlineCode
+                    JOIN airline a ON a.airlineCode = f.airlineCode
+                    JOIN aircraft ac ON ac.aircraftId = fo.aircraftId
+                    JOIN aircraftCost acs ON ac.model = acs.model AND acs.ownerAirlineCode = a.airlineCode
+                    JOIN airport da ON f.departAirportId = da.airportCode
+                    JOIN airport aa ON f.arriveAirportId = aa.airportCode
+                    JOIN seatmap_info sm ON ac.seatMapId = sm.seatMapId
+                    JOIN seat s ON s.seatMapId = sm.seatMapId AND s.class = ${flightClass}
+                    LEFT JOIN ticket t ON t.seatId = s.seatId AND t.flightId = fo.flightId
+                    LEFT JOIN booking b ON t.bookingId = b.bookingId
+                    WHERE
+                        f.departAirportId = ${depAirport}
+                        AND f.arriveAirportId = ${arrAirport}
+                        AND DATE(fo.departureTime) = ${depDate}
+                    GROUP BY fo.flightId
+                    HAVING COUNT(s.seatId) > COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID' OR b.status = 'UNPAID') THEN 1 ELSE NULL END) 
+                    AND COUNT(s.seatId) - COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID' OR b.status = 'UNPAID') THEN 1 ELSE NULL END) > ${passengerCount};
                 `;
                 return {
                     status: true,
@@ -543,7 +545,9 @@ export const flightModule = new Elysia({
                             COUNT(DISTINCT t.ticketId) AS bookedSeats
                         FROM ticket t
                         JOIN seat s ON t.seatId = s.seatId
+                        JOIN booking b ON t.bookingId = b.bookingId
                         WHERE s.class = ${flightClass}
+                        AND (b.status = 'PAID' OR b.status = 'UNPAID')
                         GROUP BY t.flightId
                     ) AS ticket_info1 ON fo1.flightId = ticket_info1.flightId
 
@@ -564,7 +568,9 @@ export const flightModule = new Elysia({
                             COUNT(DISTINCT t.ticketId) AS bookedSeats
                         FROM ticket t
                         JOIN seat s ON t.seatId = s.seatId
+                        JOIN booking b ON t.bookingId = b.bookingId
                         WHERE s.class = ${flightClass}
+                        AND (b.status = 'PAID' OR b.status = 'UNPAID')
                         GROUP BY t.flightId
                     ) AS ticket_info2 ON fo2.flightId = ticket_info2.flightId
 

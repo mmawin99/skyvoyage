@@ -44,7 +44,7 @@ export function FlightSearchPanel() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [openDepartureDate, setOpenDepartureDate] = useState(false)
   const [openReturnDate, setOpenReturnDate] = useState(false)
-  const [cabinClass, setCabinClass] = useState("E")
+  const [cabinClass, setCabinClass] = useState("Y")
   const [dialogOpen, setDialogOpen] = useState<boolean>(false)
 
   const [alertOpen, setAlertOpen] = useState<boolean>(false)
@@ -254,22 +254,22 @@ export function FlightSearchPanel() {
             <AlertDialogDescription>
               {
                 alertCode === "origin-destination" && (
-                  <p>Please select both origin and destination airports.</p>
+                  <span>Please select both origin and destination airports.</span>
                 )
               }
               {
                 alertCode === "departure-date" && (
-                  <p>Please select a departure date.</p>
+                  <span>Please select a departure date.</span>
                 )
               }
               {
                 alertCode === "return-date" && (
-                  <p>Please select a return date.</p>
+                  <span>Please select a return date.</span>
                 )
               }
               {
                 alertCode === "return-date-invalid" && (
-                  <p>Please select a valid return date.</p>
+                  <span>Please select a valid return date.</span>
                 )
               }
             </AlertDialogDescription>
@@ -392,47 +392,47 @@ export function FlightSearchPanel() {
                   showOutsideDays={true}
                   disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   defaultMonth={dateRange?.from || new Date()}
-                  components={{
-                    Day: ({ day, modifiers,...props }: DayProps) => {
-                      return (
-                        <div
-                          {...props}
-                          onClick={(e)=>{
-                            if (modifiers.disabled) return
-                            if(modifiers.outside) return
-                            handleDepartureDateSelect({ from: day.date, to: dateRange?.to })
-                          }}
-                          className={cn(
-                            "text-[1rem] flex flex-col items-center justify-center w-12 h-12 rounded-md p-2 cursor-pointer",
-                            !modifiers.disabled && "hover:bg-gray-300/40",
-                            modifiers.selected && "!bg-primary !text-white cursor-pointer",
-                            modifiers.today && "bg-blue-100 text-blue-600 cursor-pointer",
-                            modifiers.disabled && "text-gray-400 cursor-not-allowed",
-                            modifiers.outside && "text-gray-400 cursor-not-allowed",
-                            modifiers.focused && "bg-green-100 text-blue-600 cursor-pointer",
-                            modifiers.hidden && "hidden cursor-not-allowed",
-                          )}
-                        >
-                          <span 
-                          className={cn(
-                            modifiers.outside && "hidden"
-                          )
-                          }
-                          >{day.date.getDate()}</span>
-                          <span className={cn(
-                            "text-[.77rem]",
-                            !modifiers.outside && !modifiers.disabled && "!text-green-400",
-                            modifiers.outside && "text-gray-400 !hidden",
-                            modifiers.selected && "!text-green-400 !font-black",
-                            modifiers.today && "text-green-400",
-                            modifiers.focused && "text-green-400",
-                            modifiers.hidden && "text-green-400 !hidden",
-                            modifiers.disabled && "text-gray-400 !hidden",
-                          )}>${(Math.floor(Math.random() * 100) + 100)}</span>
-                        </div>
-                      )
-                    }
-                  }}
+                  // components={{
+                  //   Day: ({ day, modifiers,...props }: DayProps) => {
+                  //     return (
+                  //       <div
+                  //         {...props}
+                  //         onClick={(e)=>{
+                  //           if (modifiers.disabled) return
+                  //           if(modifiers.outside) return
+                  //           handleDepartureDateSelect({ from: day.date, to: dateRange?.to })
+                  //         }}
+                  //         className={cn(
+                  //           "text-[1rem] flex flex-col items-center justify-center w-12 h-12 rounded-md p-2 cursor-pointer",
+                  //           !modifiers.disabled && "hover:bg-gray-300/40",
+                  //           modifiers.selected && "!bg-primary !text-white cursor-pointer",
+                  //           modifiers.today && "bg-blue-100 text-blue-600 cursor-pointer",
+                  //           modifiers.disabled && "text-gray-400 cursor-not-allowed",
+                  //           modifiers.outside && "text-gray-400 cursor-not-allowed",
+                  //           modifiers.focused && "bg-green-100 text-blue-600 cursor-pointer",
+                  //           modifiers.hidden && "hidden cursor-not-allowed",
+                  //         )}
+                  //       >
+                  //         <span 
+                  //         className={cn(
+                  //           modifiers.outside && "hidden"
+                  //         )
+                  //         }
+                  //         >{day.date.getDate()}</span>
+                  //         <span className={cn(
+                  //           "text-[.77rem]",
+                  //           !modifiers.outside && !modifiers.disabled && "!text-green-400",
+                  //           modifiers.outside && "text-gray-400 !hidden",
+                  //           modifiers.selected && "!text-green-400 !font-black",
+                  //           modifiers.today && "text-green-400",
+                  //           modifiers.focused && "text-green-400",
+                  //           modifiers.hidden && "text-green-400 !hidden",
+                  //           modifiers.disabled && "text-gray-400 !hidden",
+                  //         )}>${(Math.floor(Math.random() * 100) + 100)}</span>
+                  //       </div>
+                  //     )
+                  //   }
+                  // }}
                 />
               </PopoverContent>
             </Popover>
@@ -471,47 +471,47 @@ export function FlightSearchPanel() {
                   showOutsideDays={true}
                   disabled={(date) => date < new Date(new Date(dateRange?.from || "").setHours(0, 0, 0, 0))}
                   defaultMonth={dateRange?.to || new Date()}
-                  components={{
-                    Day: ({ day, modifiers,...props }: DayProps) => {
-                      return (
-                        <div
-                          {...props}
-                          onClick={(e)=>{
-                            if (modifiers.disabled) return
-                            if(modifiers.outside) return
-                            handleReturnDateSelect({ from: dateRange?.from, to: day.date })
-                          }}
-                          className={cn(
-                            "text-[1rem] flex flex-col items-center justify-center w-12 h-12 rounded-md p-2 cursor-pointer",
-                            !modifiers.disabled && "hover:bg-gray-300/40",
-                            modifiers.selected && "!bg-primary !text-white cursor-pointer",
-                            modifiers.today && "bg-blue-100 text-blue-600 cursor-pointer",
-                            modifiers.disabled && "text-gray-400 cursor-not-allowed",
-                            modifiers.outside && "text-gray-400 cursor-not-allowed",
-                            modifiers.focused && "bg-green-100 text-blue-600 cursor-pointer",
-                            modifiers.hidden && "hidden cursor-not-allowed",
-                          )}
-                        >
-                          <span 
-                          className={cn(
-                            modifiers.outside && "hidden"
-                          )
-                          }
-                          >{day.date.getDate()}</span>
-                          <span className={cn(
-                            "text-[.77rem]",
-                            !modifiers.outside && !modifiers.disabled && "!text-green-400",
-                            modifiers.outside && "text-gray-400 !hidden",
-                            modifiers.selected && "!text-green-400 !font-black",
-                            modifiers.today && "text-green-400",
-                            modifiers.focused && "text-green-400",
-                            modifiers.hidden && "text-green-400 !hidden",
-                            modifiers.disabled && "text-gray-400 !hidden",
-                          )}>${(Math.floor(Math.random() * 100) + 100)}</span>
-                        </div>
-                      )
-                    }
-                  }}
+                  // components={{
+                  //   Day: ({ day, modifiers,...props }: DayProps) => {
+                  //     return (
+                  //       <div
+                  //         {...props}
+                  //         onClick={(e)=>{
+                  //           if (modifiers.disabled) return
+                  //           if(modifiers.outside) return
+                  //           handleReturnDateSelect({ from: dateRange?.from, to: day.date })
+                  //         }}
+                  //         className={cn(
+                  //           "text-[1rem] flex flex-col items-center justify-center w-12 h-12 rounded-md p-2 cursor-pointer",
+                  //           !modifiers.disabled && "hover:bg-gray-300/40",
+                  //           modifiers.selected && "!bg-primary !text-white cursor-pointer",
+                  //           modifiers.today && "bg-blue-100 text-blue-600 cursor-pointer",
+                  //           modifiers.disabled && "text-gray-400 cursor-not-allowed",
+                  //           modifiers.outside && "text-gray-400 cursor-not-allowed",
+                  //           modifiers.focused && "bg-green-100 text-blue-600 cursor-pointer",
+                  //           modifiers.hidden && "hidden cursor-not-allowed",
+                  //         )}
+                  //       >
+                  //         <span 
+                  //         className={cn(
+                  //           modifiers.outside && "hidden"
+                  //         )
+                  //         }
+                  //         >{day.date.getDate()}</span>
+                  //         <span className={cn(
+                  //           "text-[.77rem]",
+                  //           !modifiers.outside && !modifiers.disabled && "!text-green-400",
+                  //           modifiers.outside && "text-gray-400 !hidden",
+                  //           modifiers.selected && "!text-green-400 !font-black",
+                  //           modifiers.today && "text-green-400",
+                  //           modifiers.focused && "text-green-400",
+                  //           modifiers.hidden && "text-green-400 !hidden",
+                  //           modifiers.disabled && "text-gray-400 !hidden",
+                  //         )}>${(Math.floor(Math.random() * 100) + 100)}</span>
+                  //       </div>
+                  //     )
+                  //   }
+                  // }}
                 />
                 </PopoverContent>
               </Popover>
@@ -615,7 +615,7 @@ export function FlightSearchPanel() {
                 <SelectValue placeholder="Select cabin class" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="E">Economy</SelectItem>
+                <SelectItem value="Y">Economy</SelectItem>
                 <SelectItem value="W">Premium Economy</SelectItem>
                 <SelectItem value="C">Business</SelectItem>
                 <SelectItem value="F">First Class</SelectItem>

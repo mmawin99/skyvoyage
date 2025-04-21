@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -9,14 +9,14 @@ import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { format, addDays, intlFormat } from "date-fns"
-import { CalendarIcon, Check, ChevronsUpDown, Loader2, Terminal, TriangleAlert } from "lucide-react"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { format, addDays } from "date-fns"
+import { CalendarIcon, Loader2, Terminal, TriangleAlert } from "lucide-react"
+// import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
-import { AircraftModel, AircraftRegistration, Airline, Flight, Schedule, SubmitSchedule } from "@/types/type"
+import { AircraftModel, AircraftRegistration, Airline, Flight, SubmitSchedule } from "@/types/type"
 import { DebouncedSearch } from "../reusable/search"
 import { BackendURLType, useBackendURL } from "../backend-url-provider"
-import { Card, CardContent, CardHeader } from "../ui/card"
+// import { Card, CardContent, CardHeader } from "../ui/card"
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
 
 interface AddScheduleSheetProps {
@@ -29,7 +29,7 @@ interface AddScheduleSheetProps {
 export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLoading }: AddScheduleSheetProps) {
   const [scheduleType, setScheduleType] = useState("single")
   
-  const { backend, setBackend, status }: BackendURLType = useBackendURL();
+  const { backend: backendURL }: BackendURLType = useBackendURL();
 
   const [selectedCarrier, setSelectedCarrier] = useState<Airline>()
   const [carriers, setCarriers] = useState<Airline[]>([])
@@ -47,23 +47,6 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
   const [aircraftRegistrations, setAircraftRegistrations] = useState<AircraftRegistration[]>([])
   const [loadingRegistration, setLoadingRegistration] = useState<boolean>(false)
   
-  const [flightData, setFlightData] = useState<Schedule>({
-    flightId: "",
-    flightNum: "",
-    airlineCode: "",
-    airlineName: "",
-    departureTime: new Date().toISOString(),
-    arrivalTime: addDays(new Date(), 1).toISOString(),
-    departureGate: "",
-    aircraftId: "",
-    aircraftModel: "",
-    aircraftModelName: "",
-    departureAirport: "",
-    departureAirportCode: "",
-    arrivalAirport: "",
-    arrivalAirportCode: "",
-  })
-
   const [depDate, setDepDate] = useState<Date | undefined>(new Date())
   const [arrDate, setArrDate] = useState<Date | undefined>(addDays(new Date(), 1))
   const [depTime, setDepTime] = useState(selectedFlight?.departure_time || "12:00")
@@ -172,6 +155,21 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
         setIsError(false)
         setErrorSubmit("")
         onOpenChange(false)
+        // Reset all states
+        setSelectedCarrier(undefined)
+        setSelectedFlight(undefined)
+        setSelectedModel(undefined)
+        setSelectedRegistration(undefined)
+        setDepDate(new Date())
+        setArrDate(addDays(new Date(), 1))
+        setDepTime("12:00")
+        setArrTime("14:00")
+        setStartDate(new Date())
+        setEndDate(addDays(new Date(), 30))
+        setDaysOfWeek([])
+        setCarrierFlights([])
+        setAircraftModels([])
+        setAircraftRegistrations([])
       }, () => {
         setLoadingSubmit(false)
         setIsError(true)
@@ -236,7 +234,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                   setResults={setCarriers}
                   loading={loadingCarrier}
                   setLoading={setLoadingCarrier}
-                  fetchUrl={(q) => `${backend}/autocomplete/airline/${q}`}
+                  fetchUrl={(q) => `${backendURL}/autocomplete/airline/${q}`}
                   renderItem={(airline) => (
                     <div>
                       {airline.name}, ({airline.code})
@@ -261,7 +259,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                     setResults={setCarrierFlights}
                     loading={loadingFlight}
                     setLoading={setLoadingFlight}
-                    fetchUrl={(q) => `${backend}/autocomplete/flight/${selectedCarrier?.code}/${q}`}
+                    fetchUrl={(q) => `${backendURL}/autocomplete/flight/${selectedCarrier?.code}/${q}`}
                     renderItem={(flight) => (
                       <div className="flex flex-col">
                         <span className="text-base font-medium">{flight.airline_code} {flight.flight_number}</span>
@@ -365,7 +363,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                       setResults={setAircraftModels}
                       loading={loadingModel}
                       setLoading={setLoadingModel}
-                      fetchUrl={(q) => `${backend}/autocomplete/model/${selectedCarrier?.code}`}
+                      fetchUrl={(q) => `${backendURL}/autocomplete/model/${selectedCarrier?.code}`}
                       renderItem={(model) => (
                         <div>
                           {model.model_name}, ({model.model})
@@ -390,7 +388,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                         setResults={setAircraftRegistrations}
                         loading={loadingRegistration}
                         setLoading={setLoadingRegistration}
-                        fetchUrl={(q) => `${backend}/autocomplete/registration/${selectedCarrier?.code}/${selectedModel?.model}`}
+                        fetchUrl={(q) => `${backendURL}/autocomplete/registration/${selectedCarrier?.code}/${selectedModel?.model}`}
                         renderItem={(registration) => (
                           <div>
                             {registration.registration}, ({registration.model} {registration.airline_code})
@@ -419,7 +417,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                   setResults={setCarriers}
                   loading={loadingCarrier}
                   setLoading={setLoadingCarrier}
-                  fetchUrl={(q) => `${backend}/autocomplete/airline/${q}`}
+                  fetchUrl={(q) => `${backendURL}/autocomplete/airline/${q}`}
                   renderItem={(airline) => (
                     <div>
                       {airline.name}, ({airline.code})
@@ -444,7 +442,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                     setResults={setCarrierFlights}
                     loading={loadingFlight}
                     setLoading={setLoadingFlight}
-                    fetchUrl={(q) => `${backend}/autocomplete/flight/${selectedCarrier?.code}/${q}`}
+                    fetchUrl={(q) => `${backendURL}/autocomplete/flight/${selectedCarrier?.code}/${q}`}
                     renderItem={(flight) => (
                       <div className="flex flex-col">
                         <span className="text-base font-medium">{flight.airline_code} {flight.flight_number}</span>
@@ -557,7 +555,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                       setResults={setAircraftModels}
                       loading={loadingModel}
                       setLoading={setLoadingModel}
-                      fetchUrl={(q) => `${backend}/autocomplete/model/${selectedCarrier?.code}`}
+                      fetchUrl={(q) => `${backendURL}/autocomplete/model/${selectedCarrier?.code}`}
                       renderItem={(model) => (
                         <div>
                           {model.model_name}, ({model.model})

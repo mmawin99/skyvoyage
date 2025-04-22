@@ -45,6 +45,24 @@ export default function Home() {
                         </div>
                     </div>
                 </CarouselItem>
+                <CarouselItem>
+                    <div className="relative w-full h-full">
+                        <Image
+                            src={"./8338.jpg"}
+                            width={1920}
+                            height={1080}
+                            unoptimized
+                            placeholder='empty'
+                            alt={"Explore the world"}
+                            className="w-full h-full object-cover rounded-b-4xl" />
+                        <div className="rounded-b-4xl absolute inset-0 bg-gradient-to-t from-gray-700 via-gray-600/90 via-30% to-transparent p-8 md:p-12 lg:p-16">
+                            <div className={`flex flex-col h-full justify-end md:pb-10 -translate-y-20 lg:-translate-y-20 xl:-translate-y-32 text-white`}>
+                                <div className={`text-3xl lg:text-7xl font-semibold mb-5`}>Enjoy wonderful journey</div>
+                                <div className={`text-xl lg:text-3xl font-medium`}> Discover new destinations!</div>
+                            </div>
+                        </div>
+                    </div>
+                </CarouselItem>
               </CarouselContent>
               <CarouselPrevious className="hidden md:flex md:absolute left-4 top-1/2 -translate-y-1/2 z-10">
                   <ChevronLeftIcon className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />

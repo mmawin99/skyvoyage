@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+"use-client"
 import { useSearchParams } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { use, useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -8,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Slider } from "@/components/ui/slider"
 import { ArrowRight, Clock, Filter, Loader2, Plane, TriangleAlert } from "lucide-react"
-import { FareType, UniversalFlightSchedule, UniversalFlightSegmentSchedule } from "@/types/type"
+import { FareType, PassengerFillOut, searchSelectedFlight, searchSelectedRoutes, UniversalFlightSchedule, UniversalFlightSegmentSchedule } from "@/types/type"
 import { NextRouter, useRouter } from "next/router"
 import { useBackendURL } from "@/components/backend-url-provider"
 import { useSession } from "next-auth/react"
@@ -20,26 +21,16 @@ import FlightCard from "@/components/flight-card"
 import { cabinClassPrice } from "@/lib/price"
 import { Badge } from "@/components/ui/badge"
 
-interface searchSelectedFlight {
-  selectedFare:FareType, 
-  flightId: string, 
-  flight:UniversalFlightSchedule
-  price: number
-}
+import { useSessionStorage } from "@uidotdev/usehooks"
+import LoadingApp from "@/components/loading"
+
 
 export default function SearchResults() {
   const router:NextRouter = useRouter()
   const {backend:backendURL} = useBackendURL()
-  const {data:sessionData} = useSession()
+  const { data: sessionData, status: sessionStatus } = useSession();
 
-  // const searchParams = useSearchParams()
-  // const origin = searchParams.get("origin")
-  // const destination = searchParams.get("destination")
-  // const departDateStr = searchParams.get("departDate")
-  // const returnDateStr = searchParams.get("returnDate")
-  // const passengersStr = searchParams.get("passengers") || "1,0,0" // Default to 1 adult, 0 children, 0 infants
-  // const cabinClass = searchParams.get("cabinClass") || "Y"
-  // const tripType = searchParams.get("tripType") || "roundtrip"
+
   const [flightType, setFlightType] = useState("direct")
   const [queryParams, setQueryParams] = useState({
     origin: '',
@@ -55,7 +46,6 @@ export default function SearchResults() {
   const [adultCount] = queryParams.passengersStr.split(",").map(Number)
   const [childCount] = queryParams.passengersStr.split(",").map(Number).slice(1)
   const [infantCount] = queryParams.passengersStr.split(",").map(Number).slice(2)
-  const allTotalPassengers = adultCount + childCount + infantCount
   const totalPassengers = adultCount + childCount
   const [departFlights, setDepartFlights] = useState<UniversalFlightSchedule[]>([])
   const [departFilteredFlights, setDepartFilteredFlights] = useState<UniversalFlightSchedule[]>([])
@@ -72,34 +62,132 @@ export default function SearchResults() {
   const [minPrice,setMinPrice] = useState(0)
   const refSearchParams = useRef(false)
   
+  const [selectedRoute, setSelectedRoute] = useSessionStorage<searchSelectedRoutes>
+  ("selectedRoute", {
+      departRoute: [],
+      selectedDepartRoute: {
+        selectedFare: "SUPER_SAVER",
+        flightId: "",
+        flight: {} as UniversalFlightSchedule,
+        price: 0,
+      },
+      returnRoute: [],
+      selectedReturnRoute: undefined,
+      queryString: {
+        origin: queryParams.origin,
+        destination: queryParams.destination,
+        departDateStr: queryParams.departDateStr,
+        returnDateStr: queryParams.returnDateStr,
+        passengersStr: queryParams.passengersStr,
+        cabinClass: queryParams.cabinClass,
+        tripType: queryParams.tripType,
+      },
+      totalFare: 0,
+      passenger: []
+    })
+
+  const [nextStep, setNextStep] = useState<boolean>(false)
   
   const [selectedDepartureFlight, setSelectedDepartureFlight] = useState<searchSelectedFlight>()
   const [isSelectedDepartureFlight, setIsSelectedDepartureFlight] = useState<boolean>(false)
   const [selectedReturnFlight, setSelectedReturnFlight] = useState<searchSelectedFlight>()
   const [isSelectedReturnFlight, setIsSelectedReturnFlight] = useState<boolean>(false)
+
+    // Format passenger information for display
+  const calculateTotalPrice = useCallback((total_price: number) => {
+    let totalPrice = 0
+    if (adultCount > 0) {
+      totalPrice += adultCount * total_price
+    }
+    if (childCount > 0) {
+      totalPrice += Math.floor(childCount * (total_price * 0.75))
+    }
+    if (infantCount > 0) {
+      totalPrice += Math.floor(infantCount * (total_price * 0.2377))
+    }
+    return totalPrice
+  }, [adultCount, childCount, infantCount])
+
   useEffect(() => {
-    const searParamsExecute = ()=>{
-      console.log("searchParams Finder")
-      const searchParams = new URLSearchParams(window.location.search);
-      setQueryParams({
-        origin: searchParams.get("origin") || '',
-        destination: searchParams.get("destination") || '',
-        departDateStr: searchParams.get("departDate") || '',
-        returnDateStr: searchParams.get("returnDate") || '',
-        passengersStr: searchParams.get("passengers") || "1,0,0",
-        cabinClass: searchParams.get("cabinClass") || "Y",
-        tripType: searchParams.get("tripType") || "roundtrip"
-      });
-      console.log("searchParams",queryParams)
+    const generateTemporaryPassenger = (ageRange: "Adult" | "Children" | "Infant", index:number): PassengerFillOut => {
+      return {
+        label: ageRange + " Passenger #" + (index + 1),
+        passportNum: "",
+        passportCountry: "",
+        passportExpiry: "",
+        firstName: "",
+        lastName: "",
+        dateOfBirth: "",
+        nationality: "",
+        ageRange: ageRange,
+        baggageAllowanceWeight: 0,
+        baggageAllowancePrice: 0,
+        mealSelection: "",
+        mealPrice: 0,
+        ticketPrice: 0,
+        seatId: "",
+      }
     }
-    if (!refSearchParams.current) {
-      searParamsExecute()
-      refSearchParams.current = true
+    
+    if (nextStep) {
+      const passenger: PassengerFillOut[] = [
+        ...Array.from({ length: adultCount }, (_, index) => generateTemporaryPassenger("Adult", index)),
+        ...Array.from({ length: childCount }, (_, index) => generateTemporaryPassenger("Children", index + adultCount)),
+        ...Array.from({ length: infantCount }, (_, index) => generateTemporaryPassenger("Infant", index + adultCount + childCount)),
+      ];
+      setSelectedRoute({
+        departRoute: departFlights,
+        selectedDepartRoute: selectedDepartureFlight as searchSelectedFlight,
+        returnRoute: returnFlights,
+        selectedReturnRoute: selectedReturnFlight as searchSelectedFlight,
+        queryString: {
+          origin: queryParams.origin,
+          destination: queryParams.destination,
+          departDateStr: queryParams.departDateStr,
+          returnDateStr: queryParams.returnDateStr,
+          passengersStr: queryParams.passengersStr,
+          cabinClass: queryParams.cabinClass,
+          tripType: queryParams.tripType,
+        },
+        totalFare: calculateTotalPrice((selectedDepartureFlight?.price ?? 0) + (selectedReturnFlight?.price ?? 0)),
+        passenger: passenger,
+      })
+      router.push("/passenger-info");
     }
-    return () => {
-      refSearchParams.current = true;
+  }, [nextStep, router, setSelectedRoute, selectedDepartureFlight, selectedReturnFlight, queryParams, departFlights, returnFlights, calculateTotalPrice, adultCount,childCount,infantCount])
+
+
+  
+  const fareName = (fare: FareType | undefined) => {
+    if (!fare) return "Unknown Fare"
+    switch (fare) {
+      case "SUPER_SAVER":
+        return "Super Saver Fare"
+      case "SAVER":
+        return "Saver Fare"
+      case "STANDARD":
+        return "Standard Fare"
+      case "FLEXI":
+        return "Flexi Fare"
+      case "FULL_FLEX":
+        return "Full Flex Fare"
+      default:
+        return "Unknown Fare"
     }
-  }, [queryParams]);
+  }
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    setQueryParams({
+      origin: searchParams.get("origin") || '',
+      destination: searchParams.get("destination") || '',
+      departDateStr: searchParams.get("departDate") || '',
+      returnDateStr: searchParams.get("returnDate") || '',
+      passengersStr: searchParams.get("passengers") || "1,0,0",
+      cabinClass: searchParams.get("cabinClass") || "Y",
+      tripType: searchParams.get("tripType") || "roundtrip"
+    });
+  }, []); // Run once on mount - no dependencies
+  
   useEffect(() => {
     const interval = setInterval(async () => {
       if (!backendURL) {
@@ -188,6 +276,7 @@ export default function SearchResults() {
         if (prices.length > 0) {
           setMinPrice(Math.min(...prices));
           setMaxPrice(Math.max(...prices));
+          setPriceRange([0, Math.max(...prices)]);
         }
       } catch (error) {
         setIsError(true);
@@ -202,12 +291,21 @@ export default function SearchResults() {
   }, [backendURL, queryParams, flightType, totalPassengers]);
 
 
+  useEffect(() => {
+    const filteredDepartFlights = departFlights.filter((flight) => {
+      const price = flight.price.SUPER_SAVER
+      return price !== -1 && price >= priceRange[0] && price <= priceRange[1] && (flightType === "direct" ? flight.segments.length === 1 : flight.segments.length > 1)
+        && selectedAirlines.some((airline) => flight.segments.some((segment: UniversalFlightSegmentSchedule) => segment.airlineCode === airline.code))
+    })
+    setDepartFilteredFlights(filteredDepartFlights)
+  }, [priceRange, flightType, selectedAirlines, departFlights])
+
   const flightInfo = (flight: searchSelectedFlight | undefined, cabinClass: "Y" | "C" | "W" | "F") => {
     if (!flight) return null
     return flight.flight.segments.map((segment: UniversalFlightSegmentSchedule, index: number) => (
       <div key={index} className="flex items-center gap-2 pl-3">
         <div className="text-sm text-gray-600 flex flex-row items-center gap-2">
-          {segment.airlineName} ({segment.airlineCode} {segment.flightNum.split("-")[0]})
+          Operate by {segment.airlineName} ({segment.airlineCode} {segment.flightNum.split("-")[0]})
           <Badge variant="outline">{flight.flight.segments.length == 1 ? "Direct Flight" : "Flight Segments "+index + 1}</Badge>
           <Badge variant="default">
             {cabinClass === "Y" ? "Economy Class" : cabinClass === "C" ? "Business Class" : cabinClass === "F" ? "First Class" : cabinClass === "W" ? "Premium Economy" : ""}
@@ -216,6 +314,7 @@ export default function SearchResults() {
       </div>
     ))
   }
+  
   const handleAirlineChange = (airline: {code:string, name:string}, checked: boolean) => {
     if (checked) {
       setSelectedAirlines([...selectedAirlines, airline])
@@ -230,20 +329,6 @@ export default function SearchResults() {
     return `${hours}h ${mins}m`
   }
 
-  // Format passenger information for display
-  const calculateTotalPrice = (total_price: number) => {
-    let totalPrice = 0
-    if (adultCount > 0) {
-      totalPrice += adultCount * total_price
-    }
-    if (childCount > 0) {
-      totalPrice += Math.floor(childCount * (total_price * 0.75))
-    }
-    if (infantCount > 0) {
-      totalPrice += Math.floor(infantCount * (total_price * 0.2377))
-    }
-    return totalPrice
-  }
   const formatPassengerInfo = () => {
     const parts = []
     if (adultCount > 0) parts.push(`${adultCount} ${adultCount === 1 ? "Adult" : "Adults"}`)
@@ -251,6 +336,20 @@ export default function SearchResults() {
     if (infantCount > 0) parts.push(`${infantCount} ${infantCount === 1 ? "Infant" : "Infants"}`)
     return parts.join(", ")
   }
+
+  if(sessionStatus === "loading") return <LoadingApp />
+
+  if(sessionData?.user.role !== "user" && sessionStatus === "authenticated") return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <TriangleAlert className="h-16 w-16 mb-4 text-red-600" />
+      <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+      <p className="text-lg text-gray-600 mb-6">This page required you to sign in.</p>
+      <div className="flex flex-row gap-2">
+        <Button variant={"outline"} onClick={() => router.push("/")}>Go to Home</Button>
+        <Button variant={"default"} onClick={() => router.push("/account/auth")}>Sign in</Button>
+      </div>
+    </div>
+  )
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -411,7 +510,7 @@ export default function SearchResults() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-7">
                       <div className="text-gray-500 col-span-3 flex flex-col gap-2">
-                        <span>Departure Flight ({queryParams.origin} → {queryParams.destination})</span>
+                        <span>Departure Flight ({queryParams.origin} → {queryParams.destination}) <Badge variant={"outline"}>{fareName(selectedDepartureFlight?.selectedFare)}</Badge></span>
                         <div>{flightInfo(selectedDepartureFlight, queryParams?.cabinClass as "Y" | "C" | "W" | "F")}</div>  
                       </div>
                       <div className="font-semibold col-span-2 text-center">{formatDuration(selectedDepartureFlight?.flight.duration ?? 0)}</div>
@@ -421,7 +520,7 @@ export default function SearchResults() {
                       queryParams.tripType == "roundtrip" ? 
                         <div className="grid grid-cols-7">
                           <div className="text-gray-500 col-span-3 flex flex-col gap-2">
-                            <span>Return Flight ({queryParams.destination} → {queryParams.origin})</span>
+                            <span>Return Flight ({queryParams.destination} → {queryParams.origin}) <Badge variant={"outline"}>{fareName(selectedReturnFlight?.selectedFare)}</Badge></span>
                             <div>{flightInfo(selectedReturnFlight, queryParams?.cabinClass as "Y" | "C" | "W" | "F")}</div>  
                           </div>
                           <div className="font-semibold col-span-2 text-center">{formatDuration(selectedReturnFlight?.flight.duration ?? 0)}</div>
@@ -444,7 +543,9 @@ export default function SearchResults() {
                     </div>
                   </CardContent>
                 </Card>
-                <Button onClick={() => router.push("/checkout")}>
+                <Button onClick={() => {
+                  setNextStep(!nextStep);
+                }}>
                   Fill out Passenger Information
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

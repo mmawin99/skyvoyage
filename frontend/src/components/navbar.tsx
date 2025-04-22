@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 import { useState } from "react"
 import Link from "next/link"
-import { Plane, Calendar, User, Menu, X, LogIn, Globe, CreditCard } from "lucide-react"
+import { Plane, Calendar, User, Menu, X, LogIn, Globe, CreditCard, LogOut } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -44,20 +43,30 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
+              <Button variant='outline'>
                 <User className="h-5 w-5" />
+                {
+                  sessionData?.user.role === "user" ?
+                  <span>{sessionData?.user.firstname} {sessionData?.user.lastname}</span> : null
+                }
                 <span className="sr-only">User menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={()=> {router.push("/account/auth")}}>
-                <LogIn className="mr-2 h-4 w-4" />
-                <span>Sign in</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={()=> {router.push("/account/auth?signup")}}>
-                <User className="mr-2 h-4 w-4" />
-                <span>Sign Up</span>
-              </DropdownMenuItem>
+              {
+                sessionData?.user.role !== "user" ?
+                <DropdownMenuItem onClick={()=> {router.push("/account/auth")}}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  <span>Sign in</span>
+                </DropdownMenuItem> : null
+              }
+              {
+                sessionData?.user.role !== "user" ?
+                <DropdownMenuItem onClick={()=> {router.push("/account/auth?signup")}}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Sign Up</span>
+                </DropdownMenuItem> : null
+              }
               <DropdownMenuItem>
                 <CreditCard className="mr-2 h-4 w-4" />
                 <span>My Payments</span>
@@ -66,6 +75,13 @@ export function Navbar() {
                 <Globe className="mr-2 h-4 w-4" />
                 <span>Language</span>
               </DropdownMenuItem>
+              {
+                sessionData?.user.role === "user" ?
+                <DropdownMenuItem onClick={()=> {router.push("/account/signout")}}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem> : null
+              }
             </DropdownMenuContent>
           </DropdownMenu>
 

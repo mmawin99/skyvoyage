@@ -30,3 +30,20 @@ export async function hashDataWithSHA256AndSalt(data: string): Promise<string> {
     throw error;
   }
 }
+
+export function sanitizeBigInt(obj: any): any {
+  if (Array.isArray(obj)) {
+      return obj.map(sanitizeBigInt);
+  } else if (obj instanceof Date) {
+      return obj; // ✅ Keep Date as-is
+  } else if (obj !== null && typeof obj === 'object') {
+      const newObj: any = {};
+      for (const key in obj) {
+          const val = obj[key];
+          newObj[key] =
+              typeof val === 'bigint' ? val.toString() : sanitizeBigInt(val);
+      }
+      return newObj;
+  }
+  return obj;
+}

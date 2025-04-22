@@ -3,6 +3,7 @@ import Elysia, { error, t } from "elysia";
 import { PrismaClient} from "../prisma-client";
 const prisma = new PrismaClient()
 import modelAircraft from "../data/model_name.json"
+import { sanitizeBigInt } from '../lib';
 
 interface SubmitSchedule {
     type: "recurring" | "single",
@@ -261,23 +262,6 @@ function convertToUniversalFormat(
 }
 
 
-
-function sanitizeBigInt(obj: any): any {
-    if (Array.isArray(obj)) {
-        return obj.map(sanitizeBigInt);
-    } else if (obj instanceof Date) {
-        return obj; // ✅ Keep Date as-is
-    } else if (obj !== null && typeof obj === 'object') {
-        const newObj: any = {};
-        for (const key in obj) {
-            const val = obj[key];
-            newObj[key] =
-                typeof val === 'bigint' ? val.toString() : sanitizeBigInt(val);
-        }
-        return newObj;
-    }
-    return obj;
-}
 const dayMap: Record<string, number> = {
     Sun: 0,
     Mon: 1,

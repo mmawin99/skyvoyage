@@ -294,3 +294,47 @@ export interface ScheduleListAdmin{
 }
 
 export type FareType = "SUPER_SAVER" | "SAVER" | "STANDARD" | "FLEXI" | "FULL_FLEX"
+
+
+export interface searchSelectedFlight {
+    selectedFare:FareType, 
+    flightId: string, 
+    flight: UniversalFlightSchedule
+    price: number
+}
+
+export interface PassengerFillOut{
+    label: string
+    passportNum: string // 9 charactors
+    passportCountry: string // 2 charactors
+    passportExpiry: string // YYYY-MM-DD
+    firstName: string
+    lastName: string
+    dateOfBirth: string // YYYY-MM-DD
+    nationality: string // 2 charactors
+    ageRange: "Adult" | "Children" | "Infant"
+    baggageAllowanceWeight: number // in kg
+    baggageAllowancePrice: number // in USD
+    mealSelection: string
+    mealPrice: number // in USD
+    ticketPrice: number // in USD
+    seatId: string // seat id
+}
+
+export interface searchSelectedRoutes{
+    departRoute: UniversalFlightSchedule[],
+    selectedDepartRoute: searchSelectedFlight,
+    returnRoute?: UniversalFlightSchedule[],
+    selectedReturnRoute?: searchSelectedFlight,
+    queryString:{
+        origin: string,
+        destination: string,
+        departDateStr: string,
+        returnDateStr: string,
+        passengersStr: string,
+        cabinClass: string,
+        tripType: string,
+    }
+    totalFare: number,
+    passenger?: PassengerFillOut[],
+}

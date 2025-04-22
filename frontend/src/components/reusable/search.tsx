@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState } from "react"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from "@/components/ui/command"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, Loader2, MapPin, X } from "lucide-react"
+import { ChevronDown, Loader2, LucideIcon, MapPin, X } from "lucide-react"
 
 interface DebouncedSearchProps<T> {
   title: string
   placeholder?: string
   selected: T | null
+  Icon?: LucideIcon | null
   onSelect: (item: T) => void
   results: T[]
   setResults: (items: T[]) => void
@@ -23,6 +24,7 @@ export function DebouncedSearch<T>({
   placeholder = "Type to search...",
   selected,
   onSelect,
+  Icon,
   results,
   setResults,
   loading,
@@ -80,7 +82,11 @@ export function DebouncedSearch<T>({
       <PopoverTrigger asChild>
         <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between" onClick={() => setOpen(true)}>
           <div className="flex items-center">
-            <MapPin className="mr-2 h-4 w-4 text-gray-400" />
+            
+              
+            {Icon && <Icon className="mr-2 h-4 w-4" />}
+            {!Icon && <MapPin className="mr-2 h-4 w-4" />}
+            
             {selected ? (
               renderSelectedItem(selected)
             ) : (

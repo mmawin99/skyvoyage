@@ -3,6 +3,7 @@ import { flight as Flight, airport as Airport, PrismaClient, airline as Airline,
 const prisma = new PrismaClient()
 const countries = require("i18n-iso-countries");
 import modelAircraft from "../data/model_name.json"
+import { sanitizeBigInt } from "../lib";
 interface Schedule {
     flightId: string,
     flightNum: string,
@@ -435,6 +436,84 @@ export const autocompleteModule = new Elysia({
                                         registration: {type: "string"},
                                         model: {type: "string"},
                                         airline_code: {type: "string"}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                400:{
+                    description: "Bad request",
+                }
+            }
+        }
+    })
+    .post("/aircraft/:airline/:size/:page", async({params}:{params:{airline:string, size:number, page:number}})=>{
+        //html decode the search string
+        const {airline, size, page} = params
+        //check if airlineCode is valid
+        let airlineCode = decodeURIComponent(airline)
+        if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
+        if(!page || page < 1) return error(400, "invalid_page_number")
+        if(!size || size < 1) return error(400, "invalid_page_size")
+        // if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
+        // if(!page || page < 1 || typeof page != "number") return error(400, "invalid_page_number")
+        // if(!size || size < 1 || typeof size != "number") return error(400, "invalid_page_size")
+
+        const offset = (page - 1) * size
+        const limit = size
+        
+        let aircraftList:Aircraft[] = await prisma.$queryRaw`
+            SELECT \`aircraftId\`, \`model\`, \`ownerAirlineCode\` FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode}
+            LIMIT ${limit} OFFSET ${offset};
+        `
+        let totalCount: number = await prisma.$queryRaw`
+            SELECT COUNT(*) as count FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode};
+        `
+        return {
+            status: true,
+            data: aircraftList.map((aircraft)=>{
+                return {
+                    registration: aircraft.aircraftId,
+                    model: aircraft.model,
+                    airline_code: aircraft.ownerAirlineCode,
+                }
+            }),
+            totalCount: sanitizeBigInt(totalCount)[0].count,
+            page: page,
+            pageSize: size,
+        }
+    },{
+        detail:{
+            tags: ['Autocomplete'],
+            description: "This endpoint is used to get the autocomplete data for the flight search.",
+            responses:{
+                200:{
+                    description: "Successfully fetched autocomplete data",
+                    content:{
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties:{
+                                    data: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            properties: {
+                                                registration: {type: "string"},
+                                                model: {type: "string"},
+                                                airline_code: {type: "string"}
+                                            }
+                                        }
+                                    },
+                                    totalCount:{
+                                        type:"number"
+                                    },
+                                    page:{
+                                        type:"number"
+                                    },
+                                    pageSize:{
+                                        type:"number"
                                     }
                                 }
                             }

@@ -1,7 +1,10 @@
 import Elysia, { error } from "elysia";
 import { admin as Admin } from "../../prisma-client";
 import { hashDataWithSHA256AndSalt } from './lib';
-import { prisma } from "./libprisma";
+import { PrismaClient } from "../../prisma-client";
+
+const prisma = new PrismaClient()
+
 export const adminAuthModule = new Elysia({
     prefix: '/admin',
     })

@@ -17,7 +17,7 @@ bun install
 
 And there you go, it installed successful.
 
-Next, install prisma client **(If using my aiven database, you can skip the schema push process)**
+> Next, install prisma client **(If using my aiven database, you can skip the schema push process)**
 
 Before you install prisma client, you need to push schema to the database
 

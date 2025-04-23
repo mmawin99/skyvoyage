@@ -3,7 +3,9 @@ import { flight as Flight, airport as Airport, airline as Airline, aircraft as A
 import countries from "i18n-iso-countries";
 import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt } from "./lib";
-import { prisma } from "./libprisma";
+import { PrismaClient } from "../../prisma-client";
+
+const prisma = new PrismaClient()
 interface Schedule {
     flightId: string,
     flightNum: string,

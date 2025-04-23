@@ -40,7 +40,9 @@ declare module "next-auth" {
 }
 import CredentialsProvider from "next-auth/providers/credentials"
 import { checkPasswordWithHash } from "@/server/lib";
-import { prisma } from "@/server/libprisma";
+import { PrismaClient } from "../../../../prisma-client";
+
+const prisma = new PrismaClient()
 
 export default NextAuth({
   providers: [

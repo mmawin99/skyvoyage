@@ -3,7 +3,9 @@ import Elysia, { error } from "elysia";
 import { user as User } from "../../prisma-client";
 import * as jose from 'jose'
 import { hashDataWithSHA256AndSalt, JWT_SECRET } from "./lib";
-import { prisma } from './libprisma';
+import { PrismaClient } from "../../prisma-client";
+
+const prisma = new PrismaClient()
 
 export const userModule = new Elysia({
     prefix: '/user',

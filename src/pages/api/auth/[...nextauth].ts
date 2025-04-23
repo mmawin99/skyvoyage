@@ -56,7 +56,7 @@ export default NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const res = await fetch(`/api/admin/signin`, {
+        const res = await fetch(`${BackendBaseURL}/admin/signin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(credentials),
@@ -83,7 +83,7 @@ export default NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const res = await fetch(`/api/user/signin`, {
+        const res = await fetch(`${BackendBaseURL}/user/signin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

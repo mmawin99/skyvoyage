@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 export const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET) || (() => {
     throw new Error("JWT_SECRET is not defined in the environment variables");
 })();

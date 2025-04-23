@@ -109,7 +109,7 @@ export default function AuthPage() {
             if(phoneNumber && phoneNumber.isValid()) {
               // console.log('This will be sent to the backend, All data is valid.')
               // setIsLoading(false)
-              const response = await fetch(`${backendURL}/api/user/signup`, {
+              const response = await fetch(`${backendURL}/user/signup`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

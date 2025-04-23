@@ -8,7 +8,9 @@ import { adminAuthModule } from "./module.admin_auth";
 import { autocompleteModule } from "./module.autocomplete";
 import { flightModule } from "./module.flight";
 
-const app = new Elysia()
+export const app = new Elysia({
+   prefix: '/api'
+})
       .use(cors({
         origin: [
           /.*\.mwn99\.com$/,
@@ -60,12 +62,12 @@ const app = new Elysia()
       .use(autocompleteModule)    //See module.autocomplete.ts
       .use(flightModule)          //See module.flight.ts
       ;
-      app.listen(4000, ()=>{
-        console.log(`| CPE241 Term Project - SkyVoyage API`);
-        console.log(`| -----------------------------------`);
-        console.log(`| 🦊 Serving Elysia at http://${app.server?.hostname}:${app.server?.port}`);
-        console.log(`| 😺 Serving Elysia Swagger at http://${app.server?.hostname}:${app.server?.port}/v1/docs`);
-        console.log(`| -----------------------------------`);
-      });
+      // app.listen(4000, ()=>{
+      //   console.log(`| CPE241 Term Project - SkyVoyage API`);
+      //   console.log(`| -----------------------------------`);
+      //   console.log(`| 🦊 Serving Elysia at http://${app.server?.hostname}:${app.server?.port}`);
+      //   console.log(`| 😺 Serving Elysia Swagger at http://${app.server?.hostname}:${app.server?.port}/v1/docs`);
+      //   console.log(`| -----------------------------------`);
+      // });
       
       

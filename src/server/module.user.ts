@@ -1,12 +1,12 @@
 import { v4 as uuidv4 } from 'uuid'
-import Elysia, { error, t } from "elysia";
-import { PrismaClient, user as User } from "../prisma-client";
+import Elysia, { error } from "elysia";
+import { PrismaClient, user as User } from "../../prisma-client";
 const prisma = new PrismaClient()
 import * as jose from 'jose'
-import { checkPasswordWithHash, hashDataWithSHA256AndSalt, JWT_SECRET } from "../lib";
+import { checkPasswordWithHash, hashDataWithSHA256AndSalt, JWT_SECRET } from "./lib";
 
 export const userModule = new Elysia({
-    prefix: '/api/user',
+    prefix: '/user',
     })
     .post('/signup', async (context: {
         body: {
@@ -128,108 +128,108 @@ export const userModule = new Elysia({
             }
         }
     })
-    .post("/verify", async({ cookie: {skyvoyage_auth}, body }: { cookie:{ skyvoyage_auth: any }, body: { } })=>{
-        const cookie_skyvoyage_auth = skyvoyage_auth.value
-        if(!cookie_skyvoyage_auth) return error(401, {
-            message: 'Unauthorized',
-            status: false,
-        })
+    // .post("/verify", async({ cookie: {skyvoyage_auth}, body }: { cookie:{ skyvoyage_auth: any } })=>{
+    //     const cookie_skyvoyage_auth = skyvoyage_auth.value
+    //     if(!cookie_skyvoyage_auth) return error(401, {
+    //         message: 'Unauthorized',
+    //         status: false,
+    //     })
         
-        // verify jwt token from cookie_skyvoyage_auth
-        const jwt = await jose.jwtVerify(cookie_skyvoyage_auth, JWT_SECRET, {
-            issuer: 'skyvoyage:v1:signin',
-            audience: 'skyvoyage:user:auth'
-        })
+    //     // verify jwt token from cookie_skyvoyage_auth
+    //     const jwt = await jose.jwtVerify(cookie_skyvoyage_auth, JWT_SECRET, {
+    //         issuer: 'skyvoyage:v1:signin',
+    //         audience: 'skyvoyage:user:auth'
+    //     })
 
-        if(!jwt) return error(401, {
-            message: 'Invalid Authorization Token',
-            status: false,
-        })
-        // get uuid from jwt token and fetch user data from database
-        const uuid = jwt.payload.uuid
-        const user:User[] = await prisma.$queryRaw`SELECT uuid,email,firstname,lastname,phone FROM user WHERE uuid = ${uuid}`
-        if(user.length === 0) return error(404, {
-            message: 'User not found',
-            status: false,
-        })
-        return {
-            status: true,
-            message: 'User verified successfully',
-            data: user[0]
-        }
-    }, {
-        detail:{
-            tags: ['Auth'],
-            description: 'Token Verification for cookie authorization',
-            requestBody:{
-                required: false,
-                content:{
-                    'application/json': {
-                        schema:{
-                            type:'object',
-                            properties:{
-                                // no properties required
-                            }
-                        }
-                    }
-                }
-            },
-            responses:{
-                200:{
-                    description: 'User verified successfully',
-                    content:{
-                        'application/json':{
-                            schema:{
-                                type:'object',
-                                properties:{
-                                    message:{type:'string', description:'User verified successfully'},
-                                    status:{type:'boolean'},
-                                    data:{
-                                        type:'object',
-                                        properties:{
-                                            uuid:{type:'string', description:'User UUID'},
-                                            email:{type:'string', description:'User email'},
-                                            firstname:{type:'string', description:'User firstname'},
-                                            lastname:{type:'string', description:'User lastname'},
-                                            phone:{type:'string', description:'User phone number'}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                401:{
-                    description: 'Unauthorized or Invalid Authorization Token',
-                    content:{
-                        'application/json':{
-                            schema:{
-                                type:'object',
-                                properties:{
-                                    message:{type:'string', description:'Unauthorized or Invalid Authorization Token'},
-                                    status:{type:'boolean', default: false}
-                                }
-                            }
-                        }
-                    }
-                },
-                404:{
-                    description: 'User not found',
-                    content:{
-                        'application/json':{
-                            schema:{
-                                type:'object',
-                                properties:{
-                                    message:{type:'string', description:'User not found'},
-                                    status:{type:'boolean', default: false}
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    })
+    //     if(!jwt) return error(401, {
+    //         message: 'Invalid Authorization Token',
+    //         status: false,
+    //     })
+    //     // get uuid from jwt token and fetch user data from database
+    //     const uuid = jwt.payload.uuid
+    //     const user:User[] = await prisma.$queryRaw`SELECT uuid,email,firstname,lastname,phone FROM user WHERE uuid = ${uuid}`
+    //     if(user.length === 0) return error(404, {
+    //         message: 'User not found',
+    //         status: false,
+    //     })
+    //     return {
+    //         status: true,
+    //         message: 'User verified successfully',
+    //         data: user[0]
+    //     }
+    // }, {
+    //     detail:{
+    //         tags: ['Auth'],
+    //         description: 'Token Verification for cookie authorization',
+    //         requestBody:{
+    //             required: false,
+    //             content:{
+    //                 'application/json': {
+    //                     schema:{
+    //                         type:'object',
+    //                         properties:{
+    //                             // no properties required
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         },
+    //         responses:{
+    //             200:{
+    //                 description: 'User verified successfully',
+    //                 content:{
+    //                     'application/json':{
+    //                         schema:{
+    //                             type:'object',
+    //                             properties:{
+    //                                 message:{type:'string', description:'User verified successfully'},
+    //                                 status:{type:'boolean'},
+    //                                 data:{
+    //                                     type:'object',
+    //                                     properties:{
+    //                                         uuid:{type:'string', description:'User UUID'},
+    //                                         email:{type:'string', description:'User email'},
+    //                                         firstname:{type:'string', description:'User firstname'},
+    //                                         lastname:{type:'string', description:'User lastname'},
+    //                                         phone:{type:'string', description:'User phone number'}
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             },
+    //             401:{
+    //                 description: 'Unauthorized or Invalid Authorization Token',
+    //                 content:{
+    //                     'application/json':{
+    //                         schema:{
+    //                             type:'object',
+    //                             properties:{
+    //                                 message:{type:'string', description:'Unauthorized or Invalid Authorization Token'},
+    //                                 status:{type:'boolean', default: false}
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             },
+    //             404:{
+    //                 description: 'User not found',
+    //                 content:{
+    //                     'application/json':{
+    //                         schema:{
+    //                             type:'object',
+    //                             properties:{
+    //                                 message:{type:'string', description:'User not found'},
+    //                                 status:{type:'boolean', default: false}
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // })
     .post('/signin', async({ body }: { body: { email: string, password: string } })=>{
         const { email, password } = body
         const user:User[] = await prisma.$queryRaw`SELECT * FROM user WHERE email = ${email}`
@@ -350,6 +350,7 @@ export const userModule = new Elysia({
         cookie: { forgot_session },
         body
     }: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         cookie: { forgot_session: any },
         body: {
             email: string,

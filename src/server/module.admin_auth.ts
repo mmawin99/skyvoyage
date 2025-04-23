@@ -1,8 +1,7 @@
-import Elysia, { error, t } from "elysia";
-import { admin as Admin, PrismaClient } from "../prisma-client";
+import Elysia, { error } from "elysia";
+import { admin as Admin, PrismaClient } from "../../prisma-client";
 const prisma = new PrismaClient()
-import * as jose from 'jose'
-import { checkPasswordWithHash, hashDataWithSHA256AndSalt, JWT_SECRET } from "../lib";
+import { checkPasswordWithHash, hashDataWithSHA256AndSalt } from './lib';
 
 export const adminAuthModule = new Elysia({
     prefix: '/admin',
@@ -110,10 +109,13 @@ export const adminAuthModule = new Elysia({
     })
     .post("/deleteuser", async ({body}:{
         body:{
-
+            id: number
         }
     })=>{
-
+        return error(500, {
+            body,
+            message: "Internal server error"
+        })
     })
     .post("/signin", async ({body}:{
         body:{

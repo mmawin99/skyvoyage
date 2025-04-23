@@ -1,9 +1,9 @@
-import Elysia, { error, t } from "elysia";
-import { flight as Flight, airport as Airport, PrismaClient, airline as Airline, aircraft as Aircraft } from "../prisma-client";
+import Elysia, { error } from "elysia";
+import { flight as Flight, airport as Airport, PrismaClient, airline as Airline, aircraft as Aircraft } from "../../prisma-client";
 const prisma = new PrismaClient()
-const countries = require("i18n-iso-countries");
-import modelAircraft from "../data/model_name.json"
-import { sanitizeBigInt } from "../lib";
+import countries from "i18n-iso-countries";
+import modelAircraft from "../../data/model_name.json"
+import { sanitizeBigInt } from "./lib";
 interface Schedule {
     flightId: string,
     flightNum: string,
@@ -28,9 +28,8 @@ export const autocompleteModule = new Elysia({
     .post("/airport/:search", async({body, params:{search}}:{body:{lat?:number,lon?:number},params:{search:string}})=>{
         //html decode the search string
         try{
-            let searchstring = decodeURIComponent(search)
+            const searchstring = decodeURIComponent(search)
             let airportList: Airport[];
-            let a:boolean = false
             if(search == "nearby_airport"){
                 const lat = body?.lat;
                 const lon = body?.lon;
@@ -80,8 +79,8 @@ export const autocompleteModule = new Elysia({
                 const searchstringArray = searchstring.trim().split(/\s+/);
                 const wildcardArray = searchstringArray.map(word => `%${word}%`);
                 
-                let andConditions: string[] = [];
-                let values: string[] = [];
+                const andConditions: string[] = [];
+                const values: string[] = [];
                 
                 wildcardArray.forEach((wildcard) => {
                 // Each word needs to match one of the 4 columns
@@ -98,7 +97,7 @@ export const autocompleteModule = new Elysia({
                 return {
                     code: airport.airportCode,
                     name: airport.name,
-                    short_country: countries.getName(airport.country, 'en', {select: ''}) || airport.country,
+                    short_country: countries.getName(airport.country, 'en', {select: 'alias'}) || airport.country,
                     country: airport.country,
                     city: airport.city
                 }
@@ -141,7 +140,7 @@ export const autocompleteModule = new Elysia({
     })
     .post("/airline/:search", async({params:{search}}:{params:{search:string}})=>{
         //html decode the search string
-        let searchstring = decodeURIComponent(search)
+        const searchstring = decodeURIComponent(search)
         let airlineList:Airline[] = []
         if(!searchstring.includes(" ")){
             const wildcard = `%${searchstring}%`
@@ -155,8 +154,8 @@ export const autocompleteModule = new Elysia({
             const searchstringArray = searchstring.trim().split(/\s+/);
             const wildcardArray = searchstringArray.map(word => `%${word}%`);
             
-            let andConditions: string[] = [];
-            let values: string[] = [];
+            const andConditions: string[] = [];
+            const values: string[] = [];
             
             wildcardArray.forEach((wildcard) => {
               // Each word needs to match one of the 4 columns
@@ -204,17 +203,17 @@ export const autocompleteModule = new Elysia({
             }
         }
     })
-    .post("/flight/:airline/:search", async({params:{airline, search}}:{body:{},params:{airline:string, search:string}})=>{
+    .post("/flight/:airline/:search", async({params:{airline, search}}:{params:{airline:string, search:string}})=>{
         //html decode the search string
-        let airlineCode = decodeURIComponent(airline)
+        const airlineCode = decodeURIComponent(airline)
         //check if airlineCode is valid
         if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
 
-            let searchstring = decodeURIComponent(search)
-            let emptySearch = searchstring === ""
-            let wildcard = `%${searchstring}%`
+            const searchstring = decodeURIComponent(search)
+            const emptySearch = searchstring === ""
+            const wildcard = `%${searchstring}%`
             
-            let flightList: Flight[] = emptySearch
+            const flightList: Flight[] = emptySearch
               ? await prisma.$queryRaw`
                   SELECT flightNum, airlineCode, departAirportId, arriveAirportId, arrivalTime, departureTime 
                   FROM flight
@@ -278,14 +277,14 @@ export const autocompleteModule = new Elysia({
         //html decode the search string
         try{
 
-            let airlineCode = decodeURIComponent(airline)
+            const airlineCode = decodeURIComponent(airline)
             //check if airlineCode is valid
             if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
                 if(!page || page < 1 || typeof page != "number") return error(400, "invalid_page_number")
                     const pageSize = 25
                 const offset = (page - 1) * pageSize
 
-                let flightList: Schedule[] = await prisma.$queryRaw`
+                const flightList: Schedule[] = await prisma.$queryRaw`
                 SELECT 
                     fo.flightId,
                     fo.flightNum,
@@ -357,11 +356,11 @@ export const autocompleteModule = new Elysia({
     })
     .post("/model/:airline", async({params:{airline}}:{params:{airline:string}})=>{
         //html decode the search string
-        let airlineCode = decodeURIComponent(airline)
+        const airlineCode = decodeURIComponent(airline)
         //check if airlineCode is valid
         if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
 
-        let aircraftList:Aircraft[] = await prisma.$queryRaw`
+        const aircraftList:Aircraft[] = await prisma.$queryRaw`
             SELECT DISTINCT \`ownerAirlineCode\`, \`model\` FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode};
         `
         return aircraftList.map((aircraft)=>{ 
@@ -402,14 +401,14 @@ export const autocompleteModule = new Elysia({
     })
     .post("/registration/:airline/:model", async({params:{airline, model}}:{params:{airline:string, model:string}})=>{
         //html decode the search string
-        let airlineCode = decodeURIComponent(airline)
-        let modelName = decodeURIComponent(model)
+        const airlineCode = decodeURIComponent(airline)
+        const modelName = decodeURIComponent(model)
         //check if airlineCode is valid
         if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
         //check if modelName is valid
         if(!modelName) return error(400, "invalid_model_name")
 
-        let aircraftList:Aircraft[] = await prisma.$queryRaw`
+        const aircraftList:Aircraft[] = await prisma.$queryRaw`
             SELECT \`aircraftId\`, \`model\`, \`ownerAirlineCode\` FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode} AND \`model\` = ${modelName};
         `
         return aircraftList.map((aircraft)=>{ 
@@ -452,7 +451,7 @@ export const autocompleteModule = new Elysia({
         //html decode the search string
         const {airline, size, page} = params
         //check if airlineCode is valid
-        let airlineCode = decodeURIComponent(airline)
+        const airlineCode = decodeURIComponent(airline)
         if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
         if(!page || page < 1) return error(400, "invalid_page_number")
         if(!size || size < 1) return error(400, "invalid_page_size")
@@ -463,11 +462,11 @@ export const autocompleteModule = new Elysia({
         const offset = (page - 1) * size
         const limit = size
         
-        let aircraftList:Aircraft[] = await prisma.$queryRaw`
+        const aircraftList:Aircraft[] = await prisma.$queryRaw`
             SELECT \`aircraftId\`, \`model\`, \`ownerAirlineCode\` FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode}
             LIMIT ${limit} OFFSET ${offset};
         `
-        let totalCount: number = await prisma.$queryRaw`
+        const totalCount: number = await prisma.$queryRaw`
             SELECT COUNT(*) as count FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode};
         `
         return {

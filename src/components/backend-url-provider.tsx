@@ -10,23 +10,23 @@ export interface BackendURLType {
 const BackendURL = createContext<BackendURLType | null>(null);
 
 export const BackendProvider = ({ children }: { children: ReactNode }) => {
-  const [backend, setBackend] = useState<string>("");
+  const [backend, setBackend] = useState<string>("/api");
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     const fetchBackend = async () => {
-      setStatus('loading');
-      try {
-        const res = await fetch('/api/init');
-        if (!res.ok) throw new Error("Failed to fetch /api/init");
+      // setStatus('loading');
+      // try {
+      //   const res = await fetch('/api/init');
+      //   if (!res.ok) throw new Error("Failed to fetch /api/init");
 
-        const data = await res.json();
-        setBackend(data.backendURL);
+      //   const data = await res.json();
+      //   setBackend(data.backendURL);
         setStatus('success');
-      } catch (err) {
-        console.error(err);
-        setStatus('error');
-      }
+      // } catch (err) {
+        // console.error(err);
+        // setStatus('error');
+      // }
     };
 
     fetchBackend();

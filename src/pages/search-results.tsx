@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use-client"
 import { useSearchParams } from "next/navigation"
-import { use, useCallback, useEffect, useRef, useState } from "react"
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -51,6 +51,7 @@ export default function SearchResults() {
   const [departFilteredFlights, setDepartFilteredFlights] = useState<UniversalFlightSchedule[]>([])
   const [returnFlights, setReturnFlights] = useState<UniversalFlightSchedule[]>([])
   const [returnFilteredFlights, setReturnFilteredFlights] = useState<UniversalFlightSchedule[]>([])
+
   const [priceRange, setPriceRange] = useState([0, 2000])
   const [airlines, setAirlines] = useState<{code:string, name:string}[]>([])
   const [selectedAirlines, setSelectedAirlines] = useState<{code:string, name:string}[]>([])
@@ -90,6 +91,9 @@ export default function SearchResults() {
   
   const [selectedDepartureFlight, setSelectedDepartureFlight] = useState<searchSelectedFlight>()
   const [isSelectedDepartureFlight, setIsSelectedDepartureFlight] = useState<boolean>(false)
+
+  const [isLoadingReturnFlight, setIsLoadingReturnFlight] = useState<boolean>(false) // for move user upward to top when departure flight selected.
+
   const [selectedReturnFlight, setSelectedReturnFlight] = useState<searchSelectedFlight>()
   const [isSelectedReturnFlight, setIsSelectedReturnFlight] = useState<boolean>(false)
 
@@ -108,10 +112,14 @@ export default function SearchResults() {
     return totalPrice
   }, [adultCount, childCount, infantCount])
 
+  const refRunPassengerInfo = useRef<boolean>(false)
+
   useEffect(() => {
     const generateTemporaryPassenger = (ageRange: "Adult" | "Children" | "Infant", index:number): PassengerFillOut => {
       return {
         label: ageRange + " Passenger #" + (index + 1),
+        pid: Math.random().toString(36).substring(2, 15),
+        status: "UNFILLED",
         passportNum: "",
         passportCountry: "",
         passportExpiry: "",
@@ -128,8 +136,15 @@ export default function SearchResults() {
         seatId: "",
       }
     }
-    
-    if (nextStep) {
+    if(nextStep){
+      console.log("Next step is true")
+    }
+    if(refRunPassengerInfo.current){
+      console.log("Ref run passenger info is true")
+    }else{
+      console.log("Ref run passenger info is false")
+    }
+    if (nextStep && !refRunPassengerInfo.current) {
       const passenger: PassengerFillOut[] = [
         ...Array.from({ length: adultCount }, (_, index) => generateTemporaryPassenger("Adult", index)),
         ...Array.from({ length: childCount }, (_, index) => generateTemporaryPassenger("Children", index + adultCount)),
@@ -154,10 +169,16 @@ export default function SearchResults() {
       })
       router.push("/passenger-info");
     }
+
+    return () => {
+      if(nextStep){
+        refRunPassengerInfo.current = true
+      }
+    }
+
   }, [nextStep, router, setSelectedRoute, selectedDepartureFlight, selectedReturnFlight, queryParams, departFlights, returnFlights, calculateTotalPrice, adultCount,childCount,infantCount])
 
 
-  
   const fareName = (fare: FareType | undefined) => {
     if (!fare) return "Unknown Fare"
     switch (fare) {
@@ -176,17 +197,23 @@ export default function SearchResults() {
     }
   }
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    setQueryParams({
-      origin: searchParams.get("origin") || '',
-      destination: searchParams.get("destination") || '',
-      departDateStr: searchParams.get("departDate") || '',
-      returnDateStr: searchParams.get("returnDate") || '',
-      passengersStr: searchParams.get("passengers") || "1,0,0",
-      cabinClass: searchParams.get("cabinClass") || "Y",
-      tripType: searchParams.get("tripType") || "roundtrip"
-    });
-  }, []); // Run once on mount - no dependencies
+    if(!refSearchParams.current){
+      const searchParams = new URLSearchParams(window.location.search);
+      setQueryParams({
+        origin: searchParams.get("origin") || '',
+        destination: searchParams.get("destination") || '',
+        departDateStr: searchParams.get("departDate") || '',
+        returnDateStr: searchParams.get("returnDate") || '',
+        passengersStr: searchParams.get("passengers") || "1,0,0",
+        cabinClass: searchParams.get("cabinClass") || "Y",
+        tripType: searchParams.get("tripType") || "roundtrip"
+      });
+    }
+
+    return () => {
+      refSearchParams.current = true
+    } // Cleanup function to set refSearchParams.current to true after the first render
+  }, []);
   
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -198,13 +225,21 @@ export default function SearchResults() {
         !queryParams.origin ||
         !queryParams.destination ||
         !queryParams.departDateStr) {
-        console.log("Query parameters are not set", queryParams);
+        console.log("Query parameters are not set");
         return;
       }
-  
+
+      if(!refSearchParams.current){
+        // Check queryParams is empty (not set) return the interval function to let them occur again
+        console.log("Query parameters are not set");
+        return
+      }
+      
+    
       clearInterval(interval); // ✅ All checks passed, stop polling
       setLoading(true);
-  
+      setIsError(false);
+      setErrorMessage("")
       try {
         const departData = await fetch(`${backendURL}/flight/flightList`, {
           method: 'POST',
@@ -234,7 +269,8 @@ export default function SearchResults() {
             })
           });
         }
-  
+        // console.log("Depart Data: ", departData)
+        // console.log("Return Data: ", returnData)
         if (!departData.ok || (queryParams.tripType !== "oneway" && !returnData?.ok)) {
           setIsError(true);
           setErrorMessage("Failed to fetch flight data");
@@ -245,11 +281,15 @@ export default function SearchResults() {
         let returnJSON = null;
         if (queryParams.tripType !== "oneway") returnJSON = await returnData?.json();
   
+        console.log("Depart JSON: ", departJSON)
+        console.log("Return JSON: ", returnJSON)
+        console.log("Depart Flights: ", departJSON["data"] || [])
+        console.log("Return Flights: ", returnJSON?.["data"] || [])
         setDepartFlights(departJSON["data"] || []);
-        setReturnFlights(returnJSON?.["data"] ?? []);
+        setReturnFlights(returnJSON?.["data"] || []);
         setDepartFilteredFlights(departJSON["data"] || []);
-        setReturnFilteredFlights(returnJSON?.["data"] ?? []);
-  
+        setReturnFilteredFlights(returnJSON?.["data"] || []);
+        
         const allAirlines = [
           ...departJSON["data"].flatMap((flight: UniversalFlightSchedule) =>
             flight.segments.map((segment: UniversalFlightSegmentSchedule) => ({
@@ -290,15 +330,14 @@ export default function SearchResults() {
     return () => clearInterval(interval); // Clean up interval on unmount
   }, [backendURL, queryParams, flightType, totalPassengers]);
 
-
-  useEffect(() => {
-    const filteredDepartFlights = departFlights.filter((flight) => {
-      const price = flight.price.SUPER_SAVER
-      return price !== -1 && price >= priceRange[0] && price <= priceRange[1] && (flightType === "direct" ? flight.segments.length === 1 : flight.segments.length > 1)
-        && selectedAirlines.some((airline) => flight.segments.some((segment: UniversalFlightSegmentSchedule) => segment.airlineCode === airline.code))
-    })
-    setDepartFilteredFlights(filteredDepartFlights)
-  }, [priceRange, flightType, selectedAirlines, departFlights])
+  useEffect(()=>{
+    if(isLoadingReturnFlight){
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(()=>{
+          setIsLoadingReturnFlight(false)
+      }, 500);
+    }
+  }, [isLoadingReturnFlight])
 
   const flightInfo = (flight: searchSelectedFlight | undefined, cabinClass: "Y" | "C" | "W" | "F") => {
     if (!flight) return null
@@ -432,6 +471,20 @@ export default function SearchResults() {
                 <AlertDescription>{errorMessage}</AlertDescription>
               </Alert>
             ) : 
+            isLoadingReturnFlight ? (
+              <Card className="mb-4">
+                <CardHeader className="flex items-center justify-between">
+                  <h3 className="font-bold text-xl">Finding Your Perfect Flight</h3>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center justify-center py-12 gap-10">
+                  <Loader2 className="animate-spin h-16 w-16 text-blue-600" />
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg ml-4">We&apos;re currently searching your perfect return flights...</span>
+                    <span className="text-lg ml-4">Please wait</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ) :
             loading ? (
               <div className="text-center py-12">
                 <Loader2 className="animate-spin h-12 w-12 mx-auto mb-4 text-blue-600" />
@@ -464,6 +517,7 @@ export default function SearchResults() {
                                 price: cabinClassPrice(flight.price[selectedFare], queryParams.cabinClass as "Y" | "C" | "F" | "W", 
                                   selectedFare)
                               });
+                              setIsLoadingReturnFlight(true);
                               setIsSelectedDepartureFlight(true);
                             }
                           }}
@@ -544,6 +598,7 @@ export default function SearchResults() {
                   </CardContent>
                 </Card>
                 <Button onClick={() => {
+                  console.log("We will go to passenger info page")
                   setNextStep(!nextStep);
                 }}>
                   Fill out Passenger Information

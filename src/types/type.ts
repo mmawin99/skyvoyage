@@ -305,6 +305,8 @@ export interface searchSelectedFlight {
 
 export interface PassengerFillOut{
     label: string
+    pid: string // passenger id (only frontend use)
+    status: "UNFILLED" | "FILLED" // frotnend use only status of filling passenger info
     passportNum: string // 9 charactors
     passportCountry: string // 2 charactors
     passportExpiry: string // YYYY-MM-DD

@@ -17,6 +17,8 @@
       "@/*": ["./src/*"]
     }
   },
+  "types": ["bun-types"],
+  "resolveJsonModule": true,
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "tailwind.config.js","next.config.ts"],
   "exclude": ["node_modules"]
 }

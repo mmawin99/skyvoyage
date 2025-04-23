@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import NextAuth, { User } from "next-auth"
 
-const BackendBaseURL = process.env.BACKEND_URL || "http://localhost:4000"
+// const BackendBaseURL = process. || "http://localhost:3000/api"
+
+//check production or development
+const isProduction = process.env.NODE_ENV === "production"
+const BackendBaseURL = isProduction ? "https://skyvoyage.mwn99.com/api" : "http://localhost:3000/api"
 
 // Extend the User type to include the 'role' property
 declare module "next-auth" {
@@ -52,7 +56,7 @@ export default NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const res = await fetch(`${BackendBaseURL}/admin/signin`, {
+        const res = await fetch(`/api/admin/signin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(credentials),
@@ -79,7 +83,7 @@ export default NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const res = await fetch(`${BackendBaseURL}/api/user/signin`, {
+        const res = await fetch(`/api/user/signin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

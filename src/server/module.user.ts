@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid'
 import Elysia, { error } from "elysia";
-import { PrismaClient, user as User } from "../../prisma-client";
-const prisma = new PrismaClient()
+import { user as User } from "../../prisma-client";
 import * as jose from 'jose'
-import { checkPasswordWithHash, hashDataWithSHA256AndSalt, JWT_SECRET } from "./lib";
+import { hashDataWithSHA256AndSalt, JWT_SECRET } from "./lib";
+import { prisma } from './libprisma';
 
 export const userModule = new Elysia({
     prefix: '/user',
@@ -24,7 +24,7 @@ export const userModule = new Elysia({
                 message: 'User already exists',
                 status: false,
             })
-
+            
             const hashedPassword = await hashDataWithSHA256AndSalt(password)
             const userUUID = uuidv4()
             const newUser = await prisma.$executeRaw<User>`
@@ -230,113 +230,24 @@ export const userModule = new Elysia({
     //         }
     //     }
     // })
-    .post('/signin', async({ body }: { body: { email: string, password: string } })=>{
-        const { email, password } = body
-        const user:User[] = await prisma.$queryRaw`SELECT * FROM user WHERE email = ${email}`
-        // console.log(email, password)
-        // console.log(user)
-        if(user.length === 0) {
-            console.log('User not found')
-            return error(404, {
-                message: 'User not found',
-                status: false,
-            })
-        }
-        const isPasswordMatch = await checkPasswordWithHash(password, user[0].password)
-        if(!isPasswordMatch){ 
-            console.log('Invalid password')
-            return error(401, {
-                message: 'Invalid password or email',
-                status: false,
-            })
-        }
-        // const cred_login = await jwt.sign({ uuid: user[0].uuid })
-        // const cred_login = await new jose.SignJWT({ uuid: user[0].uuid, email: user[0].email }).setProtectedHeader({ alg: 'HS256' })
-        // .setIssuedAt()
-        // .setIssuer('skyvoyage:v1:signin')
-        // .setAudience('skyvoyage:user:auth')
-        // .setExpirationTime('30d')
-        // .sign(JWT_SECRET)
-
-        // skyvoyage_auth.set({
-        //     maxAge: 30 * 24 * 60 * 60,
-        //     value: cred_login,
-        //     httpOnly: true,
-        //     secure: true
-        // })
-
-        return {
-            status: true,
-            message: 'Login successful',
-            data: {
-                uuid: user[0].uuid,
-                email: user[0].email,
-                firstname: user[0].firstname,
-                lastname: user[0].lastname,
-            }
-        }
+    .post('/signin', async()=>{
+        return error(404,{
+            message: 'This endpoint is not available, moved to next-auth endpoint.',
+            status: false,
+        })
     }, {
         detail: {
             tags: ['Auth'],
             description: 'Login to skyvoyage',
-            requestBody: {
-                required: true,
-                content: {
-                    'application/json': {
-                        schema: {
-                            type: 'object',
-                            properties: {
-                                email: { type: 'string' },
-                                password: { type: 'string' }
-                            }
-                        }
-                    }
-                }
-            },
             responses:{
-                200:{
-                    description: 'Login successful',
-                    content: {
-                        'application/json': {
-                            schema: {
-                                type: 'object',
-                                properties: {
-                                    message: { type: 'string', description: 'Login successful' },
-                                    status: { type: 'boolean' },
-                                    data:{
-                                        type:'object',
-                                        properties:{
-                                            uuid:{type:'string', description:'User UUID'},
-                                            email:{type:'string', description:'User email'}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                401:{
-                    description: 'Invalid password or email',
-                    content:{
-                        'application/json':{
-                            schema:{
-                                type:'object',
-                                properties:{
-                                    message:{type:'string', description:'Invalid password or email'},
-                                    status:{type:'boolean', default: false}
-                                }
-                            }
-                        }
-                    }
-                },
                 404:{
-                    description: 'User not found',
+                    description: 'Removed to next-auth endpoint',
                     content:{
                         'application/json':{
                             schema:{
                                 type:'object',
                                 properties:{
-                                    message:{type:'string', description:'User not found'},
+                                    message:{type:'string', description:'This endpoint is not available, moved to next-auth endpoint.'},
                                     status:{type:'boolean', default: false}
                                 }
                             }

@@ -1,9 +1,9 @@
 import Elysia, { error } from "elysia";
-import { flight as Flight, airport as Airport, PrismaClient, airline as Airline, aircraft as Aircraft } from "../../prisma-client";
-const prisma = new PrismaClient()
+import { flight as Flight, airport as Airport, airline as Airline, aircraft as Aircraft } from "../../prisma-client";
 import countries from "i18n-iso-countries";
 import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt } from "./lib";
+import { prisma } from "./libprisma";
 interface Schedule {
     flightId: string,
     flightNum: string,
@@ -19,8 +19,6 @@ interface Schedule {
     arrivalAirport: string,
     arrivalAirportCode: string
 }
-
-
 
 export const autocompleteModule = new Elysia({
     prefix: '/autocomplete',

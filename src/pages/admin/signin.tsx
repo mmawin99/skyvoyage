@@ -41,7 +41,7 @@ const AdminSignin = () => {
             setUsername("")
             setPassword("")
         }else{
-
+            router.push("./index")
         }
     }
 

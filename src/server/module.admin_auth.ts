@@ -1,8 +1,7 @@
 import Elysia, { error } from "elysia";
-import { admin as Admin, PrismaClient } from "../../prisma-client";
-const prisma = new PrismaClient()
-import { checkPasswordWithHash, hashDataWithSHA256AndSalt } from './lib';
-
+import { admin as Admin } from "../../prisma-client";
+import { hashDataWithSHA256AndSalt } from './lib';
+import { prisma } from "./libprisma";
 export const adminAuthModule = new Elysia({
     prefix: '/admin',
     })
@@ -117,105 +116,4 @@ export const adminAuthModule = new Elysia({
             message: "Internal server error"
         })
     })
-    .post("/signin", async ({body}:{
-        body:{
-            username:string, 
-            password:string
-        }
-    })=>{
-        // Example success response:{
-        //   "success": true,
-        //   "admin": {
-        //     "id": 1,
-        //     "username": "admin123",
-        //     "permission": "MANAGER"
-        //   }
-        // }
-        const {username, password} = body
-        const admin:Admin[] = await prisma.$queryRaw`SELECT * FROM admin WHERE username = ${username}`
-        if(admin.length == 0){
-            console.log("Admin not found", username, password)
-            return error(401, {
-                message: "Invalid username or password",
-                status: false,
-            })
-        }else{
-            console.log("Admin found")
-            const adminData = admin[0]
-            const comparePassword = await checkPasswordWithHash(password, adminData.password)
-            if(comparePassword){
-                console.log("Password match")
-                return {
-                    status: true,
-                    message: "Login success",
-                    admin: {
-                        id: adminData.id,
-                        username: adminData.username,
-                        permission: adminData.permission,
-                    }
-                }
-            }else{
-                return error(401, {
-                    message: "Invalid username or password",
-                    status: false,
-                })
-            }
-        }
-    },{
-        detail:{
-            tags: ['Admin'],
-            description: "Login for admin",
-            requestBody: {
-                content: {
-                    "application/json": {
-                        schema: {
-                            type: "object",
-                            properties: {
-                                username: { type: "string" },
-                                password: { type: "string" }
-                            },
-                            required: ["username", "password"]
-                        }
-                    }
-                }
-            },
-            responses: {
-                200: {
-                    description: "Login success",
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "object",
-                                properties: {
-                                    status: { type: "boolean" , default: true },
-                                    message: { type: "string" , default: "Login success" },
-                                    admin: {
-                                        type: "object",
-                                        properties: {
-                                            id: { type: "number" },
-                                            username: { type: "string" },
-                                            permission: { type: "string" }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                401: {
-                    description: "Invalid username or password",
-                    content: {
-                        "application/json": {
-                            schema: {
-                                type: "object",
-                                properties: {
-                                    message: { type: "string", default: "Invalid username or password" },
-                                    status: { type: "boolean", default: false },
-                                },
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    })
+  

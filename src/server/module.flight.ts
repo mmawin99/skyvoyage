@@ -1,9 +1,8 @@
 import { v4 as uuidv4 } from 'uuid'
 import Elysia, { error } from "elysia";
-import { PrismaClient} from "../../prisma-client";
-const prisma = new PrismaClient()
 // import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt } from './lib';
+import { prisma } from './libprisma';
 
 interface SubmitSchedule {
     type: "recurring" | "single",
@@ -67,8 +66,6 @@ interface FlightScheduleTransit1 {
     estimatedPriceUSD: number;
 }
 
-
-
 interface UniversalFlightSchedule {
     id: string;
     price: {
@@ -97,6 +94,23 @@ interface UniversalFlightSchedule {
     arrivalAirport: string;
 }
 
+interface ScheduleListAdmin{
+    flightId: string
+    flightNum: string
+    airlineCode: string
+    airlineName: string
+    departureTime: Date
+    arrivalTime: Date
+    aircraftId: string
+    departAirportId: string
+    departureAirport: string
+    arriveAirportId: string
+    arrivalAirport: string
+    aircraftModel: string
+}
+
+type FareType = "SUPER_SAVER" | "SAVER" | "STANDARD" | "FLEXI" | "FULL_FLEX"
+
 function calculatePrice(flightClass: string, basePrice: number): number {
     const classMultiplier: Record<string, number> = {
         Y: 1.1333,
@@ -107,7 +121,7 @@ function calculatePrice(flightClass: string, basePrice: number): number {
     const multiplier = classMultiplier[flightClass] || 1;
     return Math.round(basePrice * multiplier);
 }
-type FareType = "SUPER_SAVER" | "SAVER" | "STANDARD" | "FLEXI" | "FULL_FLEX"
+
 const cabinClassPrice = (price:number, cabinClass: "Y" | "F" | "C" | "W" , FarePackage: FareType)=>{
     if(cabinClass === "Y"){
         switch(FarePackage){
@@ -261,7 +275,6 @@ function convertToUniversalFormat(
     return universalFlights;
 }
 
-
 const dayMap: Record<string, number> = {
     Sun: 0,
     Mon: 1,
@@ -282,22 +295,6 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 
 function formatterSQLTIME(date: string): string {
     return date.replace('T', ' ').replace('Z', '')
-}
-
-
-interface ScheduleListAdmin{
-    flightId: string
-    flightNum: string
-    airlineCode: string
-    airlineName: string
-    departureTime: Date
-    arrivalTime: Date
-    aircraftId: string
-    departAirportId: string
-    departureAirport: string
-    arriveAirportId: string
-    arrivalAirport: string
-    aircraftModel: string
 }
 
 export const flightModule = new Elysia({
@@ -454,9 +451,9 @@ export const flightModule = new Elysia({
             }
         }
     })
-    .post("/schedule/:size/:page", async ({params,body}:{params:{ query: string, size:number, page:number }, body:{query:string}})=>{
+    .post("/schedule/:size/:kind/:page", async ({params,body}:{params:{ query: string, size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, body:{query:string}})=>{
 
-        const { size, page } = params
+        const { size, page, kind} = params
         const { query } = body
         if(!size || !page){
             return error(400, {
@@ -466,12 +463,68 @@ export const flightModule = new Elysia({
         }
         const offset = (page - 1) * size
         const limit = size
-        const wildcard = `%${query}%`
         let result: ScheduleListAdmin[] = []
         let totalCount: { count: number }[] = []
         try {
+            
             if(!query){
-                result = await prisma.$queryRaw<ScheduleListAdmin[]>`
+                // Initialize the base query parts
+                let queryString = `
+                    SELECT 
+                        fo.flightId,
+                        fo.flightNum,
+                        fo.airlineCode,
+                        a.airlineName,
+                        fo.departureTime,
+                        fo.arrivalTime,
+                        fo.aircraftId,
+                        f.departAirportId,
+                        da.name AS departureAirport,
+                        f.arriveAirportId,
+                        aa.name AS arrivalAirport,
+                        ac.model AS aircraftModel
+                    FROM flightOperate fo
+                    JOIN flight f ON f.flightNum = fo.flightNum AND f.airlineCode = fo.airlineCode
+                    JOIN aircraft ac ON ac.aircraftId = fo.aircraftId
+                    JOIN airport da ON f.departAirportId = da.airportCode
+                    JOIN airport aa ON f.arriveAirportId = aa.airportCode
+                    JOIN airline a ON a.airlineCode = f.airlineCode`;
+                
+                // Add WHERE clause based on kind
+                if (kind === "upcoming") {
+                    queryString += ` WHERE fo.departureTime > NOW()`;
+                } else if (kind === "inflight") {
+                    queryString += ` WHERE fo.departureTime <= NOW() AND fo.arrivalTime >= NOW()`;
+                } else if (kind === "completed") {
+                    queryString += ` WHERE fo.arrivalTime < NOW()`;
+                }
+                
+                // Add ordering and pagination
+                queryString += ` ORDER BY fo.departureTime ASC LIMIT ${limit} OFFSET ${offset}`;
+                
+                // Execute the query
+                result = await prisma.$queryRawUnsafe(queryString);
+                
+                // Count query
+                let countQueryString = `
+                    SELECT COUNT(*) AS count 
+                    FROM flightOperate fo`;
+                    
+                // Add same WHERE clause to count query
+                if (kind === "upcoming") {
+                    countQueryString += ` WHERE fo.departureTime > NOW()`;
+                } else if (kind === "inflight") {
+                    countQueryString += ` WHERE fo.departureTime <= NOW() AND fo.arrivalTime >= NOW()`;
+                } else if (kind === "completed") {
+                    countQueryString += ` WHERE fo.arrivalTime < NOW()`;
+                }
+                
+                totalCount = await prisma.$queryRawUnsafe(countQueryString);
+            } else {
+                // Build search query with wildcard
+                const wildcardValue = `%${query}%`; // Assuming 'wildcard' was derived from 'query'
+                
+                let queryString = `
                     SELECT 
                         fo.flightId,
                         fo.flightNum,
@@ -491,69 +544,68 @@ export const flightModule = new Elysia({
                     JOIN airport da ON f.departAirportId = da.airportCode
                     JOIN airport aa ON f.arriveAirportId = aa.airportCode
                     JOIN airline a ON a.airlineCode = f.airlineCode
-                    ORDER BY fo.departureTime ASC
-                    LIMIT ${limit} OFFSET ${offset}
-                `
-                totalCount = await prisma.$queryRaw<{ count: number }[]>`
-                    SELECT 
-                        COUNT(*) AS count 
-                    FROM flightOperate
-                `
-            }else{
-                result = await prisma.$queryRaw<ScheduleListAdmin[]>`
-                    SELECT 
-                        fo.flightId,
-                        fo.flightNum,
-                        fo.airlineCode,
-                        a.airlineName,
-                        fo.departureTime,
-                        fo.arrivalTime,
-                        fo.aircraftId,
-                        f.departAirportId,
-                        da.name AS departureAirport,
-                        f.arriveAirportId,
-                        aa.name AS arrivalAirport,
-                        ac.model AS aircraftModel
+                    WHERE (
+                        fo.flightId LIKE '${wildcardValue}'
+                        OR fo.flightNum LIKE '${wildcardValue}'
+                        OR f.departAirportId LIKE '${wildcardValue}'
+                        OR f.arriveAirportId LIKE '${wildcardValue}'
+                        OR da.name LIKE '${wildcardValue}'
+                        OR aa.name LIKE '${wildcardValue}'
+                        OR da.city LIKE '${wildcardValue}'
+                        OR aa.city LIKE '${wildcardValue}'
+                        OR ac.model LIKE '${wildcardValue}'
+                        OR ac.aircraftId LIKE '${wildcardValue}'
+                        OR f.airlineCode LIKE '${wildcardValue}'
+                    )`;
+                
+                // Add time filter if specified
+                if (kind === "upcoming") {
+                    queryString += ` AND fo.departureTime > NOW()`;
+                } else if (kind === "inflight") {
+                    queryString += ` AND fo.departureTime <= NOW() AND fo.arrivalTime >= NOW()`;
+                } else if (kind === "completed") {
+                    queryString += ` AND fo.arrivalTime < NOW()`;
+                }
+                
+                // Add ordering and pagination
+                queryString += ` ORDER BY fo.departureTime ASC LIMIT ${limit} OFFSET ${offset}`;
+                
+                // Execute the query
+                result = await prisma.$queryRawUnsafe(queryString);
+                
+                // Count query with the same conditions but without ordering and pagination
+                let countQueryString = `
+                    SELECT COUNT(*) AS count 
                     FROM flightOperate fo
                     JOIN flight f ON f.flightNum = fo.flightNum AND f.airlineCode = fo.airlineCode
                     JOIN aircraft ac ON ac.aircraftId = fo.aircraftId
                     JOIN airport da ON f.departAirportId = da.airportCode
                     JOIN airport aa ON f.arriveAirportId = aa.airportCode
                     JOIN airline a ON a.airlineCode = f.airlineCode
-                    WHERE fo.flightId LIKE ${wildcard}
-                    OR fo.flightNum LIKE ${wildcard}
-                    OR f.departAirportId LIKE ${wildcard}
-                    OR f.arriveAirportId LIKE ${wildcard}
-                    OR da.name LIKE ${wildcard}
-                    OR aa.name LIKE ${wildcard}
-                    OR da.city LIKE ${wildcard}
-                    OR aa.city LIKE ${wildcard}
-                    OR ac.model LIKE ${wildcard}
-                    OR ac.aircraftId LIKE ${wildcard}
-                    OR f.airlineCode LIKE ${wildcard}
-                    ORDER BY fo.departureTime ASC
-                    LIMIT ${limit} OFFSET ${offset}
-                `
-                totalCount = await prisma.$queryRaw<{ count: number }[]>`
-                    SELECT 
-                        COUNT(*) AS count 
-                    FROM flightOperate fo
-                    JOIN flight f ON f.flightNum = fo.flightNum AND f.airlineCode = fo.airlineCode
-                    JOIN aircraft ac ON ac.aircraftId = fo.aircraftId
-                    JOIN airport da ON f.departAirportId = da.airportCode
-                    JOIN airport aa ON f.arriveAirportId = aa.airportCode
-                    JOIN airline a ON a.airlineCode = f.airlineCode
-                    WHERE fo.flightId LIKE ${wildcard}
-                    OR fo.flightNum LIKE ${wildcard}
-                    OR f.departAirportId LIKE ${wildcard}
-                    OR f.arriveAirportId LIKE ${wildcard}
-                    OR da.name LIKE ${wildcard}
-                    OR aa.name LIKE ${wildcard}
-                    OR da.city LIKE ${wildcard}
-                    OR aa.city LIKE ${wildcard}
-                    OR ac.model LIKE ${wildcard}
-                    OR ac.aircraftId LIKE ${wildcard}
-                `
+                    WHERE (
+                        fo.flightId LIKE '${wildcardValue}'
+                        OR fo.flightNum LIKE '${wildcardValue}'
+                        OR f.departAirportId LIKE '${wildcardValue}'
+                        OR f.arriveAirportId LIKE '${wildcardValue}'
+                        OR da.name LIKE '${wildcardValue}'
+                        OR aa.name LIKE '${wildcardValue}'
+                        OR da.city LIKE '${wildcardValue}'
+                        OR aa.city LIKE '${wildcardValue}'
+                        OR ac.model LIKE '${wildcardValue}'
+                        OR ac.aircraftId LIKE '${wildcardValue}'
+                        OR f.airlineCode LIKE '${wildcardValue}'
+                    )`;
+                
+                // Add the same time filter to count query
+                if (kind === "upcoming") {
+                    countQueryString += ` AND fo.departureTime > NOW()`;
+                } else if (kind === "inflight") {
+                    countQueryString += ` AND fo.departureTime <= NOW() AND fo.arrivalTime >= NOW()`;
+                } else if (kind === "completed") {
+                    countQueryString += ` AND fo.arrivalTime < NOW()`;
+                }
+                
+                totalCount = await prisma.$queryRawUnsafe(countQueryString);
             }
             if (result.length === 0) {
                 return {

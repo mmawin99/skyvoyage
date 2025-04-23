@@ -2,7 +2,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Loader2, PlaneIcon, PlaneTakeoff, PlusCircle } from "lucide-react"
+import { Edit, Eye, Loader2, PlaneIcon, PlaneTakeoff, PlusCircle, Trash2 } from "lucide-react"
 import { AircraftRegistration, Airline, Schedule, ScheduleListAdmin, SubmitSchedule } from "@/types/type"
 import { BackendURLType, useBackendURL } from "../backend-url-provider"
 import { CustomPagination } from "../custom-pagination"
@@ -43,7 +43,7 @@ export default function AircraftAdmin() {
                                 page:number,pageSize:number} = await response.json()
                     setAircraft(data?.data)
                     setTotalCount(data?.totalCount)
-                    setPage(data?.page)
+                    // setPage(data?.page)
                 } else {
                     console.error("Error fetching flights:", await response.json())
                 }
@@ -132,14 +132,27 @@ export default function AircraftAdmin() {
                             <CardContent>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {aircraft.length > 0 ? aircraft.map((aircraft, index) => (
-                                        <div key={index} className={`
-                                            flex flex-col items-center justify-center gap-2 p-4 border-[1px]
-                                            border-gray-500 rounded-lg shadow-sm
-                                        `}>
-                                            <PlaneIcon className="h-16 w-16 text-blue-600" />
-                                            <div className="text-lg font-semibold">{aircraft.registration}</div>
-                                            <div className="text-sm text-gray-500">{aircraft.model}</div>
+                                        <div key={index} className="relative group hover:scale-105">
+                                            <div className={`
+                                                flex flex-col items-center justify-center gap-2 p-4 border-[1px]
+                                                border-gray-500 rounded-lg shadow-sm group-hover:shadow-lg
+                                            `}>
+                                                <PlaneIcon className="h-16 w-16 text-blue-600" />
+                                                <div className="text-lg font-semibold">{aircraft.registration}</div>
+                                                <div className="text-sm text-gray-500">{aircraft.model}</div>
+                                            </div>
+                                      
+                                        {/* Hover menu */}
+                                        <div className={`
+                                            absolute top-0 left-0 z-10 w-full h-full bg-white bg-opacity-10 
+                                            flex flex-col items-center gap-2 
+                                            justify-center opacity-0 group-hover:opacity-100 transition-opacity 
+                                            duration-300 rounded-lg shadow-lg`}>
+                                          <Button className={`cursor-pointer`}><Eye /> View Details</Button>
+                                          <Button className={`cursor-pointer`} variant={"secondary"}><Edit /> Edit</Button>
+                                          <Button className={`cursor-pointer`} variant={"destructive"}><Trash2 /> Delete</Button>
                                         </div>
+                                      </div>
                                     )) : (
                                         <div className="flex flex-col items-center justify-center gap-6 py-6">
                                             <PlaneTakeoff className="h-24 w-24 text-blue-600" />

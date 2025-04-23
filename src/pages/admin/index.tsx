@@ -5,7 +5,11 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AdminWrapper } from '@/components/adminWrapper'
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 import React from 'react'
-
+import { Metadata } from 'next'
+export const metadata: Metadata = {
+    title: "Admin",
+    description: "Admin dashboard",
+}
 const AdminHome = () => {
 
     return (

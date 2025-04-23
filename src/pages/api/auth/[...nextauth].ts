@@ -1,12 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import NextAuth, { User } from "next-auth"
-
-// const BackendBaseURL = process. || "http://localhost:3000/api"
-
-//check production or development
-const isProduction = process.env.NODE_ENV === "production"
-const BackendBaseURL = isProduction ? "https://skyvoyage.mwn99.com/api" : "http://localhost:3000/api"
-
+import { admin as Admin, user as UserPrisma } from "../../../../prisma-client";
 // Extend the User type to include the 'role' property
 declare module "next-auth" {
   interface User {
@@ -45,6 +39,8 @@ declare module "next-auth" {
   }
 }
 import CredentialsProvider from "next-auth/providers/credentials"
+import { checkPasswordWithHash } from "@/server/lib";
+import { prisma } from "@/server/libprisma";
 
 export default NextAuth({
   providers: [
@@ -56,23 +52,33 @@ export default NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const res = await fetch(`${BackendBaseURL}/admin/signin`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(credentials),
-        })
+        const { username, password } = credentials ?? {}
 
-        const data = await res.json()
-        if (res.ok && data.status) {
-          return {
-            role: "admin",
-            id: data.admin.id,
-            username: data.admin.username,
-            permission: data.admin.permission,
-          }
+        if (!username || !password) return null
+
+        // 🟡 Use raw SQL query to fetch admin
+        const admin:Admin[] = await prisma.$queryRaw`SELECT * FROM admin WHERE username = ${username}`
+
+        if (admin.length === 0) {
+          console.log("Admin not found", username)
+          return null
         }
 
-        return null
+        const adminData = admin[0]
+        const isMatch = await checkPasswordWithHash(password, adminData.password)
+
+        if (!isMatch) {
+          console.log("Password mismatch for", username)
+          return null
+        }
+
+        // ✅ Valid admin
+        return {
+          id: adminData.id.toString(),
+          username: adminData.username,
+          role: "admin",
+          permission: adminData.permission,
+        }
       },
     }),
     CredentialsProvider({
@@ -83,26 +89,24 @@ export default NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const res = await fetch(`${BackendBaseURL}/user/signin`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: credentials?.email,
-            password: credentials?.password,
-          }),
-        })
-
-        const data = await res.json()
-        // console.log(data)
-        if (res.ok && data.status) {
-          return {
-            id: data.data.uuid, // Add 'id' property to conform to User type
+        const password = credentials?.password || ""
+        const email = credentials?.email || ""
+        const user:UserPrisma[] = await prisma.$queryRaw`SELECT * FROM user WHERE email = ${email}` 
+        if(user.length === 0) {
+            console.log('User not found')
+            return null
+        }
+        const isPasswordMatch = await checkPasswordWithHash(password, user[0].password)
+        if(!isPasswordMatch){ 
+            console.log('Invalid password')
+            return null
+        }
+        return {
             role: "user",
-            uuid: data.data.uuid,
-            email: data.data.email,
-            firstname: data.data.firstname,
-            lastname: data.data.lastname,
-          }
+            uuid: user[0].uuid,
+            email: user[0].email,
+            firstname: user[0].firstname,
+            lastname: user[0].lastname,
         }
 
         return null

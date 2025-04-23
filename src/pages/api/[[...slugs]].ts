@@ -1,18 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next'
 import { app } from '@/server/app'
+import { pipeline } from 'stream'
+import { Readable } from 'stream'
+import { promisify } from 'util'
+
+const pump = promisify(pipeline)
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Create a valid URL by adding a base
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
-  
-  // Convert NextApiRequest to a native Request (Fetch API-like)
+
   const request = new Request(url, {
     method: req.method,
-    headers: Object.entries(req.headers as Record<string, string>), // Convert headers to a compatible format
+    headers: req.headers as HeadersInit,
     body: req.method === 'GET' || req.method === 'HEAD' ? undefined : JSON.stringify(req.body),
   })
 
-  // Handle the request using Elysia
   const response = await app.handle(request)
 
   if (!response) {
@@ -20,20 +23,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return
   }
 
-  // Convert Elysia's Response back to NextApiResponse
   res.status(response.status)
 
   for (const [key, value] of response.headers.entries()) {
     res.setHeader(key, value)
   }
 
-  // Handle text/html or other content types properly
-  const contentType = response.headers.get('content-type') || ''
-  if (contentType.includes('text') || contentType.includes('json') || contentType.includes('html')) {
-    const body = await response.text()
-    res.end(body)
+  const body = response.body
+
+  if (body) {
+    const nodeReadable = Readable.fromWeb(body as any)
+    await pump(nodeReadable, res)
   } else {
-    const body = Buffer.from(await response.arrayBuffer())
-    res.end(body)
+    res.end()
   }
 }

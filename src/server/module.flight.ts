@@ -454,7 +454,7 @@ export const flightModule = new Elysia({
         }
     })
     .post("/schedule/:size/:kind/:page", async ({params,body}:{params:{ query: string, size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, body:{query:string}})=>{
-
+        const timeStart = Date.now()
         const { size, page, kind} = params
         const { query } = body
         if(!size || !page){
@@ -609,6 +609,7 @@ export const flightModule = new Elysia({
                 
                 totalCount = await prisma.$queryRawUnsafe(countQueryString);
             }
+            const timeEnd = Date.now()
             if (result.length === 0) {
                 return {
                     status: false,
@@ -617,6 +618,7 @@ export const flightModule = new Elysia({
                     page: page,
                     size: size,
                     data: [],
+                    timeUsed: timeEnd - timeStart,
                 }
             }
             return {
@@ -626,6 +628,7 @@ export const flightModule = new Elysia({
                 page: page,
                 size: size,
                 data: sanitizeBigInt(result),
+                timeUsed: timeEnd - timeStart,
             }
         } catch (err) {
             console.error(err)

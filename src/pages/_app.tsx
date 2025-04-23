@@ -1,11 +1,12 @@
 import "@/styles/globals.css";
-
+import SEO from "@/lib/seo";
 import { SessionProvider } from 'next-auth/react';
 import { ThemeProvider } from 'next-themes';
 import { AppProps } from 'next/app';
 import { useEffect, useState } from 'react';
 import LoadingApp from '@/components/loading'
 import { BackendProvider } from '@/components/backend-url-provider';
+import { DefaultSeo } from "next-seo";
 
 export default function App({ Component, pageProps }: AppProps) {
     // Add a state to track if we're on the client
@@ -21,6 +22,7 @@ export default function App({ Component, pageProps }: AppProps) {
     if (!isClient) {
         return (
             <main className="font-noto">
+                <DefaultSeo {...SEO} />
                 <LoadingApp />
             </main>
         )
@@ -29,6 +31,7 @@ export default function App({ Component, pageProps }: AppProps) {
     // Only render the full app when on the client
     return (
         <SessionProvider session={pageProps.session} refetchInterval={0}>
+            <DefaultSeo {...SEO} />
             <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
                 <BackendProvider>
                     <main className={`font-noto`}>

@@ -13,7 +13,7 @@ import { BackendURLType, useBackendURL } from "../backend-url-provider"
 import { CustomPagination } from "../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 
-interface FlightScheduleFetchResponse {
+interface ScheduleFetchResponse {
   message: string
   data: ScheduleListAdmin[]
   size: number
@@ -22,7 +22,7 @@ interface FlightScheduleFetchResponse {
   totalCount: number
 }
 
-export default function FlightScheduleAdmin() {
+export default function ScheduleAdmin() {
   const { backend:backendURL }: BackendURLType = useBackendURL();
   const [flights, setFlights] = useState<ScheduleListAdmin[]>([])
   const [isAddScheduleOpen, setIsAddScheduleOpen] = useState(false)
@@ -50,7 +50,7 @@ export default function FlightScheduleAdmin() {
           })
         })
         if (response.ok) {
-          const data: FlightScheduleFetchResponse = await response.json()
+          const data: ScheduleFetchResponse = await response.json()
           console.log(data)
           setFlights(data?.data)
           setTotalCount(data?.totalCount)

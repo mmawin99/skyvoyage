@@ -226,6 +226,7 @@ model user {
 enum Permission {
   SUPER
   DATA_ENTRY
+  USER
 }
 
 enum BookingStatus {

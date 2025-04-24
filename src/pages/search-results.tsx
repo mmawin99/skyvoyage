@@ -235,13 +235,13 @@ export default function SearchResults() {
         !queryParams.origin ||
         !queryParams.destination ||
         !queryParams.departDateStr) {
-        console.log("Query parameters are not set");
+        console.log("Query parameters are not set 1.", queryParams);
         return;
       }
 
       if(!refSearchParams.current){
         // Check queryParams is empty (not set) return the interval function to let them occur again
-        console.log("Query parameters are not set");
+        console.log("Query parameters are not set 2.", queryParams);
         return
       }
       

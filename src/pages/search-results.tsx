@@ -132,7 +132,10 @@ export default function SearchResults() {
     }
   }
   useEffect(() => {
+    let isEffectActive = false;
     if(!refSearchParams.current){
+      isEffectActive = true;
+      console.log("useEffect is running - setting queryParams");
       const searchParams = new URLSearchParams(window.location.search);
       setQueryParams({
         origin: searchParams.get("origin") || '',
@@ -143,10 +146,17 @@ export default function SearchResults() {
         cabinClass: searchParams.get("cabinClass") || "Y",
         tripType: searchParams.get("tripType") || "roundtrip"
       });
+    }else{
+      console.log("useEffect is not running - queryParams already set");
     }
 
     return () => {
-      refSearchParams.current = true
+      if(isEffectActive) {
+        console.log("useEffect cleanup - setting refSearchParams.current to true");
+        refSearchParams.current = true;
+      }else{
+        console.log("useEffect cleanup - refSearchParams.current already true, no action taken");
+      }
     } // Cleanup function to set refSearchParams.current to true after the first render
   }, []);
 

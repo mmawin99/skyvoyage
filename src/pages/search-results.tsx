@@ -114,6 +114,42 @@ export default function SearchResults() {
 
   const refRunPassengerInfo = useRef<boolean>(false)
 
+  const fareName = (fare: FareType | undefined) => {
+    if (!fare) return "Unknown Fare"
+    switch (fare) {
+      case "SUPER_SAVER":
+        return "Super Saver Fare"
+      case "SAVER":
+        return "Saver Fare"
+      case "STANDARD":
+        return "Standard Fare"
+      case "FLEXI":
+        return "Flexi Fare"
+      case "FULL_FLEX":
+        return "Full Flex Fare"
+      default:
+        return "Unknown Fare"
+    }
+  }
+  useEffect(() => {
+    if(!refSearchParams.current){
+      const searchParams = new URLSearchParams(window.location.search);
+      setQueryParams({
+        origin: searchParams.get("origin") || '',
+        destination: searchParams.get("destination") || '',
+        departDateStr: searchParams.get("departDate") || '',
+        returnDateStr: searchParams.get("returnDate") || '',
+        passengersStr: searchParams.get("passengers") || "1,0,0",
+        cabinClass: searchParams.get("cabinClass") || "Y",
+        tripType: searchParams.get("tripType") || "roundtrip"
+      });
+    }
+
+    return () => {
+      refSearchParams.current = true
+    } // Cleanup function to set refSearchParams.current to true after the first render
+  }, []);
+
   useEffect(() => {
     const generateTemporaryPassenger = (ageRange: "Adult" | "Children" | "Infant", index:number): PassengerFillOut => {
       return {
@@ -178,42 +214,6 @@ export default function SearchResults() {
 
   }, [nextStep, router, setSelectedRoute, selectedDepartureFlight, selectedReturnFlight, queryParams, departFlights, returnFlights, calculateTotalPrice, adultCount,childCount,infantCount])
 
-
-  const fareName = (fare: FareType | undefined) => {
-    if (!fare) return "Unknown Fare"
-    switch (fare) {
-      case "SUPER_SAVER":
-        return "Super Saver Fare"
-      case "SAVER":
-        return "Saver Fare"
-      case "STANDARD":
-        return "Standard Fare"
-      case "FLEXI":
-        return "Flexi Fare"
-      case "FULL_FLEX":
-        return "Full Flex Fare"
-      default:
-        return "Unknown Fare"
-    }
-  }
-  useEffect(() => {
-    if(!refSearchParams.current){
-      const searchParams = new URLSearchParams(window.location.search);
-      setQueryParams({
-        origin: searchParams.get("origin") || '',
-        destination: searchParams.get("destination") || '',
-        departDateStr: searchParams.get("departDate") || '',
-        returnDateStr: searchParams.get("returnDate") || '',
-        passengersStr: searchParams.get("passengers") || "1,0,0",
-        cabinClass: searchParams.get("cabinClass") || "Y",
-        tripType: searchParams.get("tripType") || "roundtrip"
-      });
-    }
-
-    return () => {
-      refSearchParams.current = true
-    } // Cleanup function to set refSearchParams.current to true after the first render
-  }, []);
   
   useEffect(() => {
     const interval = setInterval(async () => {

@@ -180,6 +180,7 @@ export interface AircraftRegistration {
     registration: string,
     model: string,
     airline_code: string,
+    totalFlight: number
 }
 
 export interface SubmitSchedule {

@@ -22,6 +22,11 @@ interface Schedule {
     arrivalAirportCode: string
 }
 
+// extends type Aircraft
+interface AircraftExtends extends Aircraft {
+    totalFlight: number
+}
+
 export const autocompleteModule = new Elysia({
     prefix: '/autocomplete',
     })
@@ -455,15 +460,15 @@ export const autocompleteModule = new Elysia({
         if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
         if(!page || page < 1) return error(400, "invalid_page_number")
         if(!size || size < 1) return error(400, "invalid_page_size")
-        // if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
-        // if(!page || page < 1 || typeof page != "number") return error(400, "invalid_page_number")
-        // if(!size || size < 1 || typeof size != "number") return error(400, "invalid_page_size")
-
+        
         const offset = (page - 1) * size
         const limit = size
-        
-        const aircraftList:Aircraft[] = await prisma.$queryRaw`
-            SELECT \`aircraftId\`, \`model\`, \`ownerAirlineCode\` FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode}
+
+        const aircraftList:AircraftExtends[] = await prisma.$queryRaw`
+            SELECT \`aircraftId\`, \`model\`, \`ownerAirlineCode\`,
+            (SELECT COUNT(*) FROM flightOperate fo WHERE fo.aircraftId = ac.aircraftId) AS totalFlight 
+            FROM \`aircraft\` ac 
+            WHERE \`ownerAirlineCode\` = ${airlineCode}
             LIMIT ${limit} OFFSET ${offset};
         `
         const totalCount: number = await prisma.$queryRaw`
@@ -471,11 +476,12 @@ export const autocompleteModule = new Elysia({
         `
         return {
             status: true,
-            data: aircraftList.map((aircraft)=>{
+            data: sanitizeBigInt(aircraftList).map((aircraft:AircraftExtends)=>{
                 return {
                     registration: aircraft.aircraftId,
                     model: aircraft.model,
                     airline_code: aircraft.ownerAirlineCode,
+                    totalFlight: aircraft.totalFlight,
                 }
             }),
             totalCount: sanitizeBigInt(totalCount)[0].count,

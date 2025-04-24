@@ -6,6 +6,7 @@ import { Loader2Icon, LockKeyholeOpen, LucidePlane, TriangleAlert } from 'lucide
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import Link from 'next/link'
 
 
 const AdminSignin = () => {
@@ -141,6 +142,9 @@ const AdminSignin = () => {
                 </div>
                 <p className='px-8 text-center text-sm text-muted-foreground'>
                     &copy; {new Date().getFullYear()} SkyVoyage. All rights reserved.
+                </p>
+                <p className='px-8 text-center text-sm text-muted-foreground'>
+                    <Link href="/account/auth?signin" className='text-blue-500 hover:underline'>Go to user sign in</Link>
                 </p>
                 </div>
             </div>

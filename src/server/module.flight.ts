@@ -718,11 +718,13 @@ export const flightModule = new Elysia({
                     WHERE
                         f.departAirportId = ${depAirport}
                         AND f.arriveAirportId = ${arrAirport}
-                        AND DATE(fo.departureTime) = ${depDate}
+                        AND DATE(CONVERT_TZ(fo.departureTime, 'UTC', da.timezone)) = ${depDate}
+                        AND fo.departureTime > UTC_TIMESTAMP() + INTERVAL 90 MINUTE
+                        
                     GROUP BY fo.flightId
                     HAVING COUNT(s.seatId) > COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID' OR b.status = 'UNPAID') THEN 1 ELSE NULL END) 
                     AND COUNT(s.seatId) - COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID' OR b.status = 'UNPAID') THEN 1 ELSE NULL END) > ${passengerCount};
-                `;
+                `
                 return {
                     status: true,
                     message: 'Flight list retrieved successfully',
@@ -791,11 +793,14 @@ export const flightModule = new Elysia({
                         FROM 
                             /* First leg flight selection with filtering applied early */
                             (SELECT fo.* 
-                            FROM flightOperate fo
-                            JOIN flight f ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
-                            WHERE f.departAirportId = ${depAirport} 
-                            AND DATE(fo.departureTime) = ${depDate}
+                                FROM flightOperate fo
+                                JOIN flight f ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
+                                JOIN airport dep ON f.departAirportId = dep.airportCode
+                                WHERE f.departAirportId = ${depAirport} 
+                                AND DATE(CONVERT_TZ(fo.departureTime, 'UTC', dep.timezone)) = ${depDate}
+                                AND fo.departureTime > UTC_TIMESTAMP() + INTERVAL 90 MINUTE
                             ) fo1
+
                         JOIN flight f1 ON fo1.flightNum = f1.flightNum AND fo1.airlineCode = f1.airlineCode
                         JOIN airline a1 ON a1.airlineCode = f1.airlineCode
                         JOIN aircraft ac1 ON ac1.aircraftId = fo1.aircraftId
@@ -815,13 +820,14 @@ export const flightModule = new Elysia({
 
                         /* Second leg flight selection */
                         JOIN flight f2 ON t.flightNumTo = f2.flightNum AND t.airlineCodeTo = f2.airlineCode
-                        JOIN (
-                            SELECT fo.* 
-                            FROM flightOperate fo
-                            JOIN flight f ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
-                            WHERE f.arriveAirportId = ${arrAirport}
-                            AND DATE(fo.departureTime) IN (${depDate}, DATE_ADD(${depDate}, INTERVAL 1 DAY))
-                        ) fo2 ON fo2.flightNum = f2.flightNum AND fo2.airlineCode = f2.airlineCode
+                        JOIN (SELECT fo.* 
+                                FROM flightOperate fo
+                                JOIN flight f ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
+                                JOIN airport dep ON f.departAirportId = dep.airportCode
+                                WHERE f.arriveAirportId = ${arrAirport}
+                                AND DATE(CONVERT_TZ(fo.departureTime, 'UTC', dep.timezone)) IN (${depDate}, DATE_ADD(${depDate}, INTERVAL 1 DAY))
+                                AND fo.</T>departureTime > UTC_TIMESTAMP() + INTERVAL 90 MINUTE
+                            ) fo2 ON fo2.flightNum = f2.flightNum AND fo2.airlineCode = f2.airlineCode
                         JOIN airline a2 ON a2.airlineCode = f2.airlineCode
                         JOIN aircraft ac2 ON ac2.aircraftId = fo2.aircraftId
                         JOIN aircraftCost acs2 ON ac2.model = acs2.model AND acs2.ownerAirlineCode = a2.airlineCode

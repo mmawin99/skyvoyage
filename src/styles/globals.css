@@ -1,12 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wdth,wght@62.5..100,100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Noto+Sans+Thai:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Noto+Sans+Thai:wght@100..900&family=Pacifico&display=swap');
+
 @plugin "tailwindcss-animate";
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.5rem;
+  --radius: .3rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
@@ -100,6 +100,7 @@ body {
   --breakpoint-xl_extra: 1340px;
   --breakpoint-2xl: 1536px;
   --font-noto: "Geist" ,"Noto Sans Thai", sans-serif;
+  --font-pacifico: "Pacifico", cursive, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

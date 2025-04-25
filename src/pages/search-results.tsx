@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Slider } from "@/components/ui/slider"
 import { ArrowRight, Clock, Filter, Loader2, Plane, TriangleAlert } from "lucide-react"
-import { FareType, PassengerFillOut, searchSelectedFlight, searchSelectedRoutes, UniversalFlightSchedule, UniversalFlightSegmentSchedule } from "@/types/type"
+import { CabinClassType, FareType, PassengerFillOut, PassengerTicket, searchSelectedFlight, searchSelectedRoutes, UniversalFlightSchedule, UniversalFlightSegmentSchedule } from "@/types/type"
 import { NextRouter, useRouter } from "next/router"
 import { useBackendURL } from "@/components/backend-url-provider"
 import { useSession } from "next-auth/react"
@@ -18,7 +18,6 @@ import { Navbar } from "@/components/navbar"
 import { AppFooter } from "@/components/footer"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import FlightCard from "@/components/flight-card"
-import { cabinClassPrice } from "@/lib/price"
 import { Badge } from "@/components/ui/badge"
 
 import { useSessionStorage } from "@uidotdev/usehooks"
@@ -80,7 +79,7 @@ export default function SearchResults() {
         departDateStr: queryParams.departDateStr,
         returnDateStr: queryParams.returnDateStr,
         passengersStr: queryParams.passengersStr,
-        cabinClass: queryParams.cabinClass,
+        cabinClass: queryParams.cabinClass as CabinClassType,
         tripType: queryParams.tripType,
       },
       totalFare: 0,
@@ -98,19 +97,23 @@ export default function SearchResults() {
   const [isSelectedReturnFlight, setIsSelectedReturnFlight] = useState<boolean>(false)
 
     // Format passenger information for display
-  const calculateTotalPrice = useCallback((total_price: number) => {
+  const calculatePrice = useCallback((totalPrice: number, type: "Adult" | "Children" | "Infant", passengerCount:number = 1 ):number=>{
+    if (type === "Adult") {
+      return totalPrice * passengerCount
+    } else if (type === "Children") {
+      return Math.floor(totalPrice * 0.78553) * passengerCount
+    } else if (type === "Infant") {
+      return Math.floor(totalPrice * 0.22053) * passengerCount
+    }
+    return 0
+  }, [])
+  const calculateTotalPrice = useCallback((total_price: number, pa:number = 0, pc:number = 0, pi:number = 0) => {
     let totalPrice = 0
-    if (adultCount > 0) {
-      totalPrice += adultCount * total_price
-    }
-    if (childCount > 0) {
-      totalPrice += Math.floor(childCount * (total_price * 0.75))
-    }
-    if (infantCount > 0) {
-      totalPrice += Math.floor(infantCount * (total_price * 0.2377))
-    }
+    if (pa > 0)  totalPrice += calculatePrice(total_price, "Adult", pa)
+    if (pc > 0)  totalPrice += calculatePrice(total_price, "Children", pc)
+    if (pi > 0) totalPrice += calculatePrice(total_price, "Infant", pi)
     return totalPrice
-  }, [adultCount, childCount, infantCount])
+  }, [calculatePrice])
 
   const refRunPassengerInfo = useRef<boolean>(false)
 
@@ -153,10 +156,29 @@ export default function SearchResults() {
   }, []);
 
   useEffect(() => {
-    const generateTemporaryPassenger = (ageRange: "Adult" | "Children" | "Infant", index:number): PassengerFillOut => {
+    const generatePassengerTicket = (segmentSchedule:UniversalFlightSegmentSchedule[]):PassengerTicket[]=>{
+      return segmentSchedule.map(i=>{
+        const referenceTicket = "t-" + Math.random().toString(36).substring(2, 15)
+        return {
+          tid: referenceTicket,
+          fid: i.flightId,
+          baggageAllowanceWeight: 0,
+          baggageAllowancePrice:0,
+          mealSelection: "",
+          mealPrice: 0,
+          seatId: ""
+        }
+      })
+      
+    }
+    const generateTemporaryPassenger = (ageRange: "Adult" | "Children" | "Infant",segmentSchedule:UniversalFlightSegmentSchedule[], index:number, offset:number = 0): PassengerFillOut => {
+      const referencePassengerID:string = "p-" + Math.random().toString(36).substring(2, 15)
       return {
-        label: ageRange + " Passenger #" + (index + 1),
-        pid: Math.random().toString(36).substring(2, 15),
+        label: 
+          ageRange == "Adult" ? "Passenger #" + (index + 1) + " (" + ageRange+ " #"+(index + 1)+")" :
+          ageRange == "Children" ? "Passenger #" + (index + offset + 1) + " (" + ageRange+ " #"+(index + 1)+")" :
+          "Passenger #" + (index + offset + 1) + " (" + ageRange+ " #"+(index + 1)+" Travel with Adult #" + (index + 1) + ")",
+        pid: referencePassengerID,
         status: "UNFILLED",
         passportNum: "",
         passportCountry: "",
@@ -166,12 +188,7 @@ export default function SearchResults() {
         dateOfBirth: "",
         nationality: "",
         ageRange: ageRange,
-        baggageAllowanceWeight: 0,
-        baggageAllowancePrice: 0,
-        mealSelection: "",
-        mealPrice: 0,
-        ticketPrice: 0,
-        seatId: "",
+        ticket: generatePassengerTicket(segmentSchedule)
       }
     }
     if(nextStep){
@@ -183,10 +200,14 @@ export default function SearchResults() {
       console.log("Ref run passenger info is false")
     }
     if (nextStep && !refRunPassengerInfo.current) {
+      const flightSegmentList:UniversalFlightSegmentSchedule[] = [
+        ...(selectedDepartureFlight?.flight.segments || []),
+        ...(selectedReturnFlight?.flight.segments || [])
+      ]
       const passenger: PassengerFillOut[] = [
-        ...Array.from({ length: adultCount }, (_, index) => generateTemporaryPassenger("Adult", index)),
-        ...Array.from({ length: childCount }, (_, index) => generateTemporaryPassenger("Children", index + adultCount)),
-        ...Array.from({ length: infantCount }, (_, index) => generateTemporaryPassenger("Infant", index + adultCount + childCount)),
+        ...Array.from({ length: adultCount }, (_, index) =>  generateTemporaryPassenger("Adult"   , flightSegmentList, index, 0)),
+        ...Array.from({ length: childCount }, (_, index) =>  generateTemporaryPassenger("Children", flightSegmentList, index, adultCount)),
+        ...Array.from({ length: infantCount }, (_, index) => generateTemporaryPassenger("Infant"  , flightSegmentList, index, adultCount + childCount)),
       ];
       setSelectedRoute({
         departRoute: departFlights,
@@ -199,13 +220,13 @@ export default function SearchResults() {
           departDateStr: queryParams.departDateStr,
           returnDateStr: queryParams.returnDateStr,
           passengersStr: queryParams.passengersStr,
-          cabinClass: queryParams.cabinClass,
+          cabinClass: queryParams.cabinClass as CabinClassType,
           tripType: queryParams.tripType,
         },
-        totalFare: calculateTotalPrice((selectedDepartureFlight?.price ?? 0) + (selectedReturnFlight?.price ?? 0)),
+        totalFare: calculateTotalPrice((selectedDepartureFlight?.price ?? 0) + (selectedReturnFlight?.price ?? 0), adultCount, childCount, infantCount),
         passenger: passenger,
       })
-      router.push("/passenger-info");
+      router.push("/booking-info");
     }
 
     return () => {
@@ -237,7 +258,8 @@ export default function SearchResults() {
         return
       }
       
-    
+      setIsSelectedDepartureFlight(false)
+      setIsSelectedReturnFlight(false)
       clearInterval(interval); // ✅ All checks passed, stop polling
       setLoading(true);
       setIsError(false);
@@ -347,7 +369,7 @@ export default function SearchResults() {
       <div key={index} className="flex items-center gap-2 pl-3">
         <div className="text-sm text-gray-600 flex flex-row items-center gap-2">
           Operate by {segment.airlineName} ({segment.airlineCode} {segment.flightNum.split("-")[0]})
-          <Badge variant="outline">{flight.flight.segments.length == 1 ? "Direct Flight" : "Flight Segments "+index + 1}</Badge>
+          <Badge variant="outline">{flight.flight.segments.length == 1 ? "Direct Flight" : "Flight Segments "+(index + 1)}</Badge>
           <Badge variant="default">
             {cabinClass === "Y" ? "Economy Class" : cabinClass === "C" ? "Business Class" : cabinClass === "F" ? "First Class" : cabinClass === "W" ? "Premium Economy" : ""}
           </Badge>
@@ -379,11 +401,24 @@ export default function SearchResults() {
   }
 
   if(sessionStatus === "loading") return <LoadingApp />
-
+  if(refSearchParams.current){
+    if(adultCount < infantCount){
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <TriangleAlert className="h-16 w-16 mb-4 text-red-600" />
+          <span className="text-3xl font-bold mb-4">Search flight is not available to you.</span>
+          <p className="text-lg text-gray-600">Number of infant passenger must be less than or equal to number of adult passenger.</p>
+          <div className="flex flex-row gap-2">
+            <Button variant={"outline"} onClick={() => router.push("/")}>Go to Home</Button>
+          </div>
+        </div>
+      )
+    }
+  }
   if(sessionData?.user.role !== "user" && sessionStatus === "authenticated") return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <TriangleAlert className="h-16 w-16 mb-4 text-red-600" />
-      <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+      <span className="text-3xl font-bold mb-4">Access Denied</span>
       <p className="text-lg text-gray-600 mb-6">This page required you to sign in.</p>
       <div className="flex flex-row gap-2">
         <Button variant={"outline"} onClick={() => router.push("/")}>Go to Home</Button>
@@ -402,8 +437,14 @@ export default function SearchResults() {
 
         <div className="flex flex-col md:flex-row gap-6">
           {/* Filters */}
-          <div className="w-full md:w-1/4 md:sticky md:top-20 self-start h-fit">
-            <Card className="max-h-screen overflow-auto">
+          <div className={`w-full
+            ${queryParams.tripType === "roundtrip" && !isSelectedReturnFlight || !isSelectedDepartureFlight && queryParams.tripType === "oneway"
+              ? "md:w-1/4" : "md:w-0"
+            }
+            md:sticky md:top-20 self-start h-fit`}>
+            {
+              (queryParams.tripType === "roundtrip" && !isSelectedReturnFlight || !isSelectedDepartureFlight && queryParams.tripType === "oneway") &&
+              <Card className="max-h-screen overflow-auto">
               <CardHeader className="pb-3">
                 <div className="flex items-center">
                   <Filter className="mr-2 h-5 w-5" />
@@ -438,7 +479,7 @@ export default function SearchResults() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="1stop" id="r2" />
-                      <Label htmlFor="r2">Transit (1 Stop)</Label>
+                      <Label htmlFor="r2">Transit (1 Stop) or lower</Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -460,11 +501,15 @@ export default function SearchResults() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> }
           </div>
 
           {/* Flight Results */}
-          <div className="w-full md:w-3/4">
+          <div className={`w-full
+            ${queryParams.tripType === "roundtrip" && !isSelectedReturnFlight || !isSelectedDepartureFlight && queryParams.tripType === "oneway"
+              ? "md:w-3/4" : "md:w-full"
+            }
+            `}>
             {
             isError ? (
               <Alert variant="destructive" className="mb-4">
@@ -516,8 +561,7 @@ export default function SearchResults() {
                                 selectedFare: selectedFare,
                                 flightId,
                                 flight,
-                                price: cabinClassPrice(flight.price[selectedFare], queryParams.cabinClass as "Y" | "C" | "F" | "W", 
-                                  selectedFare)
+                                price: flight.price[selectedFare]
                               });
                               setIsLoadingReturnFlight(true);
                               setIsSelectedDepartureFlight(true);
@@ -545,8 +589,7 @@ export default function SearchResults() {
                                 selectedFare: selectedFare,
                                 flightId,
                                 flight,
-                                price: cabinClassPrice(flight.price[selectedFare], queryParams.cabinClass as "Y" | "C" | "F" | "W", 
-                                  selectedFare)
+                                price: flight.price[selectedFare]
                               });
                               setIsSelectedReturnFlight(true);
                             }
@@ -567,17 +610,18 @@ export default function SearchResults() {
                     <div className="grid grid-cols-7">
                       <div className="text-gray-500 col-span-3 flex flex-col gap-2">
                         <span>Departure Flight ({queryParams.origin} → {queryParams.destination}) <Badge variant={"outline"}>{fareName(selectedDepartureFlight?.selectedFare)}</Badge></span>
-                        <div>{flightInfo(selectedDepartureFlight, queryParams?.cabinClass as "Y" | "C" | "W" | "F")}</div>  
+                        <div className="flex flex-col gap-2">{flightInfo(selectedDepartureFlight, queryParams?.cabinClass as "Y" | "C" | "W" | "F")}</div>  
                       </div>
                       <div className="font-semibold col-span-2 text-center">{formatDuration(selectedDepartureFlight?.flight.duration ?? 0)}</div>
                       <div className="font-semibold col-span-2 text-right">${selectedDepartureFlight?.price}</div>
                     </div>
+                    { queryParams.tripType == "roundtrip" && <Separator />}
                     {
                       queryParams.tripType == "roundtrip" ? 
                         <div className="grid grid-cols-7">
                           <div className="text-gray-500 col-span-3 flex flex-col gap-2">
                             <span>Return Flight ({queryParams.destination} → {queryParams.origin}) <Badge variant={"outline"}>{fareName(selectedReturnFlight?.selectedFare)}</Badge></span>
-                            <div>{flightInfo(selectedReturnFlight, queryParams?.cabinClass as "Y" | "C" | "W" | "F")}</div>  
+                            <div className="flex flex-col gap-2">{flightInfo(selectedReturnFlight, queryParams?.cabinClass as "Y" | "C" | "W" | "F")}</div>  
                           </div>
                           <div className="font-semibold col-span-2 text-center">{formatDuration(selectedReturnFlight?.flight.duration ?? 0)}</div>
                           <div className="font-semibold col-span-2 text-right">${selectedReturnFlight?.price}</div>
@@ -591,7 +635,7 @@ export default function SearchResults() {
                     </div>
                     <div className="grid grid-cols-7">
                       <div className="text-gray-500 col-span-5 text-right">Total Fare: </div>
-                      <div className="font-semibold col-span-2 text-right">${calculateTotalPrice((selectedDepartureFlight?.price ?? 0) + (selectedReturnFlight?.price ?? 0))}</div>
+                      <div className="font-semibold col-span-2 text-right">${calculateTotalPrice((selectedDepartureFlight?.price ?? 0) + (selectedReturnFlight?.price ?? 0), adultCount, childCount, infantCount)}</div>
                     </div>
                     <div className="grid grid-cols-7">
                       <div className="text-gray-500 col-span-7 text-right text-xs">{queryParams.tripType == "roundtrip" ? "Round trip" : "One way"} price for all passengers (including taxes, fees and discounts).

@@ -6,7 +6,8 @@ import { ChevronDown, ChevronUp, Plane, Check, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { FareType, UniversalFlightSchedule } from "@/types/type"
+import { FarePackage, FareType, UniversalFlightSchedule } from "@/types/type"
+import { FarePackageList } from './../lib/farePackage';
 
 
 interface FlightCardProps {
@@ -46,25 +47,6 @@ const formatInTimeZone = (date: Date, timeZone: string, format: string): string 
     .replace("MM", lookup.month ?? "")
     .replace("yyyy", lookup.year ?? "");
 };
-
-// Fare package types
-
-interface FarePackage {
-  type: FareType
-  price: number
-  baggage: string
-  carryOn: string
-  seatSelection: boolean
-  changes: string
-  cancellation: string
-  priorityBoarding: boolean
-  recommended?: boolean
-  label?: string
-  mileage?: string
-  refundable?: boolean
-  loungeAccess?: boolean
-  available?: boolean
-}
 
 export default function FlightCard({ flight, cabinclass, onSelect }: FlightCardProps) {
   // State to track if this flight card is expanded
@@ -120,85 +102,7 @@ export default function FlightCard({ flight, cabinclass, onSelect }: FlightCardP
   }
 
   // Sample fare packages data
-  const farePackages: FarePackage[] = [
-    {
-      type: "SUPER_SAVER",
-      price: flight.price.SUPER_SAVER,
-      available: cabinclass === "Y",
-      baggage: "1 x 23kg",
-      carryOn: "1 x 7kg",
-      mileage: "Not eligible",
-      seatSelection: false,
-      changes: "Not allowed",
-      cancellation: "Not allowed",
-      priorityBoarding: false,
-      label: "Economy",
-      refundable: false,
-      loungeAccess: false,
-    },
-    {
-      type: "SAVER",
-      price: flight.price.SAVER,
-      available: cabinclass === "Y" || cabinclass === "W",
-      baggage: "1 x 23kg",
-      carryOn: "1 x 7kg",
-      mileage: "0 - 25%",
-      seatSelection: false,
-      changes: "Fee applies",
-      cancellation: "Not allowed",
-      priorityBoarding: false,
-      label: "Value",
-      refundable: false,
-      loungeAccess: false,
-    },
-    {
-      type: "STANDARD",
-      price: flight.price.STANDARD,
-      available: cabinclass === "Y" || cabinclass === "W",
-      baggage: "1 x 25kg",
-      carryOn: "1 x 7kg",
-      mileage: "25 - 75%",
-      seatSelection: true,
-      changes: "Fee applies",
-      cancellation: "Fee applies",
-      priorityBoarding: false,
-      recommended: true,
-      label: "Popular",
-      refundable: false,
-      loungeAccess: false,
-    },
-    {
-      type: "FLEXI",
-      price: flight.price.FLEXI,
-      available: cabinclass === "Y" || cabinclass === "W" || cabinclass === "C" || cabinclass === "F",
-      baggage: "1 x 30kg",
-      carryOn: "1 x 7kg",
-      mileage: "75 - 100%",
-      seatSelection: true,
-      changes: "Free",
-      cancellation: "Fee applies",
-      priorityBoarding: true,
-      label: "Business",
-      refundable: false,
-      loungeAccess: true,
-    },
-    {
-      type: "FULL_FLEX",
-      price: flight.price.FULL_FLEX,
-      available: cabinclass === "Y" || cabinclass === "W" || cabinclass === "C" || cabinclass === "F",
-      baggage: "2 x 32kg",
-      carryOn: "1 x 7kg",
-      mileage: "100 - 125%",
-      seatSelection: true,
-      changes: "Free",
-      cancellation: "Free",
-      priorityBoarding: true,
-      label: "Premium",
-      refundable: true,
-      loungeAccess: true,
-    },
-  ]
-
+  const farePackages: FarePackage[] = FarePackageList(flight, cabinclass);
   // Format fare type for display
   const formatFareType = (type: FareType) => {
     return type

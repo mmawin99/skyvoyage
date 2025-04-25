@@ -670,7 +670,7 @@ export const flightModule = new Elysia({
             let result1: FlightScheduleTransit1[] = [];
     
             // Direct flights (0 stop)
-            if (transitCount === 0) {
+            if (transitCount === 0 || transitCount == 1) {
                 result = await prisma.$queryRaw`
                     SELECT
                         fo.flightId,
@@ -725,12 +725,15 @@ export const flightModule = new Elysia({
                     HAVING COUNT(s.seatId) > COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID' OR b.status = 'UNPAID') THEN 1 ELSE NULL END) 
                     AND COUNT(s.seatId) - COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID' OR b.status = 'UNPAID') THEN 1 ELSE NULL END) > ${passengerCount};
                 `
-                return {
-                    status: true,
-                    message: 'Flight list retrieved successfully',
-                    data: convertToUniversalFormat(flightClass, sanitizeBigInt(result)),
-                };
-            }else if (transitCount == 1) {
+                if(transitCount == 0){
+                    return {
+                        status: true,
+                        message: 'Flight list retrieved successfully',
+                        data: convertToUniversalFormat(flightClass, sanitizeBigInt(result)),
+                    };
+                }
+            }
+            if (transitCount == 1) {
                 result1 = await prisma.$queryRaw`
                         SELECT
                             fo1.flightId AS flightId1,
@@ -826,7 +829,7 @@ export const flightModule = new Elysia({
                                 JOIN airport dep ON f.departAirportId = dep.airportCode
                                 WHERE f.arriveAirportId = ${arrAirport}
                                 AND DATE(CONVERT_TZ(fo.departureTime, 'UTC', dep.timezone)) IN (${depDate}, DATE_ADD(${depDate}, INTERVAL 1 DAY))
-                                AND fo.</T>departureTime > UTC_TIMESTAMP() + INTERVAL 90 MINUTE
+                                AND fo.departureTime > UTC_TIMESTAMP() + INTERVAL 90 MINUTE
                             ) fo2 ON fo2.flightNum = f2.flightNum AND fo2.airlineCode = f2.airlineCode
                         JOIN airline a2 ON a2.airlineCode = f2.airlineCode
                         JOIN aircraft ac2 ON ac2.aircraftId = fo2.aircraftId
@@ -890,7 +893,10 @@ export const flightModule = new Elysia({
                 return {
                     status: true,
                     message: 'Flight list retrieved successfully',
-                    data: convertToUniversalFormat(flightClass, [], sanitizeBigInt(result1)),
+                    data: [
+                        ...convertToUniversalFormat(flightClass, sanitizeBigInt(result), []),
+                        ...convertToUniversalFormat(flightClass, [], sanitizeBigInt(result1)),
+                    ],
                 }
             }
     

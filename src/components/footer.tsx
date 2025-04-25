@@ -13,15 +13,18 @@ export const AppFooter = () => {
                     {/* Logo */}
                     <div className="justify-center col-span-2 lg:col-span-1 flex items-center gap-10 lg:flex-col lg:items-start">
                         <LucidePlane className="w-20 h-20" />
-                        <div className="text-4xl font-bold">SkyVoyage</div>
+                        <div className="text-4xl font-bold font-pacifico">SkyVoyage</div>
                     </div>
 
                 
                     {/* About us */}
                     <div>
                         <h4 className="text-primary font-semibold mb-3">About us</h4>
-                        <p>Created by SkyVoyage group</p>
-                        <p className="mt-2">1002, 1011, 1018, 1020, 1029</p>
+                        <p>Created by</p>
+                        <p>Group <span className='font-bold'>sudo apt i-love-ubuntu</span></p>
+                        <p className='line-through'>&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</p>
+                        <p className="mt-2">Member</p>
+                        <p>1002, 1011, 1018, 1020, 1029</p>
                         <p className='line-through'>&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</p>
                     </div>
 

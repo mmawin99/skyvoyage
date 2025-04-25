@@ -299,9 +299,19 @@ export type FareType = "SUPER_SAVER" | "SAVER" | "STANDARD" | "FLEXI" | "FULL_FL
 
 export interface searchSelectedFlight {
     selectedFare:FareType, 
-    flightId: string, 
+    flightId: string,
     flight: UniversalFlightSchedule
     price: number
+}
+
+export interface PassengerTicket{
+    tid: string, // ticket id (only frontend use)
+    fid: string, //flight reference id
+    baggageAllowanceWeight: number // in kg
+    baggageAllowancePrice: number // in USD
+    mealSelection: string //
+    mealPrice: number // in USD
+    seatId: string // seat id
 }
 
 export interface PassengerFillOut{
@@ -316,12 +326,7 @@ export interface PassengerFillOut{
     dateOfBirth: string // YYYY-MM-DD
     nationality: string // 2 charactors
     ageRange: "Adult" | "Children" | "Infant"
-    baggageAllowanceWeight: number // in kg
-    baggageAllowancePrice: number // in USD
-    mealSelection: string
-    mealPrice: number // in USD
-    ticketPrice: number // in USD
-    seatId: string // seat id
+    ticket: PassengerTicket[]
 }
 
 export interface searchSelectedRoutes{
@@ -335,9 +340,31 @@ export interface searchSelectedRoutes{
         departDateStr: string,
         returnDateStr: string,
         passengersStr: string,
-        cabinClass: string,
+        cabinClass: CabinClassType,
         tripType: string,
     }
     totalFare: number,
     passenger?: PassengerFillOut[],
+    ticket?: string
 }
+
+// Fare package types
+
+export interface FarePackage {
+    type: FareType
+    price: number
+    baggage: string
+    carryOn: string
+    seatSelection: boolean
+    changes: string
+    cancellation: string
+    priorityBoarding: boolean
+    recommended?: boolean
+    label?: string
+    mileage?: string
+    refundable?: boolean
+    loungeAccess?: boolean
+    available?: boolean
+  }
+
+export type CabinClassType = "Y" | "C" | "W" | "F"

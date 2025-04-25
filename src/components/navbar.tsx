@@ -20,7 +20,7 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Plane className="h-6 w-6 text-sky-500" />
-          <span className="text-xl font-bold text-sky-700">SkyVoyage</span>
+          <span className="text-xl font-bold text-sky-700 font-pacifico">SkyVoyage</span>
         </Link>
 
         {/* Desktop Navigation */}

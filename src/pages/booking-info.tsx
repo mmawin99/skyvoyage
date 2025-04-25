@@ -196,39 +196,41 @@ const PassengerInfo = () => {
                                         }
                                     </div>
                                     <Separator />
+                                    <div className='text-lg font-bold'>Seat Selection</div>
+                                    <Separator />
                                     <div className='text-lg font-bold'>Pricing Details</div>
                                     <div className='flex flex-col gap-2'>
                                         <div>
-                                            <div className='flex flex-row gap-2 text-sm justify-between'>
+                                            <div className='flex flex-row gap-2 text-base justify-between'>
                                                 <span className='font-bold tracking-tighter'>Base Fare</span>
                                                 <span>$ {selectedRoute.totalFare}</span>
                                             </div>
-                                            <div className='flex flex-row gap-2 text-sm justify-between'>
+                                            <div className='flex flex-row gap-2 text-base justify-between'>
                                                 <span className='font-bold tracking-tighter'>Tax & Fees</span>
                                                 <span>$ 0.00</span>
                                             </div>
-                                            <div className='flex flex-row gap-2 text-sm justify-between'>
+                                            <div className='flex flex-row gap-2 text-base justify-between'>
                                                 <span className='font-bold tracking-tighter'>Additional Service</span>
                                                 <span>$ 0.00</span>
                                             </div>
                                             <Separator className='my-2' />
-                                            <div className='flex flex-row gap-2 text-sm justify-between'>
+                                            <div className='flex flex-row gap-2 text-base justify-between'>
                                                 <span className='font-bold tracking-tighter'>Total Price</span>
                                                 <span>$ {selectedRoute.totalFare}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                <Button variant={"default"} className="w-full mt-4 cursor-pointer" onClick={() => {
+                                    // router.push("/complete-booking")
+                                }}>
+                                    <div className="flex items-center gap-2">   
+                                        <span>Continue to Payment</span>
+                                        <ArrowRight className="h-4 w-4" />
+                                    </div>
+                                </Button>
                             </CardContent>
                         </Card>
-                        <Button variant={"default"} className="w-full mt-4 cursor-pointer" onClick={() => {
-                            // router.push("/complete-booking")
-                        }}>
-                            <div className="flex items-center gap-2">   
-                                <span>Continue to Payment</span>
-                                <ArrowRight className="h-4 w-4" />
-                            </div>
-                        </Button>
                     </div>
                 </div>
             </div>

@@ -164,7 +164,7 @@ model seatmap_info {
 
 model seat {
   seatMapId String    @db.VarChar(32)
-  seatId    String    @unique @db.VarChar(16)
+  seatId    String    @unique @db.VarChar(20)
   seatNum   String    @db.VarChar(4)
   row       Int       @default(1)
   class     SeatClass @default(Y)
@@ -189,7 +189,7 @@ model ticket {
   bookingId              String       @db.VarChar(36)
   flightId               String       @db.VarChar(36)
   passportNum            String       @db.VarChar(9)
-  seatId                 String       @db.VarChar(16)
+  seatId                 String       @db.VarChar(20)
 
   booking     booking       @relation(fields: [bookingId], references: [bookingId])
   passenger   passenger     @relation(fields: [passportNum], references: [passportNum])

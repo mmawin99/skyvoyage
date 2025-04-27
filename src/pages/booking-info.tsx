@@ -118,13 +118,13 @@ const PassengerInfo = () => {
         const FareChoose:FarePackage = FarePackageList(selectedRoute.selectedDepartRoute.flight, cabinClass, flightSegment.selectedFare)[0];
         return (
             <div>
-                <div className="font-semibold text-sm">{title} <Badge variant={"outline"}>{formatFareType(FareChoose.type)} Fare</Badge></div>
+                <div className="font-semibold text-base">{title} <Badge variant={"outline"}>{formatFareType(FareChoose.type)} Fare</Badge></div>
                 <div className='grid grid-cols-2 mt-2 gap-2'>
                     <div className='flex flex-col gap-1'>
                         {PrintDetails("Luggage", FareChoose.baggage)}
-                        {PrintDetails("Cancellation", FareChoose.cancellation)}
+                        {PrintDetails("Cancellation", FareChoose.cancellation + "*")}
                         {PrintDetails("Carry on", FareChoose.carryOn)}
-                        {PrintDetails("Change Flight", FareChoose.changes)}
+                        {PrintDetails("Change Flight", FareChoose.changes + "*")}
                         {PrintDetails("Lounge", FareChoose.loungeAccess ? "Included" : "Fee applies")}
                     </div>
                     <div className='flex flex-col gap-1'>
@@ -179,11 +179,13 @@ const PassengerInfo = () => {
                                     { 
                                         PrintFareIncluded("Departure Flight", selectedRoute.selectedDepartRoute, selectedRoute.queryString.cabinClass as CabinClassType)
                                     }
-                                    { selectedRoute.selectedReturnRoute && <Separator className='mt-2 mb-1' /> }
+                                    {/* { selectedRoute.selectedReturnRoute && <Separator className='mt-2 mb-1' /> } */}
                                     {
                                         selectedRoute.selectedReturnRoute && PrintFareIncluded("Return Flight", selectedRoute.selectedReturnRoute, selectedRoute.queryString.cabinClass as CabinClassType)
                                     }
+                                    <span className="text-sm font-medium text-red-500">*contact airlines manually.</span>
                                     <Separator />
+
                                     <div className='text-lg font-bold'>Passenger</div>
                                     <div className='grid grid-cols-3'>
                                         {

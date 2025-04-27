@@ -296,8 +296,8 @@ export function FlightSearchPanel() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={()=>{ router.push("/account/auth") }}>Sign In</AlertDialogAction>
+            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="cursor-pointer" onClick={()=>{ router.push("/account/auth") }}>Sign In</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

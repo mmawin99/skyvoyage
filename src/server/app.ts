@@ -7,6 +7,7 @@ import { userModule } from "./module.user";
 import { adminAuthModule } from "./module.admin_auth";
 import { autocompleteModule } from "./module.autocomplete";
 import { flightModule } from "./module.flight";
+import { seatmapModule } from "./module.seatmap";
 
 export const app = new Elysia({
    prefix: '/api'
@@ -61,6 +62,7 @@ export const app = new Elysia({
       .use(adminAuthModule)       //See module.admin_auth.ts
       .use(autocompleteModule)    //See module.autocomplete.ts
       .use(flightModule)          //See module.flight.ts
+      .use(seatmapModule)         //See module.seatmap.ts
       ;
       // app.listen(4000, ()=>{
       //   console.log(`| CPE241 Term Project - SkyVoyage API`);

@@ -6,11 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
-import FlightScheduleTable from "@/components/schedule/flight-schedule-table"
+import FlightScheduleTable from "@/components/admin/schedule/flight-schedule-table"
 import { Schedule, ScheduleListAdmin, SubmitSchedule } from "@/types/type"
-import { BackendURLType, useBackendURL } from "../backend-url-provider"
-import { CustomPagination } from "../custom-pagination"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { BackendURLType, useBackendURL } from "../../backend-url-provider"
+import { CustomPagination } from "../../custom-pagination"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
 
 interface FlightAdminFetchResponse {
   message: string

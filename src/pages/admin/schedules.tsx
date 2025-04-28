@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import ScheduleAdmin from "@/components/schedule/flight-schedule-admin"
+import ScheduleAdmin from "@/components/admin/schedule/flight-schedule-admin"
 import { AdminWrapper } from "@/components/adminWrapper"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AdminHeader, AdminSideBar } from "@/components/admin-side-bar"

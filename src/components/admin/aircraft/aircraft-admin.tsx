@@ -4,12 +4,12 @@
 import { Button } from "@/components/ui/button"
 import { Edit, Eye, Loader2, PlaneIcon, PlaneTakeoff, PlusCircle, Trash2 } from "lucide-react"
 import { AircraftRegistration, Airline, Schedule, ScheduleListAdmin, SubmitSchedule } from "@/types/type"
-import { BackendURLType, useBackendURL } from "../backend-url-provider"
-import { CustomPagination } from "../custom-pagination"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { BackendURLType, useBackendURL } from "../../backend-url-provider"
+import { CustomPagination } from "../../custom-pagination"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
 import { useEffect, useState } from "react"
-import { DebouncedSearch } from "../reusable/search"
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { DebouncedSearch } from "../../reusable/search"
+import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card"
 
 
 export default function AircraftAdmin() {

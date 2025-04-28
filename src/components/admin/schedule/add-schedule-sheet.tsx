@@ -14,10 +14,10 @@ import { CalendarIcon, Loader2, Terminal, TriangleAlert } from "lucide-react"
 // import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
 import { AircraftModel, AircraftRegistration, Airline, Flight, SubmitSchedule } from "@/types/type"
-import { DebouncedSearch } from "../reusable/search"
-import { BackendURLType, useBackendURL } from "../backend-url-provider"
+import { DebouncedSearch } from "../../reusable/search"
+import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 // import { Card, CardContent, CardHeader } from "../ui/card"
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "../../ui/alert"
 
 interface AddScheduleSheetProps {
   open: boolean

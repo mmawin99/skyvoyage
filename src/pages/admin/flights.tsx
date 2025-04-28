@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { AdminWrapper } from "@/components/adminWrapper"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AdminHeader, AdminSideBar } from "@/components/admin-side-bar"
-import FlightAdmin from "@/components/flights/flight-admin"
+import FlightAdmin from "@/components/admin/flights/flight-admin"
 
 export const metadata: Metadata = {
     title: "Flight Schedule",

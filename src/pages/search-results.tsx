@@ -171,7 +171,7 @@ export default function SearchResults() {
       })
       
     }
-    const generateTemporaryPassenger = (ageRange: "Adult" | "Children" | "Infant",segmentSchedule:UniversalFlightSegmentSchedule[], index:number, offset:number = 0): PassengerFillOut => {
+    const generateTemporaryPassenger = (ageRange: "Adult" | "Children" | "Infant", segmentSchedule:UniversalFlightSegmentSchedule[], index:number, offset:number = 0): PassengerFillOut => {
       const referencePassengerID:string = "p-" + Math.random().toString(36).substring(2, 15)
       return {
         label: 
@@ -183,6 +183,7 @@ export default function SearchResults() {
         passportNum: "",
         passportCountry: "",
         passportExpiry: "",
+        titleName: "",
         firstName: "",
         lastName: "",
         dateOfBirth: "",

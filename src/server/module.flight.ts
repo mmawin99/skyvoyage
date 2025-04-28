@@ -3,29 +3,12 @@ import Elysia, { error } from "elysia";
 // import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt } from './lib';
 import { PrismaClient } from "../../prisma-client";
+import { FareType, ScheduleListAdmin, SubmitSchedule, UniversalFlightSchedule } from '@/types/type';
 
 const prisma = new PrismaClient()
 
-interface SubmitSchedule {
-    type: "recurring" | "single",
-    flightNum: string,
-    airlineCode: string,
-    model: string,
-    //For single flights
-    registration?: string,
-    departureDate?: string,
-    arrivalDate?: string,
-    //End for single flights
-    //For recurring flights
-    daysofweek?: string,
-    startDate?: string,
-    endDate?: string,
-    depTime?: string,
-    arrTime?: string,
-    //End for recurring flights
-}
 
-interface FlightSchedule {
+export interface FlightSchedule {
     flightId: string;
     flightNum: string;
     airlineCode: string;
@@ -42,7 +25,7 @@ interface FlightSchedule {
     estimatedPriceUSD: number;
 }
 
-interface FlightScheduleTransit1 {
+export interface FlightScheduleTransit1 {
     flightId1: string;
     flightNum1: string;
     airlineCode1: string;
@@ -68,50 +51,6 @@ interface FlightScheduleTransit1 {
     estimatedPriceUSD: number;
 }
 
-interface UniversalFlightSchedule {
-    id: string;
-    price: {
-        SUPER_SAVER: number;
-        SAVER: number;
-        STANDARD: number;
-        FLEXI: number;
-        FULL_FLEX: number;
-    };
-    duration: number;
-    stopCount: number;
-    segments: {
-        flightId: string;
-        flightNum: string;
-        airlineCode: string;
-        airlineName: string;
-        departureTime: string;
-        arrivalTime: string;
-        aircraftModel: string;
-        departureAirport: string;
-        arrivalAirport: string;
-        departTimezone: string;
-        arriveTimezone: string;
-    }[];
-    departureAirport: string;
-    arrivalAirport: string;
-}
-
-interface ScheduleListAdmin{
-    flightId: string
-    flightNum: string
-    airlineCode: string
-    airlineName: string
-    departureTime: Date
-    arrivalTime: Date
-    aircraftId: string
-    departAirportId: string
-    departureAirport: string
-    arriveAirportId: string
-    arrivalAirport: string
-    aircraftModel: string
-}
-
-type FareType = "SUPER_SAVER" | "SAVER" | "STANDARD" | "FLEXI" | "FULL_FLEX"
 
 function calculatePrice(flightClass: string, basePrice: number): number {
     const classMultiplier: Record<string, number> = {

@@ -2,7 +2,7 @@ import { AdminHeader, AdminSideBar } from '@/components/admin-side-bar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AdminWrapper } from '@/components/adminWrapper'
 import React from 'react'
-import AircraftAdmin from '@/components/aircraft/aircraft-admin'
+import AircraftAdmin from '@/components/admin/aircraft/aircraft-admin'
 
 const AircraftManagement = () => {
 

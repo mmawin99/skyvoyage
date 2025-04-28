@@ -1,26 +1,14 @@
 import Elysia, { error } from "elysia";
 import { flight as Flight, airport as Airport, airline as Airline, aircraft as Aircraft } from "../../prisma-client";
-import countries from "i18n-iso-countries";
+// import countries from "i18n-iso-countries";
 import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt } from "./lib";
 import { PrismaClient } from "../../prisma-client";
+import { Schedule } from "@/types/type";
+import { countryNameToCode } from "@/lib/country";
 
 const prisma = new PrismaClient()
-interface Schedule {
-    flightId: string,
-    flightNum: string,
-    airlineCode: string,
-    airlineName: string,
-    departureTime: string,
-    arrivalTime: string,
-    departureGate: string,
-    aircraftId: string,
-    aircraftModel: string,
-    departureAirport: string,
-    departureAirportCode: string,
-    arrivalAirport: string,
-    arrivalAirportCode: string
-}
+const countryNameToCodeMap: Record<string, string> = countryNameToCode;
 
 // extends type Aircraft
 interface AircraftExtends extends Aircraft {
@@ -102,7 +90,7 @@ export const autocompleteModule = new Elysia({
                 return {
                     code: airport.airportCode,
                     name: airport.name,
-                    short_country: countries.getName(airport.country, 'en', {select: 'alias'}) || airport.country,
+                    short_country: countryNameToCodeMap[airport.country] || airport.country,
                     country: airport.country,
                     city: airport.city
                 }

@@ -142,7 +142,7 @@ export interface Schedule {
     departureGate: string,
     aircraftId: string,
     aircraftModel: string,
-    aircraftModelName: string,
+    aircraftModelName?: string,
     departureAirport: string,
     departureAirportCode: string,
     arrivalAirport: string,
@@ -321,6 +321,7 @@ export interface PassengerFillOut{
     passportNum: string // 9 charactors
     passportCountry: string // 2 charactors
     passportExpiry: string // YYYY-MM-DD
+    titleName: string
     firstName: string
     lastName: string
     dateOfBirth: string // YYYY-MM-DD
@@ -368,3 +369,21 @@ export interface FarePackage {
   }
 
 export type CabinClassType = "Y" | "C" | "W" | "F"
+
+export interface SeatmapAPI{
+    seatId: bigint;
+    seatNum: string;
+    row: number;
+    class: string;
+    price: number;
+    features: string | {
+        s: {
+            p: string;
+            w: string;
+            r: string;
+        },
+        f: number[]
+    } [];
+    floor: number;
+    seatStatus: 'available' | 'reserved';
+}

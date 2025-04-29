@@ -1,27 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+// /* eslint-disable @typescript-eslint/no-unused-vars */
  
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardImage, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
-import { searchSelectedRoutes } from '@/types/type'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { PassengerTicket, searchSelectedRoutes, ticketBaggageUpdatorType } from '@/types/type'
 import { ArrowRight } from 'lucide-react'
 import React, { useState } from 'react'
-
-interface ticketBaggageUpdatorType {
-    passengerIndex: number,
-    ticketIndex: number,
-    weight: number,
-    price: number
-}
 
 const BaggageAdditionCard = ({
     onInteract
 }:{
     onInteract: ()=> void
 }) => {
-    const [baggageSelection, setBaggageSelection] = useState<ticketBaggageUpdatorType[]>([]);
-
     return (
         <Card className="p-0 flex-row overflow-hidden gap-0">
             <div className="flex flex-col w-2/3 py-6">
@@ -49,12 +40,85 @@ const BaggageAdditionCard = ({
 
 const BaggageAdditionForm = ({
     onClose,
-    selectedRoute
+    selectedRoute,
+    updatePassenger,
+    defaultValue = [],
+    setDefaultValue
 }:{
     onClose: ()=> void
-    selectedRoute: searchSelectedRoutes
+    selectedRoute: searchSelectedRoutes,
+    updatePassenger: (update: { passengerIndex: number, ticketIndex: number, fields: Partial<PassengerTicket>}[]) => void
+    defaultValue?: ticketBaggageUpdatorType[]
+    setDefaultValue?: React.Dispatch<React.SetStateAction<ticketBaggageUpdatorType[]>>
 }) =>{
-    console.log(selectedRoute)
+    const [baggageSelection, setBaggageSelection] = useState<ticketBaggageUpdatorType[]>(defaultValue); 
+    
+    // Function to handle baggage selection
+    const handleBaggageSelection = (segmentIndex: number, passengerIndex: number, weightValue: string) => {
+        const weight = parseInt(weightValue);
+        const price = weight * 30; // Calculate price based on weight
+        
+        // Check if selection for this passenger and segment already exists
+        const existingSelectionIndex = baggageSelection.findIndex(
+            item => item.ticketIndex === segmentIndex && item.passengerIndex === passengerIndex
+        );
+        
+        if (existingSelectionIndex !== -1) {
+            // Update existing selection
+            const updatedSelection = [...baggageSelection];
+            
+            if (weight === 0) {
+                // Remove the selection if weight is 0
+                updatedSelection.splice(existingSelectionIndex, 1);
+            } else {
+                // Update the existing selection
+                updatedSelection[existingSelectionIndex] = {
+                    passengerIndex,
+                    ticketIndex: segmentIndex,
+                    weight,
+                    price
+                };
+            }
+            
+            setBaggageSelection(updatedSelection);
+        } else if (weight > 0) {
+            // Add new selection only if weight is greater than 0
+            setBaggageSelection([
+                ...baggageSelection,
+                {
+                    passengerIndex,
+                    ticketIndex: segmentIndex,
+                    weight,
+                    price
+                }
+            ]);
+        }
+    };
+    const handleCompleted = () => {
+        // Update all selected baggage items
+        if(setDefaultValue){
+            setDefaultValue(baggageSelection);
+        }
+        baggageSelection.forEach(item => {
+            console.log("Update for", item);
+            updatePassenger(
+                baggageSelection.map(item => ({
+                    passengerIndex: item.passengerIndex,
+                    ticketIndex: item.ticketIndex,
+                    fields: {
+                        baggageAllowanceWeight: item.weight,
+                        baggageAllowancePrice: item.price
+                    }
+                }))
+            );
+        });
+        
+        // Close the baggage selection modal
+        onClose();
+    };
+    // Calculate total price from all selections
+    const totalPrice = baggageSelection.reduce((sum, item) => sum + item.price, 0);
+    
     return (
         <Card>  
             <CardHeader className='flex flex-row items-center justify-between'>
@@ -67,34 +131,45 @@ const BaggageAdditionForm = ({
             <CardContent>
                 <Accordion type="single" collapsible className="my-4 w-full">
                     {
-                        [...selectedRoute.selectedDepartRoute.flight.segments, ...(selectedRoute?.selectedReturnRoute?.flight.segments ?? [])].map((segment, index) => (
-                            <AccordionItem key={index} value={`baggage-${index}`} className="w-full">
+                        [...selectedRoute.selectedDepartRoute.flight.segments, ...(selectedRoute?.selectedReturnRoute?.flight.segments ?? [])].map((segment, segmentIndex) => (
+                            <AccordionItem key={segmentIndex} value={`baggage-${segmentIndex}`} className="w-full">
                                 <AccordionTrigger className="w-full flex justify-between items-center">
-                                    {/* <div className='flex flex-row gap-2'>
-                                        <img src={`https://www.gstatic.com/flights/airline_logos/70px/${segment.carrier}.png`} alt={segment.carrier} className='h-8 w-8' />
-                                        <span>{segment.carrier}</span>
-                                    </div>
-                                    <span>{segment.baggage}</span> */}
                                     <div className='flex flex-row items-center'>
                                         (Flight: {segment.airlineCode} {segment.flightNum.split("-")[0]}) [{segment.departureAirport} <ArrowRight className='h-4 w-4' /> {segment.arrivalAirport}]
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="w-full flex flex-col gap-2">
                                     {
-                                        selectedRoute.passenger?.map((passenger, pIndex)=>{
+                                        selectedRoute.passenger?.map((passenger, passengerIndex) => {
                                             if(passenger.ageRange == "Infant"){
                                                 return (
-                                                    <div key={`segment-baggage-${index}-passenger-${pIndex}`} className='flex flex-row justify-between'>
+                                                    <div key={`segment-baggage-${segmentIndex}-passenger-${passengerIndex}`} className='flex flex-row justify-between'>
                                                          <span className='text-destructive'>*Additional Baggage Weight is not available for <span className='italic'>infant passenger</span> <span className='font-semibold'>{passenger.firstName} {passenger.lastName[0].toUpperCase()}.</span></span>
                                                     </div>    
                                                 )
                                             }
+                                            
+                                            // Find current selection for this passenger and segment
+                                            const currentSelection = baggageSelection.find(
+                                                item => item.ticketIndex === segmentIndex && item.passengerIndex === passengerIndex
+                                            );
+                                            
+                                            const currentValue = currentSelection ? `${currentSelection.weight}` : '0';
+                                            
                                             return (
-                                                <div key={`segment-baggage-${index}-passenger-${pIndex}`} className='flex flex-row justify-between'>
+                                                <div key={`segment-baggage-${segmentIndex}-passenger-${passengerIndex}`} className='flex flex-row justify-between'>
                                                     <span>Additional Baggage Weight For <span className='font-semibold'>{passenger.firstName} {passenger.lastName[0].toUpperCase()}.</span></span>
-                                                    <Select>
+                                                    <Select 
+                                                        value={currentValue}
+                                                        onValueChange={(value) => handleBaggageSelection(segmentIndex, passengerIndex, value)}
+                                                    >
                                                         <SelectTrigger>
-                                                            <span>0kg - free of charge</span>
+                                                            <SelectValue placeholder="0kg - free of charge">
+                                                                {currentValue === '0' ? 
+                                                                    '0kg - free of charge' : 
+                                                                    `${currentValue}kg - $${parseInt(currentValue) * 30}.00`
+                                                                }
+                                                            </SelectValue>
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value='0'>0kg - free of charge</SelectItem>
@@ -102,12 +177,11 @@ const BaggageAdditionForm = ({
                                                                 [5,10,15,20,25,30,35,40,45,50].map((weight, wIndex) => {
                                                                     return (
                                                                         <SelectItem 
-                                                                            key={`segment-b-${index}-p-${pIndex}-w-${wIndex}`} 
+                                                                            key={`segment-b-${segmentIndex}-p-${passengerIndex}-w-${wIndex}`} 
                                                                             value={`${weight}`}>{weight}kg - ${weight * 30}.00</SelectItem>
                                                                     )
                                                                 })
                                                             }
-                                                            
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
@@ -120,8 +194,8 @@ const BaggageAdditionForm = ({
                     }
                 </Accordion>
                 <div className='flex flex-row justify-between'>
-                    <div>Total: $ 0.00</div>
-                    <Button variant={"default"} className='rounded-lg'>Completed</Button>
+                    <div>Total: $ {totalPrice.toFixed(2)}</div>
+                    <Button variant={"default"} onClick={handleCompleted} className='rounded-lg'>Completed</Button>
                 </div>
             </CardContent>
         </Card>

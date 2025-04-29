@@ -95,7 +95,7 @@ const PassengerSummary = ({
             </Card>
             <Button variant={"default"} className="w-full mt-4 cursor-pointer" onClick={onComplete}>
                 <div className="flex items-center gap-2">   
-                    <span>Confirm Your booking</span>
+                    <span>Customize your journey</span>
                     <ArrowRight className="h-4 w-4" />
                 </div>
             </Button>

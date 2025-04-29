@@ -312,6 +312,7 @@ export interface PassengerTicket{
     mealSelection: string //
     mealPrice: number // in USD
     seatId: string // seat id
+    seatPrice: number
 }
 
 export interface PassengerFillOut{
@@ -387,4 +388,11 @@ export interface SeatmapAPI{
     } [];
     floor: number;
     seatStatus: 'available' | 'reserved';
+}
+
+export interface ticketBaggageUpdatorType {
+    passengerIndex: number,
+    ticketIndex: number,
+    weight: number,
+    price: number
 }

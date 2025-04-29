@@ -166,7 +166,8 @@ export default function SearchResults() {
           baggageAllowancePrice:0,
           mealSelection: "",
           mealPrice: 0,
-          seatId: ""
+          seatId: "",
+          seatPrice: 0
         }
       })
       

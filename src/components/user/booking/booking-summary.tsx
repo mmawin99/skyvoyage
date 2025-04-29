@@ -116,13 +116,17 @@ const BookingSummary = ({
     selectedRoute, 
     onClickNext, 
     isEnableButton,
-    flightOpen = true
+    flightOpen = true,
+    customText,
+    additionalFare
 }: {
     percentageComplete:number,
     selectedRoute: searchSelectedRoutes, 
     onClickNext: ()=>void, 
-    isEnableButton:boolean
-    flightOpen?: boolean
+    isEnableButton:boolean,
+    flightOpen?: boolean,
+    customText?: string,
+    additionalFare: number
 }) => {
     return (
         <Card className="overflow-auto">
@@ -171,27 +175,27 @@ const BookingSummary = ({
                         <div>
                             <div className='flex flex-row gap-2 text-base justify-between'>
                                 <span className='font-bold tracking-tighter'>Base Fare</span>
-                                <span>$ {selectedRoute.totalFare}</span>
-                            </div>
-                            <div className='flex flex-row gap-2 text-base justify-between'>
-                                <span className='font-bold tracking-tighter'>Tax & Fees</span>
-                                <span>$ 0.00*</span>
+                                <span>$ {selectedRoute.totalFare.toFixed(2)}</span>
                             </div>
                             <div className='flex flex-row gap-2 text-base justify-between'>
                                 <span className='font-bold tracking-tighter'>Additional Service</span>
-                                <span>$ 0.00*</span>
+                                <span>$ {additionalFare.toFixed(2)}*</span>
+                            </div>
+                            <div className='flex flex-row gap-2 text-base justify-between'>
+                                <span className='font-bold tracking-tighter'>Tax & Fees</span>
+                                <span>$ {((selectedRoute.totalFare + additionalFare) * 0.07).toFixed(2)}*</span>
                             </div>
                             <Separator className='my-2' />
                             <div className='flex flex-row gap-2 text-base justify-between'>
                                 <span className='font-bold tracking-tighter'>Total Price</span>
-                                <span>$ {selectedRoute.totalFare}</span>
+                                <span>$ {((selectedRoute.totalFare + additionalFare) * 1.07).toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <Button variant={"default"} className="w-full mt-4 cursor-pointer" disabled={!isEnableButton} onClick={!isEnableButton ? undefined : onClickNext}>
                     <div className="flex items-center gap-2">   
-                        <span>Confirm Your booking</span>
+                        <span>{customText ? customText : "Confirm Your booking"}</span>
                         <ArrowRight className="h-4 w-4" />
                     </div>
                 </Button>

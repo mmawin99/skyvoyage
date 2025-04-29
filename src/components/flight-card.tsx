@@ -120,7 +120,7 @@ export default function FlightCard({ flight, cabinclass, onSelect }: FlightCardP
 
   return (
     <Card className="overflow-hidden mb-2">
-      <CardHeader className="bg-muted/40 pb-4">
+      <CardHeader className="pb-4">
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center gap-2">
             <span className="font-bold">{firstSegment.airlineName}</span>

@@ -75,7 +75,13 @@ const PassengerInfo = () => {
             setWantToEdit(true)
         }, 100);
     }
+    const totalAddtionalServicesFare = selectedRoute.passenger?.reduce((acc, passenger) => {
+        const ticketTotal = passenger.ticket.reduce((ticketAcc, ticket) => {
+            return ticketAcc + ticket.mealPrice + ticket.seatPrice + ticket.baggageAllowancePrice;
+        }, 0);
 
+        return acc + ticketTotal;
+    }, 0) ?? 0; 
     if(selectedRoute.passenger === undefined || selectedRoute.passenger.length === 0){   
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
@@ -121,9 +127,12 @@ const PassengerInfo = () => {
                     </div>
                     <div className="w-full lg:w-6/20 lg:sticky lg:top-20 self-start h-fit">
                         <BookingSummary 
-                        percentageComplete={isAllComplete ? 100 : (selectedRoute.passenger?.filter(i=>i.status == "FILLED" ? true: null).filter(i=>i!=null).length) / selectedRoute.passenger?.length * 100}
-                        selectedRoute={selectedRoute} onClickNext={onComplete} 
-                        isEnableButton={isAllComplete && currentPassenger == selectedRoute.passenger?.length - 1} />
+                            percentageComplete={isAllComplete ? 100 : (selectedRoute.passenger?.filter(i=>i.status == "FILLED" ? true: null).filter(i=>i!=null).length) / selectedRoute.passenger?.length * 100}
+                            selectedRoute={selectedRoute} onClickNext={onComplete} 
+                            isEnableButton={isAllComplete && currentPassenger == selectedRoute.passenger?.length - 1}
+                            additionalFare={totalAddtionalServicesFare}
+                            customText={"Customize your journey"}
+                        />
                     </div>
                 </div>
             </div>

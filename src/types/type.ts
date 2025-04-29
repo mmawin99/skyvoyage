@@ -366,6 +366,7 @@ export interface FarePackage {
     refundable?: boolean
     loungeAccess?: boolean
     available?: boolean
+    mealSelection?: boolean
   }
 
 export type CabinClassType = "Y" | "C" | "W" | "F"

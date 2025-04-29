@@ -16,6 +16,7 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
       label: "Economy",
       refundable: false,
       loungeAccess: false,
+      mealSelection: false
     },
     {
       type: "SAVER",
@@ -31,6 +32,7 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
       label: "Value",
       refundable: false,
       loungeAccess: false,
+      mealSelection: false
     },
     {
       type: "STANDARD",
@@ -47,6 +49,7 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
       label: "Popular",
       refundable: cabinclass == "W" ? true : false,
       loungeAccess: false,
+      mealSelection: cabinclass == "W" ? true : false
     },
     {
       type: "FLEXI",
@@ -62,6 +65,7 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
       label: "Business",
       refundable: cabinclass === "C" || cabinclass === "F" || cabinclass === "W" ? true : false,
       loungeAccess: true,
+      mealSelection: true
     },
     {
       type: "FULL_FLEX",
@@ -77,6 +81,7 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
       label: "Premium",
       refundable: true,
       loungeAccess: true,
+      mealSelection: true
     }
   ]
   

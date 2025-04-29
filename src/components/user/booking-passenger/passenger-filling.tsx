@@ -185,7 +185,7 @@ const PassengerFilling = ({
                                     error == "information_empty" ? "Information can not be empty." :
                                     error == "invalid_dob" ? "Invalid Date of Birth." :
                                     error == "adult_age_error" ? "Adult age must be greater than or equal to 12" :
-                                    error == "children_age_error" ? "Adult age must be in range 2 to 11" :
+                                    error == "children_age_error" ? "Children age must be in range 2 to 11" :
                                     error == "infant_age_error" ? "Infant age must be less than 2" :
                                     error == "passport_expiry_error" ? "Passport that will be expired in 60 days can not travel." :
                                     ""

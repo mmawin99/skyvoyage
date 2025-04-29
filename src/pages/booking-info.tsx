@@ -5,11 +5,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { CabinClassType, FarePackage, FareType, searchSelectedFlight, searchSelectedRoutes, UniversalFlightSchedule } from '@/types/type'
+import { CabinClassType, FarePackage, FareType, PassengerFillOut, searchSelectedFlight, searchSelectedRoutes, UniversalFlightSchedule } from '@/types/type'
 import { useSessionStorage } from '@uidotdev/usehooks'
 import { ArrowRight, Calendar, Clock, Plane, SearchX } from 'lucide-react'
 import { NextRouter, useRouter } from 'next/router'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { format } from "date-fns"
 import { FarePackageList } from '@/lib/farePackage'
 import BookingSummary from '@/components/user/booking/booking-summary'
@@ -57,6 +57,25 @@ const PassengerInfo = () => {
     const onComplete = () => {
         router.push("/booking-confirmation")
     }
+    const [wantToEdit, setWantToEdit] = useState<boolean>(false)
+    const [editId, setEditId] = useState<number>(-1)
+    const [passengerInformation, setPassengerInformation] = useState<PassengerFillOut | null>(null)
+    useEffect(()=>{
+        if(wantToEdit && editId != -1){
+            setCurrentPassenger(editId)
+            setPassengerInformation(selectedRoute.passenger?.[editId] ?? null)
+            setIsAllComplete(false)
+            setWantToEdit(false)
+            setEditId(-1)
+        }
+    },[wantToEdit, editId, selectedRoute])
+    const editPassenger = (index:number) => {
+        setEditId(index)
+        setTimeout(()=>{
+            setWantToEdit(true)
+        }, 100);
+    }
+
     if(selectedRoute.passenger === undefined || selectedRoute.passenger.length === 0){   
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
@@ -81,13 +100,11 @@ const PassengerInfo = () => {
                             <>
                                 <PassengerSummary selectedRoute={selectedRoute} 
                                     onEdit={(index:number)=>{
-                                        setIsAllComplete(false)
-                                        setCurrentPassenger(index)
+                                        editPassenger(index)
                                     }}
                                     onPrevious={()=>{ 
-                                        setIsAllComplete(false)
                                         const passengerLength:number = (selectedRoute?.passenger?.length ?? 0) - 1
-                                        setCurrentPassenger(passengerLength == -1 ? 0 : passengerLength)
+                                        editPassenger(passengerLength == -1 ? 0 : passengerLength)
                                     }}
                                     onComplete={onComplete}
                                 />
@@ -98,7 +115,7 @@ const PassengerInfo = () => {
                                 setCurrentPassenger={setCurrentPassenger} 
                                 updatePassengerFields={updatePassengerFields}
                                 setAllComplete={setIsAllComplete}
-                                firstPasssenger={selectedRoute.passenger?.[0]}
+                                firstPasssenger={passengerInformation || selectedRoute.passenger?.[0]}
                             />
                         }
                     </div>

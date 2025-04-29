@@ -98,9 +98,10 @@ const PrintFareIncluded = (selectedRoute:searchSelectedRoutes, title: string, fl
                 </div>
                 <div className='flex flex-col gap-1'>
                     {PrintDetails("Mileage", FareChoose?.mileage || "0 - 25%")}
-                    {PrintDetails("Boarding Priority", FareChoose.priorityBoarding ? "Elible" : "Not Eligible")}
-                    {PrintDetails("Refund", FareChoose.refundable ? "Elible" : "Not Elible")}
-                    {PrintDetails("Seat Selection", FareChoose.seatSelection ? "Elible" : "Not Eligible")}
+                    {PrintDetails("Boarding Priority", FareChoose.priorityBoarding ? "Eligible" : "Not Eligible")}
+                    {PrintDetails("Refund", FareChoose.refundable ? "Eligible" : "Fee applies")}
+                    {PrintDetails("Seat Selection", FareChoose.seatSelection ? "Eligible" : "Fee applies")}
+                    {PrintDetails("Meal Selection", FareChoose.mealSelection ? "Eligible" : "Fee applies")}
                 </div>
             </div>
         </CollapsibleFilter>

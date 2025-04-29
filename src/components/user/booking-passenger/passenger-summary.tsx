@@ -27,7 +27,7 @@ const PassengerSummary = ({
                     </Button>
                     <CardTitle className='text-lg font-semibold'>Passenger Summary</CardTitle>
                 </CardHeader>
-                <CardContent className='grid grid-cols-2'>
+                <CardContent className='grid grid-cols-2 gap-4'>
                     <div className='grid grid-cols-3 col-span-2 mb-3 border-b-[1px] border-b-slate-600 pb-2'>
                     {
                         selectedRoute.queryString.passengersStr.split(",").map((passenger, index) => (  
@@ -82,7 +82,10 @@ const PassengerSummary = ({
                                                 </div>
                                             </CollapsibleContent>
                                         </Collapsible>
-                                        <Button variant={"outline"} className='w-full mt-4' onClick={() => onEdit(index)}>Edit</Button>
+                                        <Button variant={"outline"} className='w-full mt-4' onClick={() => {
+                                            console.log("Edit passenger", passenger, index)
+                                            onEdit(index)
+                                        }}>Edit</Button>
                                     </CardContent>
                                 </Card>    
                             )

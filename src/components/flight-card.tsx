@@ -346,6 +346,22 @@ export default function FlightCard({ flight, cabinclass, onSelect }: FlightCardP
                           </p>
                         </div>
                       </div>
+                      
+                      <div className="flex items-start gap-2">
+                        <div className="w-5 h-5 mt-0.5 flex-shrink-0">
+                          {fare.mealSelection ? (
+                            <Check className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <X className="h-5 w-5 text-red-500" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">Meal Selection</p>
+                          <p className="text-sm text-muted-foreground">
+                            {fare.mealSelection ? "Included" : "Not included"}
+                          </p>
+                        </div>
+                      </div>
 
                       <div className="flex items-start gap-2">
                         <div className="w-5 h-5 mt-0.5 flex-shrink-0">

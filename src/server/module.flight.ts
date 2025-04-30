@@ -3,7 +3,7 @@ import Elysia, { error } from "elysia";
 // import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt } from './lib';
 import { PrismaClient } from "../../prisma-client";
-import { FareType, ScheduleListAdmin, SubmitSchedule, UniversalFlightSchedule } from '@/types/type';
+import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitSchedule, UniversalFlightSchedule } from '@/types/type';
 
 const prisma = new PrismaClient()
 
@@ -578,14 +578,14 @@ export const flightModule = new Elysia({
             })
         }
     })
-    .post("/flightList", async ({ body }:{
+    .post("/searchFlight", async ({ body }:{
         body:{
             from: string,
             to: string,
             passengerCount: number,
             date: string,
             class: string,
-            transitCount: 0 | 1 
+            transitCount: 0 | 1
         }
     }) => {
         const {
@@ -847,4 +847,293 @@ export const flightModule = new Elysia({
                 error: err,
             });
         }
-    });
+    })
+    .post("/flightlist/:airline/:size/:page", async ({params, body}:{
+        body:{search: string},
+        params:{airline:string, size:number, page:number, search:string}
+    })=>{
+        const { airline, size, page, } = params
+        const { search } = body
+        if(!airline || !size || !page){
+            return error(400, {
+                status: false,
+                message: 'Missing required fields',
+            })
+        }
+        const offset = (page - 1) * size
+        const limit = size
+        let result: adminFlightListType[] = []
+        let totalCount: { count: number }[] = []
+        const wildcardValue = `%${search}%` // Assuming 'wildcard' was derived from 'query'
+        try {
+            if(search === '' || search === undefined || !search){
+                result = await prisma.$queryRaw`
+                    SELECT 
+                        f.flightNum,
+                        f.airlineCode,
+                        a.airlineName,
+                        f.departAirportId,
+                        da.name AS departureAirportName,
+                        f.arriveAirportId,
+                        aa.name AS arrivalAirportName,
+                        f.departureTime AS utcDepartureTime,
+                        f.arrivalTime AS utcArrivalTime,
+                        COUNT(DISTINCT fo.flightId) AS flightCount
+                    FROM flight f
+                    JOIN airline a ON a.airlineCode = f.airlineCode
+                    JOIN airport da ON f.departAirportId = da.airportCode
+                    JOIN airport aa ON f.arriveAirportId = aa.airportCode
+                    LEFT JOIN flightOperate fo ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
+                    WHERE a.airlineCode = ${airline}
+                    GROUP BY 
+                        f.flightNum, 
+                        f.airlineCode, 
+                        a.airlineName, 
+                        f.departAirportId, 
+                        da.name, 
+                        f.arriveAirportId, 
+                        aa.name, f.departureTime, f.arrivalTime
+                    LIMIT ${limit} OFFSET ${offset}
+                `
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) AS count 
+                    FROM flight f
+                    JOIN airline a ON a.airlineCode = f.airlineCode
+                    WHERE a.airlineCode = ${airline}
+                `
+
+            }else{
+                result = await prisma.$queryRaw`
+                    SELECT 
+                        f.flightNum,
+                        f.airlineCode,
+                        a.airlineName,
+                        f.departAirportId,
+                        da.name AS departureAirportName,
+                        f.arriveAirportId,
+                        aa.name AS arrivalAirportName,
+                        f.departureTime AS utcDepartureTime,
+                        f.arrivalTime AS utcArrivalTime,
+                        COUNT(DISTINCT fo.flightId) AS flightCount
+                    FROM flight f
+                    JOIN airline a ON a.airlineCode = f.airlineCode
+                    JOIN airport da ON f.departAirportId = da.airportCode
+                    JOIN airport aa ON f.arriveAirportId = aa.airportCode
+                    LEFT JOIN flightOperate fo ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
+                    WHERE a.airlineCode = ${airline}
+                    AND (
+                        f.flightNum LIKE ${wildcardValue}
+                        OR da.name LIKE ${wildcardValue}
+                        OR f.departAirportId LIKE ${wildcardValue}
+                        OR aa.name LIKE ${wildcardValue}
+                        OR f.arrivalTime LIKE ${wildcardValue}
+                    )
+                    GROUP BY 
+                        f.flightNum, 
+                        f.airlineCode, 
+                        a.airlineName, 
+                        f.departAirportId, 
+                        da.name, 
+                        f.arriveAirportId, 
+                        aa.name, f.departureTime, f.arrivalTime
+                    LIMIT ${limit} OFFSET ${offset}
+                `
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) AS count 
+                    FROM flight f
+                    JOIN airline a ON a.airlineCode = f.airlineCode
+                    JOIN airport da ON f.departAirportId = da.airportCode
+                    JOIN airport aa ON f.arriveAirportId = aa.airportCode
+                    WHERE a.airlineCode = ${airline} AND (
+                        f.flightNum LIKE ${wildcardValue}
+                        OR da.name LIKE ${wildcardValue}
+                        OR f.departAirportId LIKE ${wildcardValue}
+                        OR aa.name LIKE ${wildcardValue}
+                        OR f.arrivalTime LIKE ${wildcardValue}
+                    )
+                `
+            }
+
+            if (result.length === 0) {
+                return {
+                    status: false,
+                    message: 'No flights found',
+                    totalCount: 0,
+                    page: page,
+                    size: size,
+                    data: [],
+                }
+            }
+            return {
+                status: true,
+                message: 'Flight list retrieved successfully',
+                totalCount: sanitizeBigInt(totalCount)[0].count,
+                page: page,
+                size: size,
+                data: sanitizeBigInt(result),
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err instanceof Error ? err.message : String(err),
+            })
+        }
+
+    }, {
+        detail:{
+            requestBody: {
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                search: { type: 'string' },
+                            },
+                        },
+                    },
+                },
+            },
+            
+        }
+    })
+    .post("/transit/:airline/:size/:page", async ({params, body}:{
+        params:{size:number, page:number, airline:string},
+        body:{search: string}
+    })=>{
+        const { size, page, airline } = params
+        const { search } = body
+        if(!size || !page){
+            return error(400, {
+                status: false,
+                message: 'Missing required fields',
+            })
+        }
+        const offset = (page - 1) * size
+        const limit = size
+        let result: adminTransitListType[] = []
+        let totalCount: { count: number }[] = []
+        const wildcardValue = `%${search}%` // Assuming 'wildcard' was derived from 'query'
+        try {
+            if(search === '' || search === undefined || !search){
+                result = await prisma.$queryRaw`
+                    SELECT 
+                        t.flightNumFrom,
+                        t.airlineCodeFrom,
+                        a1.airlineName AS airlineNameFrom,
+                        t.flightNumTo,
+                        t.airlineCodeTo,
+                        a2.airlineName AS airlineNameTo
+                    FROM transit t
+                    JOIN airline a1 ON a1.airlineCode = t.airlineCodeFrom
+                    JOIN airline a2 ON a2.airlineCode = t.airlineCodeTo
+                    WHERE t.airlineCodeFrom = ${airline} OR t.airlineCodeTo = ${airline}
+                    GROUP BY 
+                        t.flightNumFrom, 
+                        t.airlineCodeFrom, 
+                        a1.airlineName, 
+                        t.flightNumTo, 
+                        t.airlineCodeTo, 
+                        a2.airlineName
+                    LIMIT ${limit} OFFSET ${offset};
+                `
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) AS count 
+                    FROM transit t
+                    WHERE t.airlineCodeFrom = ${airline} OR t.airlineCodeTo = ${airline}
+                `
+            }else{
+                result = await prisma.$queryRaw`
+                    SELECT 
+                        t.flightNumFrom,
+                        t.airlineCodeFrom,
+                        a1.airlineName AS airlineNameFrom,
+                        t.flightNumTo,
+                        t.airlineCodeTo,
+                        a2.airlineName AS airlineNameTo
+                    FROM transit t
+                    JOIN airline a1 ON a1.airlineCode = t.airlineCodeFrom
+                    JOIN airline a2 ON a2.airlineCode = t.airlineCodeTo
+                    WHERE (t.flightNumFrom LIKE ${wildcardValue} OR t.flightNumTo LIKE ${wildcardValue})
+                    AND (t.airlineCodeFrom = ${airline} OR t.airlineCodeTo = ${airline})
+                    GROUP BY 
+                        t.flightNumFrom, 
+                        t.airlineCodeFrom, 
+                        a1.airlineName, 
+                        t.flightNumTo, 
+                        t.airlineCodeTo, 
+                        a2.airlineName
+                    LIMIT ${limit} OFFSET ${offset};
+                `
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) AS count 
+                    FROM transit t
+                    JOIN airline a1 ON a1.airlineCode = t.airlineCodeFrom
+                    JOIN airline a2 ON a2.airlineCode = t.airlineCodeTo
+                    WHERE (t.flightNumFrom LIKE ${wildcardValue} OR t.flightNumTo LIKE ${wildcardValue} OR da.name LIKE ${wildcardValue} OR ta.name LIKE ${wildcardValue} OR aa.name LIKE ${wildcardValue})
+                    AND (t.airlineCodeFrom = ${airline} OR t.airlineCodeTo = ${airline})
+                `
+            }
+            if (result.length === 0) {
+                return {
+                    status: false,
+                    message: 'No flights found',
+                    totalCount: 0,
+                    page: page,
+                    size: size,
+                    data: [],
+                }
+            }
+            return {
+                status: true,
+                message: 'Flight list retrieved successfully',
+                totalCount: sanitizeBigInt(totalCount)[0].count,
+                page: page,
+                size: size,
+                data: sanitizeBigInt(result),
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err instanceof Error ? err.message : String(err),
+            })
+        }
+    },{
+        detail:{
+            requestBody: {
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                search: { type: 'string' },
+                            },
+                        },
+                    },
+                },
+            },
+            responses: {
+                200: {
+                    description: 'Flight list retrieved successfully',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    status: { type: 'boolean' },
+                                    message: { type: 'string' },
+                                    totalCount: { type: 'number' },
+                                    page: { type: 'number' },
+                                    size: { type: 'number' },
+                                    data: { type: 'array', items: { type: 'object' } },
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+        }
+    })

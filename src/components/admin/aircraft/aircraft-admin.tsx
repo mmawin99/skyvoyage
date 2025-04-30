@@ -1,15 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Edit, Eye, Loader2, PlaneIcon, PlaneTakeoff, PlusCircle, Trash2 } from "lucide-react"
-import { AircraftRegistration, Airline, Schedule, ScheduleListAdmin, SubmitSchedule } from "@/types/type"
+import { Loader2, PlaneIcon, PlaneTakeoff, PlusCircle } from "lucide-react"
+import { AircraftRegistration, Airline } from "@/types/type"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 import { CustomPagination } from "../../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
 import { useEffect, useState } from "react"
 import { DebouncedSearch } from "../../reusable/search"
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card"
+import AircraftTableWithEditor from "./aircraft-table"
 
 
 export default function AircraftAdmin() {
@@ -130,35 +130,9 @@ export default function AircraftAdmin() {
                                 <CardTitle className="text-2xl font-semibold">{selectedCarrier?.name} ({selectedCarrier?.code}) ({totalCount} Aircrafts)</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                                    {aircraft.length > 0 ? aircraft.map((aircraft, index) => (
-                                        <div key={index} className="relative group hover:scale-105 hover:border-[1px] hover:border-gray-500 hover:rounded-lg">
-                                            <div className={`
-                                                flex flex-col items-center justify-center gap-2 p-4 border-[1px]
-                                                border-gray-500 rounded-lg shadow-sm group-hover:shadow-lg
-                                            `}>
-                                                <PlaneIcon className="h-16 w-16 text-blue-600" />
-                                                <div className="text-lg font-semibold">{aircraft.registration}</div>
-                                                <div className="text-sm text-gray-500">{aircraft.model}</div>
-                                            </div>
-                                        <div className={`absolute top-0 left-0 z-10 w-full h-full bg-white bg-opacity-10 
-                                        flex flex-row items-center gap-2 opacity-0
-                                        justify-center group-hover:opacity-100 transition-opacity cursor-pointer 
-                                        duration-300 rounded-lg shadow-lg`}>
-                                            <div className="flex flex-col items-start">
-                                                <div className="text-lg font-bold">{aircraft.registration}</div>
-                                                <div className="text-base text-gray-400 font-medium">{aircraft.model}</div>
-                                                <div className="text-sm text-gray-500 font-normal">{aircraft.totalFlight} Flights</div>
-                                            </div>
-                                            <div className="flex flex-col items-end gap-2">
-                                                <Button className={`cursor-pointer`} variant={"default"}><Eye /> View Details</Button>
-                                                <Button className={`cursor-pointer`} variant={"secondary"}><Edit /> Edit</Button>
-                                                <Button className={`cursor-pointer`} variant={"destructive"}><Trash2 /> Delete</Button>
-                                            </div>
-                                        </div>
-                                      </div>
-                                    )) : (
-                                        <div className="flex flex-col items-center justify-center gap-6 py-6">
+                                <div className="flex flex-col">
+                                    {aircraft.length > 0 ? <AircraftTableWithEditor aircraft={aircraft} isLoading={isLoadingAircraft} /> : (
+                                        <div className="flex flex-col items-center justify-center gap-6 py-6 w-full">
                                             <PlaneTakeoff className="h-24 w-24 text-blue-600" />
                                             <div className="text-xl font-semibold">No aircraft found</div>
                                         </div>

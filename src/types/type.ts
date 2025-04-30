@@ -163,7 +163,7 @@ export interface Airline {
 }
 export interface Flight {
     flight_number: string,
-    airline_code: string,
+    airlineCode: string,
     depart_airport: string,
     arrive_airport: string,
     arrival_time: string,
@@ -173,13 +173,13 @@ export interface Flight {
 export interface AircraftModel {
     model: string,
     model_name: string,
-    airline_code: string,
+    airlineCode: string,
 }
 
 export interface AircraftRegistration {
     registration: string,
     model: string,
-    airline_code: string,
+    airlineCode: string,
     totalFlight: number
 }
 
@@ -395,4 +395,29 @@ export interface ticketBaggageUpdatorType {
     ticketIndex: number,
     weight: number,
     price: number
+}
+
+export interface adminFlightListType {
+    flightNum: string,
+    airlineCode: string,
+    airlineName: string,
+    departAirportId: string,
+    departAirportName: string,
+    arriveAirportId: string,
+    arriveAirportName: string,
+    utcArrivalTime: string,
+    utcDepartureTime: string,
+    flightCount?: number
+}
+
+export interface adminTransitListType{
+    flightNumFrom: string,
+    flightNumTo: string,
+    airlineCodeFrom: string,
+    airlineNameFrom: string,
+    airlineCodeTo: string,
+    airlineNameTo: string,
+    // departureAirportName: string,
+    // transitAirportName: string,
+    // arrivalAirportName: string,
 }

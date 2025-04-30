@@ -262,14 +262,14 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                     fetchUrl={(q) => `${backendURL}/autocomplete/flight/${selectedCarrier?.code}/${q}`}
                     renderItem={(flight) => (
                       <div className="flex flex-col">
-                        <span className="text-base font-medium">{flight.airline_code} {flight.flight_number}</span>
+                        <span className="text-base font-medium">{flight.airlineCode} {flight.flight_number}</span>
                         <span className="text-xs text-gray-500">{flight.depart_airport} → {flight.arrive_airport}</span>
                         <span className="text-xs text-gray-500">{flight.departure_time} UTC → {flight.arrival_time} UTC</span>
                       </div>
                     )}
                     renderSelectedItem={(flight) => (
                       <div>
-                        <span className="text-base font-medium">{flight.airline_code} {flight.flight_number} ({flight.depart_airport} → {flight.arrive_airport})</span>
+                        <span className="text-base font-medium">{flight.airlineCode} {flight.flight_number} ({flight.depart_airport} → {flight.arrive_airport})</span>
                       </div>
                     )}
                   />
@@ -391,12 +391,12 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                         fetchUrl={(q) => `${backendURL}/autocomplete/registration/${selectedCarrier?.code}/${selectedModel?.model}`}
                         renderItem={(registration) => (
                           <div>
-                            {registration.registration}, ({registration.model} {registration.airline_code})
+                            {registration.registration}, ({registration.model} {registration.airlineCode})
                           </div>
                         )}
                         renderSelectedItem={(registration) => (
                           <div>
-                            {registration.registration}, ({registration.model} {registration.airline_code})
+                            {registration.registration}, ({registration.model} {registration.airlineCode})
                           </div>
                         )}
                       />
@@ -445,14 +445,14 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                     fetchUrl={(q) => `${backendURL}/autocomplete/flight/${selectedCarrier?.code}/${q}`}
                     renderItem={(flight) => (
                       <div className="flex flex-col">
-                        <span className="text-base font-medium">{flight.airline_code} {flight.flight_number}</span>
+                        <span className="text-base font-medium">{flight.airlineCode} {flight.flight_number}</span>
                         <span className="text-xs text-gray-500">{flight.depart_airport} → {flight.arrive_airport}</span>
                         <span className="text-xs text-gray-500">{flight.departure_time} UTC → {flight.arrival_time} UTC</span>
                       </div>
                     )}
                     renderSelectedItem={(flight) => (
                       <div>
-                        <span className="text-base font-medium">{flight.airline_code} {flight.flight_number} ({flight.depart_airport} → {flight.arrive_airport})</span>
+                        <span className="text-base font-medium">{flight.airlineCode} {flight.flight_number} ({flight.depart_airport} → {flight.arrive_airport})</span>
                       </div>
                     )}
                     />

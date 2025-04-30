@@ -227,7 +227,7 @@ export const autocompleteModule = new Elysia({
         return flightList.map((flight)=>{
             return {
                 flight_number: flight.flightNum,
-                airline_code: flight.airlineCode,
+                airlineCode: flight.airlineCode,
                 depart_airport: flight.departAirportId,
                 arrive_airport: flight.arriveAirportId,
                 arrival_time: flight.arrivalTime,
@@ -249,7 +249,7 @@ export const autocompleteModule = new Elysia({
                                     type: "object",
                                     properties: {
                                         flight_number: {type: "string"},
-                                        airline_code: {type: "string"},
+                                        airlineCode: {type: "string"},
                                         depart_airport: {type: "string"},
                                         arrive_airport: {type: "string"},
                                         arrival_time: {type: "string"},
@@ -360,7 +360,7 @@ export const autocompleteModule = new Elysia({
             return {
                 model: aircraft.model,
                 model_name: modelAircraft[aircraft.model as keyof typeof modelAircraft] || aircraft.model,
-                airline_code: aircraft.ownerAirlineCode,
+                airlineCode: aircraft.ownerAirlineCode,
             }
         })
     },{
@@ -379,7 +379,7 @@ export const autocompleteModule = new Elysia({
                                     properties: {
                                         model: {type: "string"},
                                         model_name: {type: "string"},
-                                        airline_code: {type: "string"}
+                                        airlineCode: {type: "string"}
                                     }
                                 }
                             }
@@ -408,7 +408,7 @@ export const autocompleteModule = new Elysia({
             return {
                 registration: aircraft.aircraftId,
                 model: aircraft.model,
-                airline_code: aircraft.ownerAirlineCode,
+                airlineCode: aircraft.ownerAirlineCode,
             }
         })
     },{
@@ -427,7 +427,7 @@ export const autocompleteModule = new Elysia({
                                     properties: {
                                         registration: {type: "string"},
                                         model: {type: "string"},
-                                        airline_code: {type: "string"}
+                                        airlineCode: {type: "string"}
                                     }
                                 }
                             }
@@ -468,7 +468,7 @@ export const autocompleteModule = new Elysia({
                 return {
                     registration: aircraft.aircraftId,
                     model: aircraft.model,
-                    airline_code: aircraft.ownerAirlineCode,
+                    airlineCode: aircraft.ownerAirlineCode,
                     totalFlight: aircraft.totalFlight,
                 }
             }),
@@ -495,7 +495,7 @@ export const autocompleteModule = new Elysia({
                                             properties: {
                                                 registration: {type: "string"},
                                                 model: {type: "string"},
-                                                airline_code: {type: "string"}
+                                                airlineCode: {type: "string"}
                                             }
                                         }
                                     },

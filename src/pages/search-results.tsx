@@ -267,7 +267,7 @@ export default function SearchResults() {
       setIsError(false);
       setErrorMessage("")
       try {
-        const departData = await fetch(`${backendURL}/flight/flightList`, {
+        const departData = await fetch(`${backendURL}/flight/searchFlight`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -282,7 +282,7 @@ export default function SearchResults() {
   
         let returnData;
         if (queryParams.tripType !== "oneway") {
-          returnData = await fetch(`${backendURL}/flight/flightList`, {
+          returnData = await fetch(`${backendURL}/flight/searchFlight`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

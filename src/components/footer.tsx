@@ -80,10 +80,10 @@ export const AppFooter = () => {
 
                     {/* Payment Icons */}
                     <div className="flex gap-2 mt-4 md:mt-0">
-                        <Image className="w-10 h-7" width={100} height={70} src="https://github.com/aaronfagan/svg-credit-card-payment-icons/raw/main/logo/paypal.svg" alt="Paypal" />
-                        <Image className="w-10 h-7" width={100} height={70} src="https://github.com/aaronfagan/svg-credit-card-payment-icons/raw/main/logo/amex.svg" alt="Amex" />
-                        <Image className="w-10 h-7" width={100} height={70} src="https://github.com/aaronfagan/svg-credit-card-payment-icons/raw/main/logo/mastercard.svg" alt="MasterCard" />
-                        <Image className="w-10 h-7" width={100} height={70} src="https://github.com/aaronfagan/svg-credit-card-payment-icons/raw/main/logo/visa.svg" alt="Visa" />
+                        <Image className="w-10 h-7" width={100} height={70} src="./paypal.svg" alt="Paypal" />
+                        <Image className="w-10 h-7" width={100} height={70} src="./amex.svg" alt="Amex" />
+                        <Image className="w-10 h-7" width={100} height={70} src="./mastercard.svg" alt="MasterCard" />
+                        <Image className="w-10 h-7" width={100} height={70} src="./visa.svg" alt="Visa" />
                     </div>
                 </div>
             </div>

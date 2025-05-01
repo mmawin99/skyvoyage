@@ -41,6 +41,7 @@ export const seatmapModule = new Elysia({
                         seatId: seat.seatId,
                         seatNum: seat.seatNum,
                         row: seat.row,
+                        column: seat.seatNum.replace(String(seat.row), ''),
                         class: seat.class,
                         price: seat.price,
                         features: typeof seat.features === 'string' ? JSON.parse(seat.features) : seat.features,

@@ -155,6 +155,7 @@ export default function SearchResults() {
     }
   }, []);
 
+  //Generate temporary passenger booking info
   useEffect(() => {
     const generatePassengerTicket = (segmentSchedule:UniversalFlightSegmentSchedule[]):PassengerTicket[]=>{
       return segmentSchedule.map(i=>{
@@ -166,7 +167,7 @@ export default function SearchResults() {
           baggageAllowancePrice:0,
           mealSelection: "",
           mealPrice: 0,
-          seatId: "",
+          seatId: null,
           seatPrice: 0
         }
       })

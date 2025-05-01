@@ -141,10 +141,10 @@ export default function AircraftAdmin() {
                             </CardContent>
                         </Card>
                     ) : (
-                    <div className="flex flex-col items-center justify-center gap-6 py-6">
-                        <PlaneTakeoff className="h-24 w-24 text-blue-600" />
-                        <div className="text-3xl font-semibold">Select an airline to view aircraft</div>
-                    </div>
+                    <Card className="flex flex-col items-center justify-center gap-6 py-20 w-full">
+                        <PlaneIcon className="h-24 w-24 text-blue-600" />
+                        <div className="text-xl font-semibold">No airline selected</div>
+                      </Card>
                     )
             }
         </div>

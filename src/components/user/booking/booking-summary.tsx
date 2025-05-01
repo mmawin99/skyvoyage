@@ -118,6 +118,7 @@ const BookingSummary = ({
     isEnableButton,
     flightOpen = true,
     customText,
+    customButton = true,
     additionalFare
 }: {
     percentageComplete:number,
@@ -126,6 +127,7 @@ const BookingSummary = ({
     isEnableButton:boolean,
     flightOpen?: boolean,
     customText?: string,
+    customButton?: boolean,
     additionalFare: number
 }) => {
     return (
@@ -193,12 +195,12 @@ const BookingSummary = ({
                         </div>
                     </div>
                 </div>
-                <Button variant={"default"} className="w-full mt-4 cursor-pointer" disabled={!isEnableButton} onClick={!isEnableButton ? undefined : onClickNext}>
+                {customButton && <Button variant={"default"} className="w-full mt-4 cursor-pointer" disabled={!isEnableButton} onClick={!isEnableButton ? undefined : onClickNext}>
                     <div className="flex items-center gap-2">   
                         <span>{customText ? customText : "Confirm Your booking"}</span>
                         <ArrowRight className="h-4 w-4" />
                     </div>
-                </Button>
+                </Button>}
             </CardContent>
         </Card>
     )

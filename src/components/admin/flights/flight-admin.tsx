@@ -5,16 +5,18 @@ import { useEffect, useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle } from "lucide-react"
+import { PlaneIcon, PlusCircle } from "lucide-react"
 import FlightScheduleTable from "@/components/admin/schedule/flight-schedule-table"
-import { Schedule, ScheduleListAdmin, SubmitSchedule } from "@/types/type"
+import { adminFlightListType, Airline, Schedule, ScheduleListAdmin, SubmitSchedule } from "@/types/type"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 import { CustomPagination } from "../../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
+import FlightTable from "./flight-table"
+import { DebouncedSearch } from "@/components/reusable/search"
 
 interface FlightAdminFetchResponse {
   message: string
-  data: ScheduleListAdmin[]
+  data: adminFlightListType[]
   size: number
   page: number
   status: boolean
@@ -23,23 +25,26 @@ interface FlightAdminFetchResponse {
 
 export default function FlightAdmin() {
   const { backend:backendURL }: BackendURLType = useBackendURL();
-  const [flights, setFlights] = useState<ScheduleListAdmin[]>([])
+  const [flights, setFlights] = useState<adminFlightListType[]>([])
   const [isAddScheduleOpen, setIsAddScheduleOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
+  const [selectedCarrier, setSelectedCarrier]     = useState<Airline>()
+  const [carriers, setCarriers]                   = useState<Airline[]>([])
+  const [loadingCarrier, setLoadingCarrier]       = useState<boolean>(false)
 
   //Pagination state
   const [page, setPage] = useState<number>(1)
-  const [kind, setKind] = useState<"all" | "upcoming" | "inflight" | "completed">("all")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [pageSize, setPageSize] = useState<number>(20)
   const [totalCount, setTotalCount] = useState<number>(0)
+  
   useEffect(()=>{
     const fetchFlights = async () => {
       setIsLoading(true)
       if(!backendURL || backendURL == "") return
       try {
-        const response = await fetch(`${backendURL}/flight/schedule/${pageSize}/${kind}/${page}`, {
+        const response = await fetch(`${backendURL}/flight/flightlist/${selectedCarrier?.code}/${pageSize}/${page}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -53,7 +58,7 @@ export default function FlightAdmin() {
           console.log(data)
           setFlights(data?.data)
           setTotalCount(data?.totalCount)
-          // setPage(data?.page)
+          console.log(data?.data)
         } else {
           console.error("Error fetching flights:", await response.json())
         }
@@ -66,7 +71,7 @@ export default function FlightAdmin() {
 
     fetchFlights()
 
-  }, [searchQuery, page, pageSize, backendURL, kind])
+  }, [searchQuery, page, pageSize, backendURL, selectedCarrier])
   const handleAddFlight = async (newFlight: SubmitSchedule, onSuccess: ()=> void, onError: ()=> void) => {
     setIsLoading(true)
     // Simulate API call
@@ -95,7 +100,7 @@ export default function FlightAdmin() {
     return (
       <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select a fruit" />
+          <SelectValue placeholder="Select a size" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="10">10</SelectItem>
@@ -110,48 +115,79 @@ export default function FlightAdmin() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Flight Management</h1>
-        <Button onClick={() => setIsAddScheduleOpen(true)} className="gap-1">
-          <PlusCircle className="h-4 w-4" />
-          Add Schedule
-        </Button>
-      </div>
+        <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold tracking-tight">Flight Management</h1>
+            <Button onClick={() => {}} className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+                Add Aircraft
+            </Button>
+        </div>
+            <div className="flex flex-row gap-2">
+                <div className="w-75">
+                    <DebouncedSearch<Airline>
+                        title="Search for airline"
+                        Icon={PlaneIcon}
+                        selected={selectedCarrier ?? null}
+                        onSelect={setSelectedCarrier}
+                        results={carriers}
+                        setResults={setCarriers}
+                        loading={loadingCarrier}
+                        setLoading={setLoadingCarrier}
+                        fetchUrl={(q) => `${backendURL}/autocomplete/airline/${q}`}
+                        renderItem={(airline) => (
+                            <div>
+                            {airline.name}, ({airline.code})
+                            </div>
+                        )}
+                        renderSelectedItem={(airline) => (
+                            <div>
+                            {airline.name}, ({airline.code})
+                            </div>
+                        )}
+                    />
+                </div>
+            </div>
 
-
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                Flight
-              </CardTitle>
-              <CardDescription>
-                View and manage all flights belonging to the airline.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-row justify-between mb-4">
-                <CustomPagination className="w-full flex flex-row justify-start" 
-                  currentPage={parseInt(String(page))} 
-                  totalCount={totalCount} 
-                  pageSize={pageSize} 
-                  onPageChange={setPage}
-                  siblingCount={1}
-                />
-                <SelectSizeInput />
-              </div>
-              <FlightScheduleTable searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
-              <div className="flex flex-row justify-between mt-4">
-                <CustomPagination className="w-full flex flex-row justify-start" 
-                  currentPage={parseInt(String(page))} 
-                  totalCount={totalCount} 
-                  pageSize={pageSize} 
-                  onPageChange={setPage}
-                  siblingCount={1}
-                />
-                <SelectSizeInput />
-              </div>
-            </CardContent>
-          </Card>
+          {
+            selectedCarrier ? 
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  Flight
+                </CardTitle>
+                <CardDescription>
+                  View and manage all flights belonging to the airline.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-row justify-between mb-4">
+                  <CustomPagination className="w-full flex flex-row justify-start" 
+                    currentPage={parseInt(String(page))} 
+                    totalCount={totalCount} 
+                    pageSize={pageSize} 
+                    onPageChange={setPage}
+                    siblingCount={1}
+                  />
+                  <SelectSizeInput />
+                </div>
+                <FlightTable searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
+                <div className="flex flex-row justify-between mt-4">
+                  <CustomPagination className="w-full flex flex-row justify-start" 
+                    currentPage={parseInt(String(page))} 
+                    totalCount={totalCount} 
+                    pageSize={pageSize} 
+                    onPageChange={setPage}
+                    siblingCount={1}
+                  />
+                  <SelectSizeInput />
+                </div>
+              </CardContent>
+            </Card> :
+            <Card className="flex flex-col items-center justify-center gap-6 py-20 w-full">
+              <PlaneIcon className="h-24 w-24 text-blue-600" />
+              <div className="text-xl font-semibold">No airline selected</div>
+            </Card>
+          }
     </div>
   )
 }

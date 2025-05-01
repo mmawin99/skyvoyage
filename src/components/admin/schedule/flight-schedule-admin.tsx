@@ -96,7 +96,7 @@ export default function ScheduleAdmin() {
     return (
       <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select a fruit" />
+          <SelectValue placeholder="Select a size" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="10">10</SelectItem>

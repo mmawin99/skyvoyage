@@ -873,9 +873,9 @@ export const flightModule = new Elysia({
                         f.airlineCode,
                         a.airlineName,
                         f.departAirportId,
-                        da.name AS departureAirportName,
+                        da.name AS departAirportName,
                         f.arriveAirportId,
-                        aa.name AS arrivalAirportName,
+                        aa.name AS arriveAirportName,
                         f.departureTime AS utcDepartureTime,
                         f.arrivalTime AS utcArrivalTime,
                         COUNT(DISTINCT fo.flightId) AS flightCount
@@ -909,9 +909,9 @@ export const flightModule = new Elysia({
                         f.airlineCode,
                         a.airlineName,
                         f.departAirportId,
-                        da.name AS departureAirportName,
+                        da.name AS departAirportName,
                         f.arriveAirportId,
-                        aa.name AS arrivalAirportName,
+                        aa.name AS arriveAirportName,
                         f.departureTime AS utcDepartureTime,
                         f.arrivalTime AS utcArrivalTime,
                         COUNT(DISTINCT fo.flightId) AS flightCount

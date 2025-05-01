@@ -2,17 +2,18 @@
 import { AppFooter } from '@/components/footer'
 import { Navbar } from '@/components/navbar'
 import { Button } from '@/components/ui/button'
-import { CabinClassType, PassengerTicket, searchSelectedRoutes, ticketBaggageUpdatorType, UniversalFlightSchedule } from '@/types/type'
+import { CabinClassType, PassengerTicket, searchSelectedRoutes, SeatmapAPI, SeatmapFetch, ticketBaggageUpdatorType, UniversalFlightSchedule } from '@/types/type'
 import { useSessionStorage } from '@uidotdev/usehooks'
-import { ArrowLeft, Link, SearchX } from 'lucide-react'
+import { ArrowLeft, Link, SearchX, TriangleAlert } from 'lucide-react'
 import { NextRouter, useRouter } from 'next/router'
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import BookingSummary from '@/components/user/booking/booking-summary'
 import { useSession } from 'next-auth/react'
 import PolicyDialogs from '@/components/user/booking-passenger/policy'
-import {SeatSelectionCard, SeatSelectionForm} from '@/components/user/booking-additional/seatSelection'
 import MealSelectionCard from '@/components/user/booking-additional/mealSelection'
 import { BaggageAdditionCard, BaggageAdditionForm } from '@/components/user/booking-additional/BaggageSelection'
+import { SeatSelectionCard, SeatSelectionForm } from '@/components/user/booking-additional/seatSelection';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 type PolicyDialogsType = "foreign" | "purchase" | "refund" | null;
 type InteractCardType = "seat" | "meal" | "baggage" | null;
 const PassengerInfo = () => {
@@ -50,7 +51,39 @@ const PassengerInfo = () => {
 
         return acc + ticketTotal;
     }, 0) ?? 0; 
+    const [isSeatError, setIsSeatError] = useState<boolean>(false)
+    const [seatErrorMessage, setSeatErrorMessage] = useState<string>("")
+    const [seatMapTemporary, setSeatMapTemporary] = useState<SeatmapFetch[]>([])
+    const [isReady, setIsReady] = useState<boolean>(false)
+    
+    //For check ready checkout state
+    useEffect(()=>{
 
+        if(isReady){
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setIsReady(false)
+            setSeatErrorMessage("");
+            setIsSeatError(false)
+            const isAllAdultAndChildren = selectedRoute.passenger?.every((passenger) => {
+                if (passenger.ageRange === "Adult" || passenger.ageRange === "Children") {
+                    return passenger.ticket?.every((ticket) => {
+                        console.log("checking ticket", ticket.seatId, passenger.firstName);
+                        return ticket.seatId !== null && ticket.seatId !== undefined;
+                    });
+                } else {
+                    return true;
+                }
+            });
+            console.log("isAllAdultAndChildren", isAllAdultAndChildren, selectedRoute);
+            if (!isAllAdultAndChildren) {
+                setIsSeatError(true);
+                setSeatErrorMessage("Please select a seat for all adult and children passengers.");
+            } else {
+                router.push("/payment");
+            }
+        }
+
+    }, [isReady, selectedRoute, router])
     console.log(totalAddtionalServicesFare)
     const updateMultiplePassengerTickets = (
         updates: {
@@ -82,6 +115,46 @@ const PassengerInfo = () => {
             return updated;
         });
     };
+    const isEffectFetchSeatmapRan = useRef(false);
+    useEffect(()=>{
+        if (isEffectFetchSeatmapRan.current) return;
+
+        if (selectedRoute?.passenger?.length ?? 0 > 0) {
+            const flightList: string[] = selectedRoute?.passenger?.[0]?.ticket?.map((ticket) => {
+            return ticket?.fid;
+            }) ?? [];
+
+            const fetchSeatmapForFlights = async () => {
+                try {
+                    const fetchPromises = flightList.map(async (flightId) => {
+                        try {
+                            const response = await fetch(`/api/seatmap/flight/${flightId}/${selectedRoute.queryString.cabinClass}`);
+                            if (!response.ok) {
+                                throw new Error(`Failed to fetch seatmap for flightId: ${flightId}`);
+                            }
+                            const data = await response.json();
+                            console.log(`Seatmap for flightId ${flightId}:`, data);
+                            return data; // Return the fetched data
+                        } catch (error) {
+                            console.error(`Error fetching seatmap for flightId ${flightId}:`, error);
+                            return null; // Return null in case of an error
+                        }
+                    });
+
+                    const seatmaps = await Promise.all(fetchPromises);
+                    const validSeatmaps = seatmaps.filter((seatmap) => seatmap !== null); // Filter out null values
+                    setSeatMapTemporary(validSeatmaps); // Save the fetched seatmaps into state
+                    console.log("Seatmap fetched successfully for all flights.", validSeatmaps);
+                    isEffectFetchSeatmapRan.current = true;
+                } catch (error) {
+                    console.error("Error fetching seatmap:", error);
+                }
+            };
+
+            fetchSeatmapForFlights();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[])
     if(selectedRoute.passenger === undefined || selectedRoute.passenger.length === 0){   
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
@@ -94,7 +167,12 @@ const PassengerInfo = () => {
             </div>
         )
     }
-    console.log(baggageDefault)
+    
+    const validatePassengerBooking = () => {
+        // check all adult and children passenger ticket has a seat
+        setIsReady(true)
+    }
+    // console.log(baggageDefault, seatMapTemporary)
     return (
         <main className="min-h-screen bg-gray-50">
             <PolicyDialogs setOpenDialog={setPolicyOpen} openDialog={policyOpen} />
@@ -106,6 +184,15 @@ const PassengerInfo = () => {
                 </h1>
                 <div className="flex flex-col lg:flex-row gap-6 w-full">
                     <div className='w-full lg:w-14/20 flex flex-col gap-6'>
+                        {
+                            isSeatError && (
+                                <Alert variant="destructive" className='w-full'>
+                                    <TriangleAlert className='h-6 w-6' />
+                                    <AlertTitle>Booking Error</AlertTitle>
+                                    <AlertDescription>{seatErrorMessage}</AlertDescription>
+                                </Alert>
+                            )    
+                        }
                         {
                             interactOpen === "baggage" && (
                                 <BaggageAdditionForm 
@@ -120,9 +207,10 @@ const PassengerInfo = () => {
                         {
                             interactOpen === "seat" && (
                                 <SeatSelectionForm
+                                    seatmapTemporary={seatMapTemporary}
                                     selectedRoute={selectedRoute}
                                     updatePassenger={updateMultiplePassengerTickets}
-                                    onClose={()=>{ setInteractOpen(null); }}
+                                    onClose={()=>{ setInteractOpen(null); setIsSeatError(false); setSeatErrorMessage(""); }}
                                     defaultValue={[]}
                                     setDefaultValue={()=>{}}
                                 />
@@ -150,7 +238,10 @@ const PassengerInfo = () => {
                         percentageComplete={100}
                         selectedRoute={selectedRoute} 
                         additionalFare={totalAddtionalServicesFare}
-                        onClickNext={()=>{ }} 
+                        onClickNext={()=>{ 
+                            validatePassengerBooking()
+                        }} 
+                        customText="Checkout now"
                         isEnableButton={true} />
                     </div>
                 </div>

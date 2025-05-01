@@ -197,6 +197,7 @@ model ticket {
   seat        seat          @relation(fields: [seatId], references: [seatId])
 
   @@index([seatId, flightId])
+  @@unique([seatId, flightId])
 }
 
 model transit {

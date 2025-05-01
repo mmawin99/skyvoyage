@@ -311,7 +311,7 @@ export interface PassengerTicket{
     baggageAllowancePrice: number // in USD
     mealSelection: string //
     mealPrice: number // in USD
-    seatId: string // seat id
+    seatId: string | null // seat id
     seatPrice: number
 }
 
@@ -373,21 +373,30 @@ export interface FarePackage {
 export type CabinClassType = "Y" | "C" | "W" | "F"
 
 export interface SeatmapAPI{
-    seatId: bigint;
+    seatId: string;
     seatNum: string;
     row: number;
+    column: string;
     class: string;
     price: number;
-    features: string | {
+    features: {
         s: {
-            p: string;
-            w: string;
-            r: string;
+            p: string; //seat_pitch
+            w: string; //seat_width
+            r: string; //seat_recline
         },
-        f: number[]
-    } [];
+        f: number[] //features_id
+    };
     floor: number;
     seatStatus: 'available' | 'reserved';
+}
+
+export interface SeatmapFetch{
+    status: boolean,
+    msg: string,
+    flightId: string,
+    cabinClass: string,
+    data: SeatmapAPI[]
 }
 
 export interface ticketBaggageUpdatorType {

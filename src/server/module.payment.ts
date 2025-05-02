@@ -1,6 +1,8 @@
-import Elysia from "elysia"
+import Elysia, {error} from "elysia"
+import { v4 as uuidv4 } from 'uuid';
 import Stripe from 'stripe'
 import { PrismaClient } from "../../prisma-client";
+import { searchSelectedRoutes } from '@/types/type';
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -9,7 +11,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
 const prisma = new PrismaClient()
 export const paymentModule = new Elysia({
     prefix: '/payment',
-  }).post('/create-payment-intent', async ({ body }) => {
+}).post('/create-payment-intent', async ({ body }) => {
     try {
         const { seats, userId, amount } = body as {
             seats: { seat_id: string; flight_id: string; price: number }[]
@@ -95,11 +97,182 @@ export const paymentModule = new Elysia({
             clientSecret: paymentIntent.client_secret,
             paymentIntentId: paymentIntent.id
         }
-    } catch (error) {
-        console.error('Error creating PaymentIntent:', error)
-        return {
+    } catch (err) {
+        console.error('Error creating PaymentIntent:', err)
+        return error(500, {
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
-        }
+            error: err instanceof Error ? err.message : 'Unknown error'
+        })
     }
 })
+.post("/booking", async ({ body }: {
+    body: {
+      selectedRoute: searchSelectedRoutes
+      userid: string,
+      paymentReference: string,
+      paymentDate: string,
+      paymentMethod: string,
+      totalFare: number
+    }
+  })  => {
+    try {
+      // Start a transaction
+      const result = await prisma.$transaction(async (tx) => {
+        const { selectedRoute, userid, paymentReference, paymentDate, paymentMethod, totalFare } = body;
+        const bookingId = uuidv4();
+        
+        // 1. Create the booking record
+        await tx.$queryRaw`
+          INSERT INTO booking (bookingId, bookingDate, status, userId)
+          VALUES (${bookingId}, NOW(), 'PAID', ${userid})
+        `;
+        
+        // 2. Process all passengers and their tickets
+        if (!selectedRoute.passenger) {
+          throw new Error("Passenger data is missing in the selected route.");
+        }
+        for (const passenger of selectedRoute.passenger) {
+          // Check if passenger exists
+          const existingPassenger = await tx.$queryRaw`
+            SELECT passportNum FROM passenger 
+            WHERE passportNum = ${passenger.passportNum}
+            AND userId = ${userid}
+            LIMIT 1
+          `;
+          
+          // If passenger doesn't exist, create a new one
+          if (!existingPassenger || (existingPassenger as { passportNum: string }[]).length === 0) {
+            await tx.$queryRaw`
+              INSERT INTO passenger (
+                passportNum, 
+                passportCountry, 
+                passportExpiry, 
+                firstName, 
+                lastName, 
+                dateOfBirth, 
+                nationality, 
+                ageRange, 
+                userId
+              )
+              VALUES (
+                ${passenger.passportNum},
+                ${passenger.passportCountry},
+                STR_TO_DATE(${passenger.passportExpiry}, '%Y-%m-%dT%H:%i:%s.%fZ'),
+                ${passenger.firstName},
+                ${passenger.lastName},
+                STR_TO_DATE(${passenger.dateOfBirth}, '%Y-%m-%dT%H:%i:%s.%fZ'),
+                ${passenger.nationality},
+                ${passenger.ageRange},
+                ${userid}
+              )
+            `;
+          }
+          
+          // Link passenger to booking
+          await tx.$queryRaw`
+            INSERT INTO passenger_booking (bookingId, passportNum)
+            VALUES (${bookingId}, ${passenger.passportNum})
+          `;
+          
+          // Process all tickets for this passenger
+          for (const ticket of passenger.ticket) {
+            const ticketId = uuidv4();
+            
+            await tx.$queryRaw`
+              INSERT INTO ticket (
+                ticketId,
+                farePackage,
+                baggageAllowanceWeight,
+                baggageAllowancePrice,
+                mealSelection,
+                mealPrice,
+                ticketPrice,
+                bookingId,
+                flightId,
+                passportNum,
+                seatId
+              )
+              VALUES (
+                ${ticketId},
+                ${selectedRoute.selectedDepartRoute.selectedFare},
+                ${ticket.baggageAllowanceWeight},
+                ${ticket.baggageAllowancePrice},
+                ${ticket.mealSelection},
+                ${ticket.mealPrice},
+                ${ticket.seatPrice},
+                ${bookingId},
+                ${ticket.fid},
+                ${passenger.passportNum},
+                ${ticket.seatId || null}
+              )
+            `;
+          }
+        }
+        
+        // 3. Create booking_flight records for departure route
+        // Process all segments in the departure flight
+        if (selectedRoute.selectedDepartRoute && selectedRoute.selectedDepartRoute.flight.segments) {
+          for (const segment of selectedRoute.selectedDepartRoute.flight.segments) {
+            await tx.$queryRaw`
+              INSERT INTO booking_flight (bookingId, flightId)
+              VALUES (${bookingId}, ${segment.flightId})
+            `;
+          }
+        } else {
+          // If there are no segments, use the main flight ID
+          await tx.$queryRaw`
+            INSERT INTO booking_flight (bookingId, flightId)
+            VALUES (${bookingId}, ${selectedRoute.selectedDepartRoute.flightId})
+          `;
+        }
+        
+        // 4. Create booking_flight records for return route (if exists)
+        if (selectedRoute.selectedReturnRoute) {
+          if (selectedRoute.selectedReturnRoute.flight.segments) {
+            for (const segment of selectedRoute.selectedReturnRoute.flight.segments) {
+              await tx.$queryRaw`
+                INSERT INTO booking_flight (bookingId, flightId)
+                VALUES (${bookingId}, ${segment.flightId})
+              `;
+            }
+          } else {
+            await tx.$queryRaw`
+              INSERT INTO booking_flight (bookingId, flightId)
+              VALUES (${bookingId}, ${selectedRoute.selectedReturnRoute.flightId})
+            `;
+          }
+        }
+        
+        // 5. Create payment record
+        await tx.$queryRaw`
+          INSERT INTO payment (
+            paymentId,
+            amount,
+            method,
+            paymentDate,
+            bookingId
+          )
+          VALUES (
+            ${paymentReference},
+            ${totalFare},
+            ${paymentMethod},
+            STR_TO_DATE(${paymentDate}, '%Y-%m-%dT%H:%i:%s.%fZ'),
+            ${bookingId}
+          )
+        `;
+        
+        return { success: true, bookingId };
+      });
+      
+      return {
+        success: true,
+        data: result
+      };
+    } catch (err) {
+      console.error("Booking error:", err);
+      return error(500, {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error occurred"
+      });
+    }
+  });

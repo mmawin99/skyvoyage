@@ -6,7 +6,7 @@ import { loadStripe } from "@stripe/stripe-js"
 import { Elements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/router"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, CheckCircleIcon, Loader2 } from "lucide-react"
 import { useSessionStorage } from "@uidotdev/usehooks"
 import { CabinClassType, searchSelectedRoutes, UniversalFlightSchedule } from "@/types/type"
 import { Navbar } from "@/components/navbar"
@@ -22,8 +22,8 @@ const BookingPayment = () => {
   const router = useRouter()
   const { data: sessionData } = useSession()
   const [clientSecret, setClientSecret] = useState<string | null>(null)
-
-  const [selectedRoute] = useSessionStorage<searchSelectedRoutes>("selectedRoute", {
+  const [isBookingComplete, setIsBookingComplete] = useState(false)
+  const [selectedRoute, setSelectedRoute] = useSessionStorage<searchSelectedRoutes>("selectedRoute", {
     departRoute: [],
     selectedDepartRoute: {
       selectedFare: "SUPER_SAVER",
@@ -103,7 +103,56 @@ const BookingPayment = () => {
         if (convertedAmount)
             fetchClientSecret()
   }, [sessionData?.user.uuid, totalFare, convertedAmount])
-
+  const onBookingComplete = () => {
+    setIsBookingComplete(true)
+    setSelectedRoute({
+      departRoute: [],
+      selectedDepartRoute: {
+        selectedFare: "SUPER_SAVER",
+        flightId: "",
+        flight: {} as UniversalFlightSchedule,
+        price: 0
+      },
+      returnRoute: [],
+      selectedReturnRoute: undefined,
+      queryString: {
+        origin: "",
+        destination: "",
+        departDateStr: "",
+        returnDateStr: "",
+        passengersStr: "",
+        cabinClass: "Y" as CabinClassType,
+        tripType: ""
+      },
+      totalFare: 0,
+      passenger: []
+    })
+  }
+  if(isBookingComplete){
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto py-8">
+          <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            Booking Confirmed!
+          </h1>
+          <div className="flex flex-col lg:flex-row gap-6">
+          <Card className="w-full">
+            <CardHeader className="text-2xl font-semibold mb-4 text-center">Booking Confirmation</CardHeader>
+            <CardContent className='flex flex-col items-center '>
+              <CheckCircleIcon className="h-32 w-32 text-primary" />
+              <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                <h2 className="text-xl font-semibold mb-4">Booking Confirmed!</h2>
+                <p className="text-gray-500">Your journey has begin right now, Thank for choosing us.</p>
+              </div>
+            </CardContent>
+          </Card>
+          </div>
+        </div>
+        <AppFooter />
+      </main>
+    )
+  }
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
@@ -118,7 +167,9 @@ const BookingPayment = () => {
           <div className="w-full lg:w-3/5">
             {clientSecret ? (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <CheckoutForm selectedRoute={selectedRoute} totalFare={totalFare} thbFare={convertedAmount ? Number(convertedAmount.toFixed(2)) : 0} />
+                <CheckoutForm 
+                onComplete={onBookingComplete}
+                selectedRoute={selectedRoute} totalFare={totalFare} thbFare={convertedAmount ? Number(convertedAmount.toFixed(2)) : 0} />
               </Elements>
             ): (
                 <Card>

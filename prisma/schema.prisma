@@ -179,7 +179,7 @@ model seat {
 }
 
 model ticket {
-  ticketId               String       @id @db.VarChar(13)
+  ticketId               String       @id @db.VarChar(36)
   farePackage            FarePackage  @default(STANDARD)
   baggageAllowanceWeight Int          @default(0)
   baggageAllowancePrice  Float        @default(0)

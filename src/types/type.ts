@@ -430,3 +430,13 @@ export interface adminTransitListType{
     // transitAirportName: string,
     // arrivalAirportName: string,
 }
+export interface loadExistPassengerType{
+    passportNum: string,
+    passportCountry: string,
+    passportExpiry: string,
+    firstName: string,
+    lastName: string,
+    dateOfBirth: string,
+    nationality: string,
+    ageRange: string
+}

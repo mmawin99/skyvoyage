@@ -8,7 +8,7 @@ import { adminAuthModule } from "./module.admin_auth";
 import { autocompleteModule } from "./module.autocomplete";
 import { flightModule } from "./module.flight";
 import { seatmapModule } from "./module.seatmap";
-import { paymentModule } from "./module.payment";
+import { paymentModule } from "./module.booking";
 
 export const app = new Elysia({
    prefix: '/api'

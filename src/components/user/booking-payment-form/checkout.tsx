@@ -47,7 +47,7 @@ export const CheckoutForm = ({ selectedRoute, totalFare, thbFare, onComplete }: 
       if (result.paymentIntent.status === "succeeded") {
         setIsPaymentSuccess(true)
         try{
-          const createBooking = await fetch("/api/payment/booking", {
+          const createBooking = await fetch("/api/booking/book", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { PassengerFillOut, searchSelectedRoutes } from '@/types/type'
+import { loadExistPassengerType, PassengerFillOut, searchSelectedRoutes } from '@/types/type'
 import { CalendarIcon, Check, ChevronsUpDown, SearchX, TriangleAlert } from 'lucide-react'
 import { NextRouter, useRouter } from 'next/router'
 import React, { useState } from 'react'
@@ -36,6 +36,9 @@ const PassengerFilling = ({
     currentPassenger,
     setCurrentPassenger,
     updatePassengerFields,
+    //Remark: this will be fixed later, กูง่วงหว่ะขอไปนอนก่อนละกันนะ
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    existPassenger,
     setAllComplete,
     firstPasssenger
 }:{
@@ -45,6 +48,7 @@ const PassengerFilling = ({
     updatePassengerFields: (index: number, fields: Record<string, string>) => void
     setAllComplete: React.Dispatch<React.SetStateAction<boolean>>
     firstPasssenger: PassengerFillOut
+    existPassenger: loadExistPassengerType[]
 }) => {
     const [passportNum, setPassportNum] = useState<string>(firstPasssenger.passportNum)
     const [passportCountry, setpassportCountry] = useState<string>(firstPasssenger.passportCountry)
@@ -171,7 +175,7 @@ const PassengerFilling = ({
                         <CardDescription>Please fill in passenger details</CardDescription>
                     </div>
                     <div>
-                        <Button>Load Exist Passenger</Button>
+                        <Button variant={"outline"}>Load Exist Passenger</Button>
                     </div>
                 </CardHeader>
                 <CardContent>

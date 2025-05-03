@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { CabinClassType, FarePackage, FareType, PassengerFillOut, searchSelectedFlight, searchSelectedRoutes, UniversalFlightSchedule } from '@/types/type'
+import { CabinClassType, FarePackage, FareType, loadExistPassengerType, PassengerFillOut, searchSelectedFlight, searchSelectedRoutes, UniversalFlightSchedule } from '@/types/type'
 import { useSessionStorage } from '@uidotdev/usehooks'
 import { ArrowRight, Calendar, Clock, Plane, SearchX } from 'lucide-react'
 import { NextRouter, useRouter } from 'next/router'
@@ -15,9 +15,11 @@ import { FarePackageList } from '@/lib/farePackage'
 import BookingSummary from '@/components/user/booking/booking-summary'
 import PassengerFilling from '@/components/user/booking-passenger/passenger-filling'
 import PassengerSummary from '@/components/user/booking-passenger/passenger-summary'
+import { useSession } from 'next-auth/react'
 
 const PassengerInfo = () => {
     const router:NextRouter = useRouter()
+    const {data:sessionData} = useSession();
     const [selectedRoute, setSelectedRoute] = useSessionStorage<searchSelectedRoutes>("selectedRoute", {
         departRoute: [],
         selectedDepartRoute: {
@@ -60,6 +62,7 @@ const PassengerInfo = () => {
     const [wantToEdit, setWantToEdit] = useState<boolean>(false)
     const [editId, setEditId] = useState<number>(-1)
     const [passengerInformation, setPassengerInformation] = useState<PassengerFillOut | null>(null)
+    const [existPassenger, setExistPassenger] = useState<loadExistPassengerType[]>([])
     useEffect(()=>{
         if(wantToEdit && editId != -1){
             setCurrentPassenger(editId)
@@ -69,6 +72,29 @@ const PassengerInfo = () => {
             setEditId(-1)
         }
     },[wantToEdit, editId, selectedRoute])
+
+    useEffect(()=>{
+        const fetchPassenger = async () => {
+            if(!sessionData) return
+            if(!sessionData?.user) return
+            if(!sessionData?.user.uuid) return
+            if(sessionData?.user.uuid == "") return
+            const response = await fetch("/api/booking/passenger/"+sessionData?.user.uuid, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+            const data = await response.json()
+            if(data.success){
+                setExistPassenger(data.passengers)
+            }else{
+                setExistPassenger([])
+            }
+        }
+        fetchPassenger()
+    },[sessionData])
+
     const editPassenger = (index:number) => {
         setEditId(index)
         setTimeout(()=>{
@@ -116,6 +142,7 @@ const PassengerInfo = () => {
                                 />
                             </> :
                             <PassengerFilling
+                                existPassenger={existPassenger}
                                 selectedRoute={selectedRoute} 
                                 currentPassenger={currentPassenger} 
                                 setCurrentPassenger={setCurrentPassenger} 

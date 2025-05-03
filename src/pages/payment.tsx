@@ -85,7 +85,7 @@ const BookingPayment = () => {
           }))
         ) ?? []
 
-      const res = await fetch("/api/payment/create-payment-intent", {
+      const res = await fetch("/api/booking/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

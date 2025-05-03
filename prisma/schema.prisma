@@ -121,7 +121,7 @@ model flightOperate {
 }
 
 model passenger {
-  passportNum      String    @id @db.VarChar(9)
+  passportNum      String    @db.VarChar(9)
   passportCountry  String    @db.VarChar(30)
   passportExpiry   DateTime  @db.DateTime(3)
   firstName        String    @db.VarChar(30)
@@ -133,13 +133,17 @@ model passenger {
   user             user      @relation(fields: [userId], references: [uuid])
   passengerBookings passenger_booking[]
   tickets          ticket[]
+  @@id([passportNum, userId])
+  @@index([passportNum, userId])
+  @@index([userId])
 }
 
 model passenger_booking {
   bookingId   String    @db.VarChar(36)
   passportNum String    @db.VarChar(9)
+  userId      String    @db.VarChar(36)
   booking     booking   @relation(fields: [bookingId], references: [bookingId])
-  passenger   passenger @relation(fields: [passportNum], references: [passportNum])
+  passenger   passenger @relation(fields: [passportNum, userId], references: [passportNum, userId])
 
   @@id([bookingId, passportNum])
 }
@@ -189,10 +193,11 @@ model ticket {
   bookingId              String       @db.VarChar(36)
   flightId               String       @db.VarChar(36)
   passportNum            String       @db.VarChar(9)
+  userId                 String       @db.VarChar(36)
   seatId                 String       @db.VarChar(20)
 
   booking     booking       @relation(fields: [bookingId], references: [bookingId])
-  passenger   passenger     @relation(fields: [passportNum], references: [passportNum])
+  passenger   passenger     @relation(fields: [passportNum, userId], references: [passportNum, userId])
   flight      flightOperate @relation(fields: [flightId], references: [flightId])
   seat        seat          @relation(fields: [seatId], references: [seatId])
 

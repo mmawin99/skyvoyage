@@ -1,8 +1,9 @@
 import Elysia, {error} from "elysia"
 import { v4 as uuidv4 } from 'uuid';
 import Stripe from 'stripe'
-import { PrismaClient } from "../../prisma-client";
+import { passenger as Passenger, PrismaClient } from "../../prisma-client";
 import { searchSelectedRoutes } from '@/types/type';
+import { sanitizeBigInt } from "./lib";
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -10,7 +11,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
 })
 const prisma = new PrismaClient()
 export const paymentModule = new Elysia({
-    prefix: '/payment',
+    prefix: '/booking',
 }).post('/create-payment-intent', async ({ body }) => {
     try {
         const { seats, userId, amount } = body as {
@@ -105,7 +106,7 @@ export const paymentModule = new Elysia({
         })
     }
 })
-.post("/booking", async ({ body }: {
+.post("/book", async ({ body }: {
   body: {
     selectedRoute: searchSelectedRoutes
     userid: string,
@@ -184,10 +185,10 @@ export const paymentModule = new Elysia({
           `;
         }
         
-        // Link passenger to booking
+        // Link passenger to booking (now includes userId)
         await tx.$queryRaw`
-          INSERT INTO passenger_booking (bookingId, passportNum)
-          VALUES (${bookingId}, ${passenger.passportNum})
+          INSERT INTO passenger_booking (bookingId, passportNum, userId)
+          VALUES (${bookingId}, ${passenger.passportNum}, ${userid})
         `;
         
         // Process all tickets for this passenger
@@ -218,6 +219,7 @@ export const paymentModule = new Elysia({
               bookingId,
               flightId,
               passportNum,
+              userId,
               seatId
             )
             VALUES (
@@ -231,6 +233,7 @@ export const paymentModule = new Elysia({
               ${bookingId},
               ${ticket.fid},
               ${passenger.passportNum},
+              ${userid},
               ${seatIdToUse}
             )
           `;
@@ -308,4 +311,32 @@ export const paymentModule = new Elysia({
       error: err instanceof Error ? err.message : "Unknown error occurred"
     });
   }
-});
+})
+.get("/passenger/:userId", async ({ params }:{params:{userId:string}}) => {
+  try {
+    const { userId } = params;
+    const passengers:Passenger[] = await prisma.$queryRaw`
+      SELECT 
+        passportNum,
+        passportCountry,
+        passportExpiry,
+        firstName,
+        lastName,
+        dateOfBirth,
+        nationality,
+        ageRange
+      FROM passenger
+      WHERE userId = ${userId}
+    `;
+    return {
+      success: true,
+      passengers: sanitizeBigInt(passengers)
+    }
+  } catch (err) {
+    console.error("Error fetching passengers:", err);
+    return error(500, {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown error occurred"
+    });
+  }
+})

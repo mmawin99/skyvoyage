@@ -66,7 +66,7 @@ model airport {
 model booking {
   bookingId   String        @id @db.VarChar(36)
   bookingDate DateTime      @default(now()) @db.DateTime(3)
-  status      BookingStatus @default(UNPAID)
+  status      BookingStatus @default(PAID)
   userId      String        @db.VarChar(36)
   user        user          @relation(fields: [userId], references: [uuid])
   bookingFlights booking_flight[]
@@ -124,6 +124,7 @@ model passenger {
   passportNum      String    @db.VarChar(9)
   passportCountry  String    @db.VarChar(30)
   passportExpiry   DateTime  @db.DateTime(3)
+  title            String    @db.VarChar(10) @default("Mr")
   firstName        String    @db.VarChar(30)
   lastName         String    @db.VarChar(30)
   dateOfBirth      DateTime  @db.DateTime(3)
@@ -237,7 +238,6 @@ enum Permission {
 
 enum BookingStatus {
   PAID
-  UNPAID
   CANCELLED
   REFUNDED
 }

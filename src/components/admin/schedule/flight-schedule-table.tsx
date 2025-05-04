@@ -23,7 +23,7 @@ export default function FlightScheduleTable({ flights, isLoading,
  }: FlightScheduleTableProps) {
   const [sortColumn, setSortColumn] = useState<keyof ScheduleListAdmin>("flightNum")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-
+  console.log(flights)
   const handleSort = (column: keyof ScheduleListAdmin) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc")
@@ -41,15 +41,7 @@ export default function FlightScheduleTable({ flights, isLoading,
     }
   })
 
-  const filteredFlights = sortedFlights.filter(
-    (flight) =>
-      flight.flightNum.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      flight.airlineCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      flight.departureAirport.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      flight.arrivalAirport.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (flight.aircraftModel && flight.aircraftModel.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (flight.aircraftId && flight.aircraftId.toLowerCase().includes(searchQuery.toLowerCase())),
-  )
+  const filteredFlights = sortedFlights
 
   const formatDateTime = (dateTimeStr: string) => {
     try {
@@ -157,7 +149,7 @@ export default function FlightScheduleTable({ flights, isLoading,
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: 20 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
                     <Skeleton className="h-6 w-16" />

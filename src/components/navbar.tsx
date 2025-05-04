@@ -1,17 +1,16 @@
 "use client"
 import { useState } from "react"
 import Link from "next/link"
-import { Plane, Calendar, User, Menu, X, LogIn, Globe, CreditCard, LogOut } from "lucide-react"
+import { Plane, Calendar, User, Menu, X, LogIn, Globe, LogOut, PlaneIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { NextRouter, useRouter } from "next/router"
+// import { NextRouter, useRouter } from "next/router"
 import { useSession } from "next-auth/react"
 // import { Input } from "@/components/ui/input"
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const router:NextRouter = useRouter()
   const { data: sessionData } = useSession()
   // console.log(sessionData)
   return (
@@ -31,7 +30,7 @@ export function Navbar() {
           <Link href="/flights" className="text-sm font-medium hover:text-sky-500 transition-colors">
             Flights
           </Link>
-          <Link href="/bookings" className="text-sm font-medium hover:text-sky-500 transition-colors">
+          <Link href="/account/my-booking" className="text-sm font-medium hover:text-sky-500 transition-colors">
             My Bookings
           </Link>
           <Link href="/about" className="text-sm font-medium hover:text-sky-500 transition-colors">
@@ -55,21 +54,27 @@ export function Navbar() {
             <DropdownMenuContent align="end">
               {
                 sessionData?.user.role !== "user" ?
-                <DropdownMenuItem onClick={()=> {router.push("/account/auth")}}>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  <span>Sign in</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/account/auth?signin">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    <span>Sign in</span>
+                  </Link>
                 </DropdownMenuItem> : null
               }
               {
                 sessionData?.user.role !== "user" ?
-                <DropdownMenuItem onClick={()=> {router.push("/account/auth?signup")}}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Sign Up</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/account/auth?signup">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Sign Up</span>
+                  </Link>
                 </DropdownMenuItem> : null
               }
-              <DropdownMenuItem>
-                <CreditCard className="mr-2 h-4 w-4" />
-                <span>My Payments</span>
+              <DropdownMenuItem asChild>
+                <Link href="/account/my-booking">
+                <PlaneIcon className="mr-2 h-4 w-4" />
+                <span>My Booking</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Globe className="mr-2 h-4 w-4" />
@@ -77,9 +82,11 @@ export function Navbar() {
               </DropdownMenuItem>
               {
                 sessionData?.user.role === "user" ?
-                <DropdownMenuItem onClick={()=> {router.push("/account/signout")}}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/account/auth?signout">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </Link>
                 </DropdownMenuItem> : null
               }
             </DropdownMenuContent>

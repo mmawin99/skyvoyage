@@ -1,3 +1,4 @@
+// /* eslint-disable @typescript-eslint/no-explicit-any */
 // export interface Airline {
 //     airlineCode: string,
 //     airlineName: string
@@ -434,9 +435,15 @@ export interface loadExistPassengerType{
     passportNum: string,
     passportCountry: string,
     passportExpiry: string,
+    title: string,
     firstName: string,
     lastName: string,
     dateOfBirth: string,
     nationality: string,
     ageRange: string
+}
+export type BookingStatus = "PAID" | "CANCELLED" | "REFUNDED"
+
+export interface searchSelectedBookingRoutes extends searchSelectedRoutes{
+    status: BookingStatus
 }

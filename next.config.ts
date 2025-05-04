@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
     domains: ['images.unsplash.com', 'cdn.pixabay.com', 'images.pexels.com', 
       'upload.wikimedia.org', 'www.freepik.com',"github.com"],
-  }
+  },
 };
 
 export default nextConfig;

@@ -2,17 +2,117 @@ import Elysia, {error} from "elysia"
 import { v4 as uuidv4 } from 'uuid';
 import Stripe from 'stripe'
 import { passenger as Passenger, PrismaClient } from "../../prisma-client";
-import { searchSelectedRoutes } from '@/types/type';
 import { sanitizeBigInt } from "./lib";
+import { BookingStatus, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes, UniversalFlightSchedule, UniversalFlightSegmentSchedule } from "@/types/type";
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2025-03-31.basil', // Use the latest API version
+    apiVersion: '2025-03-31.basil', // Use the latest API version
 })
 const prisma = new PrismaClient()
-export const paymentModule = new Elysia({
+
+interface BookingRow {
+  bookingId: string;
+  bookingDate: Date;
+  status: string;
+  userId: string;
+  paymentId: string | null;
+  totalAmount: number | null;
+  paymentMethod: string | null;
+  paymentDate: Date | null;
+}
+
+interface FlightOperationRow {
+  flightId: string;
+  flightNum: string;
+  airlineCode: string;
+  departureTime: Date;
+  arrivalTime: Date;
+  departureGate: string;
+  aircraftId: string;
+  aircraftModel: string;
+  departAirportId: string;
+  arriveAirportId: string;
+  departureAirportName: string;
+  departureAirportTimezone: string;
+  arrivalAirportName: string;
+  arrivalAirportTimezone: string;
+  airlineName: string;
+}
+
+interface PassengerRow {
+  passportNum: string;
+  passportCountry: string;
+  passportExpiry: Date;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: Date;
+  nationality: string;
+  ageRange: string;
+}
+
+interface TicketRow {
+  ticketId: string;
+  farePackage: string;
+  baggageAllowanceWeight: number;
+  baggageAllowancePrice: number;
+  mealSelection: string;
+  mealPrice: number;
+  ticketPrice: number;
+  flightId: string;
+  passportNum: string;
+  seatId: string;
+  seatNum: string;
+  seatClass: string;
+  seatPrice: number;
+}
+
+// Helper function to create a UniversalFlightSchedule from flight operations
+function createUniversalFlightSchedule(flights: FlightOperationRow[]): UniversalFlightSchedule {
+    // Generate a unique ID for this schedule
+    const id = flights.map(f => f.flightId).join('-');
+    
+    // Calculate duration in minutes
+    const startTime = new Date(flights[0].departureTime);
+    const endTime = new Date(flights[flights.length - 1].arrivalTime);
+    const durationMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
+    
+    // Create segments
+    const segments: UniversalFlightSegmentSchedule[] = flights.map(flight => ({
+      flightId: flight.flightId,
+      flightNum: flight.flightNum,
+      airlineCode: flight.airlineCode,
+      airlineName: flight.airlineName,
+      departureTime: new Date(flight.departureTime).toISOString(),
+      arrivalTime: new Date(flight.arrivalTime).toISOString(),
+      aircraftModel: flight.aircraftModel,
+      departureAirport: flight.departureAirportName,
+      arrivalAirport: flight.arrivalAirportName,
+      departTimezone: flight.departureAirportTimezone,
+      arriveTimezone: flight.arrivalAirportTimezone
+    }));
+    
+    return {
+      id,
+      price: {
+        SUPER_SAVER: 0, // These values would need to be calculated based on your pricing logic
+        SAVER: 0,
+        STANDARD: 0,
+        FLEXI: 0,
+        FULL_FLEX: 0
+      },
+      duration: durationMinutes,
+      stopCount: segments.length - 1,
+      segments,
+      departureAirport: flights[0].departureAirportName,
+      arrivalAirport: flights[flights.length - 1].arrivalAirportName
+    };
+}
+
+export const bookingModule = new Elysia({
     prefix: '/booking',
-}).post('/create-payment-intent', async ({ body }) => {
+})
+.post('/create-payment-intent', async ({ body }) => {
     try {
         const { seats, userId, amount } = body as {
             seats: { seat_id: string; flight_id: string; price: number }[]
@@ -108,7 +208,7 @@ export const paymentModule = new Elysia({
 })
 .post("/book", async ({ body }: {
   body: {
-    selectedRoute: searchSelectedRoutes
+    selectedRoute: searchSelectedBookingRoutes
     userid: string,
     paymentReference: string,
     paymentDate: string,
@@ -224,12 +324,26 @@ export const paymentModule = new Elysia({
             )
             VALUES (
               ${ticketId},
-              ${selectedRoute.selectedDepartRoute.selectedFare},
+              ${
+                selectedRoute.selectedDepartRoute.flightId == ticket.fid ? 
+                selectedRoute.selectedDepartRoute.selectedFare : 
+                selectedRoute.selectedDepartRoute.flightId.includes(ticket.fid) ?
+                selectedRoute.selectedDepartRoute.selectedFare :
+                selectedRoute.selectedReturnRoute?.selectedFare
+              },
               ${ticket.baggageAllowanceWeight},
               ${ticket.baggageAllowancePrice},
               ${ticket.mealSelection},
               ${ticket.mealPrice},
-              ${ticket.seatPrice},
+              ${
+                selectedRoute.selectedDepartRoute.flightId == ticket.fid ?
+                selectedRoute.selectedDepartRoute.price :
+                selectedRoute.selectedDepartRoute.flightId.includes(ticket.fid) ?
+                (selectedRoute.selectedDepartRoute.price / 2) :
+                selectedRoute.selectedReturnRoute?.flightId == ticket.fid ?
+                selectedRoute.selectedReturnRoute.price :
+                ((selectedRoute.selectedReturnRoute?.price ?? 0) / 2)
+              },
               ${bookingId},
               ${ticket.fid},
               ${passenger.passportNum},
@@ -312,24 +426,29 @@ export const paymentModule = new Elysia({
     });
   }
 })
-.get("/passenger/:userId", async ({ params }:{params:{userId:string}}) => {
+.get("/passenger/:userId", async ({ params, query }:{params:{userId:string}, query:{seldate:string}}) => {
   try {
+    // the url is in format /passenger/:userId?date={ISODate} 
     const { userId } = params;
+    const { seldate } = query;
     const passengers:Passenger[] = await prisma.$queryRaw`
       SELECT 
         passportNum,
         passportCountry,
         passportExpiry,
+        title,
         firstName,
         lastName,
         dateOfBirth,
         nationality,
         ageRange
       FROM passenger
-      WHERE userId = ${userId}
+      WHERE userId = ${userId} AND
+      passportExpiry > DATE_ADD(STR_TO_DATE(${seldate}, '%Y-%m-%dT%H:%i:%s.%fZ'), INTERVAL 60 DAY)
     `;
     return {
       success: true,
+      // query: params,
       passengers: sanitizeBigInt(passengers)
     }
   } catch (err) {
@@ -340,3 +459,205 @@ export const paymentModule = new Elysia({
     });
   }
 })
+.get("/mybookings/:userId", async ({ params }) => {
+  try {
+    const { userId } = params;
+
+    // Fetch all bookings for the user
+    const bookings = await prisma.$queryRaw<BookingRow[]>`
+      SELECT 
+        b.bookingId, 
+        b.bookingDate, 
+        b.status, 
+        b.userId,
+        p.paymentId,
+        p.amount as totalAmount,
+        p.method as paymentMethod,
+        p.paymentDate
+      FROM booking b
+      LEFT JOIN payment p ON p.bookingId = b.bookingId
+      WHERE b.userId = ${userId}
+      ORDER BY b.bookingDate DESC
+    `;
+
+    if (!bookings || bookings.length === 0) {
+      return {
+        success: true,
+        data: []
+      };
+    }
+
+    const transformedBookings: searchSelectedBookingRoutes[] = [];
+
+    // Process each booking
+    for (const booking of bookings) {
+      // Get flight operations (instances) for this booking
+      const flightOperations = await prisma.$queryRaw<FlightOperationRow[]>`
+        SELECT 
+          fo.flightId,
+          fo.flightNum,
+          fo.airlineCode,
+          fo.departureTime,
+          fo.arrivalTime,
+          fo.departureGate,
+          fo.aircraftId,
+          a.model as aircraftModel,
+          f.departAirportId,
+          f.arriveAirportId,
+          depAirport.name as departureAirportName,
+          depAirport.timezone as departureAirportTimezone,
+          arrAirport.name as arrivalAirportName,
+          arrAirport.timezone as arrivalAirportTimezone,
+          airline.airlineName
+        FROM booking_flight bf
+        JOIN flightOperate fo ON bf.flightId = fo.flightId
+        JOIN flight f ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
+        JOIN aircraft a ON fo.aircraftId = a.aircraftId
+        JOIN airport depAirport ON f.departAirportId = depAirport.airportCode
+        JOIN airport arrAirport ON f.arriveAirportId = arrAirport.airportCode
+        JOIN airline ON fo.airlineCode = airline.airlineCode
+        WHERE bf.bookingId = ${booking.bookingId}
+        ORDER BY fo.departureTime ASC
+      `;
+
+      if (flightOperations.length === 0) continue;
+
+      // Get passengers for this booking
+      const passengers = await prisma.$queryRaw<PassengerRow[]>`
+        SELECT 
+          p.passportNum,
+          p.passportCountry,
+          p.passportExpiry,
+          p.firstName,
+          p.lastName,
+          p.dateOfBirth,
+          p.nationality,
+          p.ageRange
+        FROM passenger_booking pb
+        JOIN passenger p ON pb.passportNum = p.passportNum
+        WHERE pb.bookingId = ${booking.bookingId}
+      `;
+
+      // Get tickets for this booking
+      const tickets = await prisma.$queryRaw<TicketRow[]>`
+        SELECT 
+          t.ticketId,
+          t.farePackage,
+          t.baggageAllowanceWeight,
+          t.baggageAllowancePrice,
+          t.mealSelection,
+          t.mealPrice,
+          t.ticketPrice,
+          t.flightId,
+          t.passportNum,
+          t.seatId,
+          s.seatNum,
+          s.class as seatClass,
+          s.price as seatPrice
+        FROM ticket t
+        JOIN seat s ON t.seatId = s.seatId
+        WHERE t.bookingId = ${booking.bookingId}
+      `;
+
+      // Sort flights by departure time
+      const sortedFlights = [...flightOperations].sort(
+        (a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()
+      );
+
+      // Split into depart and return flights
+      const departFlights = sortedFlights.slice(0, Math.ceil(sortedFlights.length / 2));
+      const returnFlights = sortedFlights.length > 1 
+        ? sortedFlights.slice(Math.ceil(sortedFlights.length / 2)) 
+        : undefined;
+
+      // Get primary fare package from tickets
+      const farePackage = tickets.length > 0 ? tickets[0].farePackage : "STANDARD";
+      const totalFare = booking.totalAmount || 0;
+
+      // Transform passengers with their tickets
+      const transformedPassengers: PassengerFillOut[] = passengers.map(passenger => {
+        const passengerTickets: PassengerTicket[] = tickets
+          .filter(t => t.passportNum === passenger.passportNum)
+          .map(ticket => ({
+            tid: ticket.ticketId,
+            fid: ticket.flightId,
+            baggageAllowanceWeight: ticket.baggageAllowanceWeight,
+            baggageAllowancePrice: ticket.baggageAllowancePrice,
+            mealSelection: ticket.mealSelection,
+            mealPrice: ticket.mealPrice,
+            seatId: ticket.seatId,
+            seatPrice: ticket.seatPrice || 0
+          }));
+
+        return {
+          label: `${passenger.firstName} ${passenger.lastName}`,
+          pid: passenger.passportNum,
+          status: "FILLED",
+          passportNum: passenger.passportNum,
+          passportCountry: passenger.passportCountry,
+          passportExpiry: new Date(passenger.passportExpiry).toISOString(),
+          titleName: "", // Not in schema
+          firstName: passenger.firstName,
+          lastName: passenger.lastName,
+          dateOfBirth: new Date(passenger.dateOfBirth).toISOString(),
+          nationality: passenger.nationality,
+          ageRange: passenger.ageRange as "Adult" | "Children" | "Infant",
+          ticket: passengerTickets
+        };
+      });
+
+      // Create depart route
+      const departRoute = createUniversalFlightSchedule(departFlights);
+      
+      // Create the booking object in searchSelectedBookingRoutes format
+      const transformedBooking: searchSelectedBookingRoutes = {
+        departRoute: [departRoute],
+        selectedDepartRoute: {
+          selectedFare: farePackage as FareType,
+          flightId: departFlights[0].flightId,
+          flight: departRoute,
+          price: returnFlights ? totalFare / 2 : totalFare
+        },
+        status: booking.status as BookingStatus,
+        queryString:{
+          origin: "",
+          destination: "",
+          departDateStr: "",
+          returnDateStr: "",
+          passengersStr: "",
+          cabinClass: "Y",
+          tripType: returnFlights ? "roundtrip" : "oneway"
+        },
+        totalFare: totalFare,
+        passenger: transformedPassengers,
+        ticket: booking.bookingId
+      };
+      
+      // Add return route if exists
+      if (returnFlights) {
+        const returnRoute = createUniversalFlightSchedule(returnFlights);
+        transformedBooking.returnRoute = [returnRoute];
+        transformedBooking.selectedReturnRoute = {
+          selectedFare: farePackage as FareType,
+          flightId: returnFlights[0].flightId,
+          flight: returnRoute,
+          price: totalFare / 2
+        };
+      }
+      
+      transformedBookings.push(transformedBooking);
+    }
+
+    return {
+      success: true,
+      booking: transformedBookings
+    };
+  } catch (err) {
+    console.error("Error fetching bookings:", err);
+    return error(500, {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown error occurred"
+    });
+  }
+});
+

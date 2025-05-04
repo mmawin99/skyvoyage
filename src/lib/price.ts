@@ -64,3 +64,14 @@ export const cabinClassPrice = (price:number, cabinClass: "Y" | "F" | "C" | "W" 
     }
     return -1
 }
+
+export const flightPriceCalculator = (totalPrice: number, type: "Adult" | "Children" | "Infant", passengerCount:number = 1 ):number=>{
+    if (type === "Adult") {
+      return totalPrice * passengerCount
+    } else if (type === "Children") {
+      return Math.floor(totalPrice * 0.78553) * passengerCount
+    } else if (type === "Infant") {
+      return Math.floor(totalPrice * 0.22053) * passengerCount
+    }
+    return 0
+  }

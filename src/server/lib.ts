@@ -49,3 +49,72 @@ export function sanitizeBigInt(obj: any): any {
   }
   return obj;
 }
+
+
+/**
+ * Helper for parsing date ranges from query parameters
+ * @param {Object} query - The query parameters
+ * @param {string} defaultRange - Default time range if not specified
+ * @returns {Object} Start and end date objects
+ */
+export function getDateRange(query: { range?: string }, defaultRange: string = '30d'): { start: string; end: string } {
+  const range = query.range || defaultRange;
+  console.log("Range", range)
+  let end = new Date();
+  let start = new Date();
+
+  // Parse time range
+  if (range.endsWith('d')) {
+    const days = parseInt(range.slice(0, -1));
+    start.setDate(end.getDate() - days);
+  } else if (range.endsWith('w')) {
+    const weeks = parseInt(range.slice(0, -1));
+    start.setDate(end.getDate() - (weeks * 7));
+  } else if (range.endsWith('m')) {
+    const months = parseInt(range.slice(0, -1));
+    start.setMonth(end.getMonth() - months);
+  } else if (range.endsWith('y')) {
+    const years = parseInt(range.slice(0, -1));
+    start.setFullYear(end.getFullYear() - years);
+  } else {
+    // Custom date range
+    const dates = range.split(',');
+    if (dates.length === 2) {
+      start = new Date(dates[0]);
+      end = new Date(dates[1]);
+    }
+  }
+
+  // Set end time to the end of the day
+  end.setHours(23, 59, 59, 999);
+  console.log("Start", start.toISOString())
+  console.log("End", end.toISOString())
+  return { start:start.toISOString(), end:end.toISOString() };
+}
+
+/**
+ * Helper to format time intervals for grouping in SQL queries
+ * @param query - The query parameters
+ * @param defaultInterval - Default interval if not specified
+ * @returns SQL date format string
+ */
+export function getTimeInterval(query: { interval?: string }, defaultInterval: string = 'day'): string {
+  const interval = query.interval || defaultInterval;
+  
+  switch (interval) {
+    case 'hour':
+      return '%Y-%m-%d %H:00:00';
+    case 'day':
+      return '%Y-%m-%d';
+    case 'week':
+      return '%Y-%u';
+    case 'month':
+      return '%Y-%m';
+    case 'quarter':
+      return 'CONCAT(YEAR(date), "-Q", QUARTER(date))';
+    case 'year':
+      return '%Y';
+    default:
+      return '%Y-%m-%d';
+  }
+}

@@ -12,8 +12,15 @@ export const SeatSelectionCard = ({onInteract}:{
     onInteract: ()=> void
 }) => {
     return (
-        <Card className="p-0 flex-row overflow-hidden gap-0">
-            <div className="flex flex-col w-2/3 py-6">
+        <Card className="p-0 flex-col md:flex-row overflow-hidden gap-0">
+          <CardImage
+                src="./seat.jpg" 
+                alt="Pick Your Seat" 
+                aspectRatio="wide"
+                position="top"
+                className="w-full md:hidden h-42"
+            />
+            <div className="flex flex-col w-full md:w-2/3 py-6">
                 <CardHeader>
                     <CardTitle className={`text-lg font-semibold`}>Seat Selection</CardTitle>
                     <CardDescription>Find your perfect spot onboard</CardDescription>
@@ -30,7 +37,7 @@ export const SeatSelectionCard = ({onInteract}:{
                 alt="Pick Your Seat" 
                 aspectRatio="wide"
                 position="left"
-                className="w-1/3 rounded-l-none"
+                className="w-1/3 rounded-l-none hidden md:block"
             />
         </Card>
     )

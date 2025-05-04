@@ -26,18 +26,23 @@ const calculateAge = (dateOfBirthISO: string): number => {
     }
     return age;
 }
+const diff2Date = (dateISO1: string, dateISO2: string): number => {
+    const date1 = new Date(dateISO1);
+    const date2 = new Date(dateISO2);
+    return Math.floor((date2.getTime() - date1.getTime()) / (1000 * 3600 * 24));
+}
 const diffDateInFuture = (dateISO: string): number => {
     const date1 = new Date();
-    const date2 = new Date(dateISO);
-    return Math.floor((date2.getTime() - date1.getTime()) / (1000 * 3600 * 24));
+    return diff2Date(date1.toISOString(), dateISO)
+    // const date1 = new Date();
+    // const date2 = new Date(dateISO);
+    // return Math.floor((date2.getTime() - date1.getTime()) / (1000 * 3600 * 24));
 }
 const PassengerFilling = ({
     selectedRoute,
     currentPassenger,
     setCurrentPassenger,
     updatePassengerFields,
-    //Remark: this will be fixed later, กูง่วงหว่ะขอไปนอนก่อนละกันนะ
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     existPassenger,
     setAllComplete,
     firstPasssenger
@@ -63,6 +68,7 @@ const PassengerFilling = ({
     const router:NextRouter = useRouter()
     const [isError, setIsError] = useState<boolean>(false)
     const [error, setError] = useState<string>("")
+    const [loadPassengerOpen, setLoadPassengerOpen] = useState<boolean>(false)
     const validate = (action: string) => {
         console.log("validate", action);
         setIsError(false)
@@ -94,6 +100,20 @@ const PassengerFilling = ({
             setError("infant_age_error")
             return;
         }
+        // check passport expire with 60 days from selectedRoute?.queryString?.returnDateStr if exist else selectedRoute?.queryString?.departureDateStr
+        const selectedDateCheck = selectedRoute?.queryString?.returnDateStr || selectedRoute?.queryString?.departDateStr
+        if(selectedDateCheck === undefined){
+            setIsError(true)
+            setError("query_empty")
+            return;
+        }
+
+        if(diff2Date(selectedDateCheck, passportExpiry) < 60){
+            setIsError(true)
+            setError("passport_expiry_error_onboard")
+            return;
+        }
+        
         if(diffDateInFuture(passportExpiry) < 60){
             setIsError(true)
             setError("passport_expiry_error")
@@ -175,7 +195,55 @@ const PassengerFilling = ({
                         <CardDescription>Please fill in passenger details</CardDescription>
                     </div>
                     <div>
-                        <Button variant={"outline"}>Load Exist Passenger</Button>
+                    <Popover open={loadPassengerOpen} onOpenChange={setLoadPassengerOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={loadPassengerOpen}>
+                                Load Exist Passenger
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent side='bottom' sideOffset={10} className="p-0">
+                            <Command>
+                            <CommandInput placeholder="Search passenger..." />
+                            <CommandList>
+                                <CommandEmpty>No passenger found.</CommandEmpty>
+                                <CommandGroup>
+                                    {
+                                        existPassenger.filter(i=>{
+                                            return i.ageRange == selectedRoute.passenger?.[currentPassenger].ageRange
+                                        }).map((passenger) => (
+                                            <CommandItem className=""
+                                            key={passenger.passportNum}
+                                            value={`${passenger.passportNum} ${passenger.firstName} ${passenger.lastName}`}
+                                            onSelect={() => {
+                                                setPassportNum(passenger.passportNum)
+                                                setpassportCountry(passenger.passportCountry)
+                                                setpassportExpiry(passenger.passportExpiry)
+                                                setFirstName(passenger.firstName)
+                                                setLastName(passenger.lastName)
+                                                setDateOfBirth(passenger.dateOfBirth)
+                                                setNationality(passenger.nationality)
+                                                setTitleName(passenger.title)
+                                                setLoadPassengerOpen(false)
+                                            }}
+                                            >
+                                            <Check
+                                                className={cn(
+                                                "mr-2 h-4 w-4",
+                                                passportNum === passenger.passportNum ? "opacity-100" : "opacity-0",
+                                                )}
+                                            />
+                                            {passenger.firstName} {passenger.lastName} ({passenger.passportNum})
+                                            </CommandItem>
+                                        ))
+                                    }
+                                </CommandGroup>
+                            </CommandList>
+                            </Command>
+                        </PopoverContent>
+                        </Popover>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -186,11 +254,13 @@ const PassengerFilling = ({
                             <AlertDescription>
                                 {
                                     error && 
+                                    error == "query_empty" ? "The system malfunctioned because the session was modified by a user without permission to modify it." :
                                     error == "information_empty" ? "Information can not be empty." :
                                     error == "invalid_dob" ? "Invalid Date of Birth." :
                                     error == "adult_age_error" ? "Adult age must be greater than or equal to 12" :
                                     error == "children_age_error" ? "Children age must be in range 2 to 11" :
                                     error == "infant_age_error" ? "Infant age must be less than 2" :
+                                    error == "passport_expiry_error_onboard" ? "Passport that will be expired in 60 days on travelling date can not travel." :
                                     error == "passport_expiry_error" ? "Passport that will be expired in 60 days can not travel." :
                                     ""
                                 }

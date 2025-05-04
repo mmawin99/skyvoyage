@@ -226,7 +226,7 @@ const PassengerInfo = () => {
                             <SeatSelectionCard onInteract={()=>{ setInteractOpen("seat");  }} />
                         }
                         <MealSelectionCard onInteract={()=>{  }} />
-                        <div className='flex flex-row w-full justify-end gap-2'>
+                        <div className='flex flex-col md:flex-row w-full justify-center md:justify-end gap-2'>
                             <Button variant={"ghost"} onClick={()=>{ setPolicyOpen("foreign") }} className='flex flex-row gap-2 border-2 border-slate-300 rounded-full cursor-pointer'><Link /><span>Foreign Items</span></Button>
                             <Button variant={"ghost"} onClick={()=>{ setPolicyOpen("purchase") }} className='flex flex-row gap-2 border-2 border-slate-300 rounded-full cursor-pointer'><Link /><span>Purchase Policy</span></Button>
                             <Button variant={"ghost"} onClick={()=>{ setPolicyOpen("refund") }} className='flex flex-row gap-2 border-2 border-slate-300 rounded-full cursor-pointer'><Link /><span>Refund Policy</span></Button>

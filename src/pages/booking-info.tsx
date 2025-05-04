@@ -63,6 +63,7 @@ const PassengerInfo = () => {
     const [editId, setEditId] = useState<number>(-1)
     const [passengerInformation, setPassengerInformation] = useState<PassengerFillOut | null>(null)
     const [existPassenger, setExistPassenger] = useState<loadExistPassengerType[]>([])
+    const [isPassengerExistLoading, setIsPassengerExistLoading] = useState<boolean>(false)
     useEffect(()=>{
         if(wantToEdit && editId != -1){
             setCurrentPassenger(editId)
@@ -75,11 +76,14 @@ const PassengerInfo = () => {
 
     useEffect(()=>{
         const fetchPassenger = async () => {
+            if(isPassengerExistLoading) return
             if(!sessionData) return
             if(!sessionData?.user) return
             if(!sessionData?.user.uuid) return
             if(sessionData?.user.uuid == "") return
-            const response = await fetch("/api/booking/passenger/"+sessionData?.user.uuid, {
+            setIsPassengerExistLoading(true)
+            const response = await fetch(`/api/booking/passenger/${sessionData?.user.uuid}?seldate=${selectedRoute.queryString.returnDateStr || selectedRoute.queryString.departDateStr || new Date().toISOString()}`, {
+                
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -93,7 +97,7 @@ const PassengerInfo = () => {
             }
         }
         fetchPassenger()
-    },[sessionData])
+    },[isPassengerExistLoading, selectedRoute.queryString.departDateStr, selectedRoute.queryString.returnDateStr, sessionData])
 
     const editPassenger = (index:number) => {
         setEditId(index)

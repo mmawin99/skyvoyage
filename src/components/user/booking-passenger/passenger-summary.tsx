@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CollapsibleContent, Collapsible, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Separator } from '@/components/ui/separator'
 import { countryCodeToName } from '@/lib/country'
 import { searchSelectedRoutes } from '@/types/type'
 import { ArrowLeft, ArrowRight, ChevronDown } from 'lucide-react'
@@ -41,42 +42,43 @@ const PassengerSummary = ({
                     {
                         selectedRoute.passenger?.map((passenger, index) => {
                             return (
-                                <Card key={`passenger-summarize-${index}`}>
+                                <Card key={`passenger-summarize-${index}`} className='col-span-2 md:col-span-1'>
                                     <CardContent className='flex flex-col gap-2'>
                                         <Collapsible>
                                             <CollapsibleTrigger className='group flex flex-row gap-2 justify-start items-center'>
-                                                <Avatar className='w-12 h-12'>
+                                                <Avatar className='w-10 h-10 md:w-12 md:h-12'>
                                                     <AvatarFallback className="bg-slate-500 text-white">
                                                         {passenger.firstName.charAt(0).toUpperCase()}{passenger.lastName.charAt(0).toUpperCase()}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <span className='text-lg font-semibold'>{passenger.label}</span>
+                                                <span className='text-lg font-semibold tracking-tighter'>{passenger.label}</span>
                                                 <ChevronDown className="h-4 w-4 group-data-[state=open]:rotate-180 transition-transform text-muted-foreground" />
                                             </CollapsibleTrigger>
                                             <CollapsibleContent className='mt-2 ml-4 border-l-2 border-l-slate-300 pl-4'>
                                                 <div className='flex flex-col'>
                                                     <div className='flex flex-row gap-2'>
-                                                        <span className='font-semibold'>Full name:</span>
+                                                        <span className='font-semibold tracking-tighter'>Full name:</span>
                                                         <span>{passenger.titleName} {passenger.firstName} {passenger.lastName}</span>
                                                     </div>
                                                     <div className='flex flex-row gap-2'>
-                                                        <span className='font-semibold'>Date of Birth:</span>
+                                                        <span className='font-semibold tracking-tighter'>Date of Birth:</span>
                                                         <span>{new Date(passenger.dateOfBirth).toDateString()}</span>
                                                     </div>
                                                     <div className='flex flex-row gap-2'>
-                                                        <span className='font-semibold'>Nationality:</span>
+                                                        <span className='font-semibold tracking-tighter'>Nationality:</span>
                                                         <span>{countryCodeToName[passenger.nationality as keyof typeof countryCodeToName]}</span>
                                                     </div>
+                                                    <Separator className='my-2' />
                                                     <div className='flex flex-row gap-2'>
-                                                        <span className='font-semibold'>Passport Number:</span>
+                                                        <span className='font-semibold tracking-tighter'>Passport Number:</span>
                                                         <span>{passenger.passportNum}</span>
                                                     </div>
                                                     <div className='flex flex-row gap-2'>
-                                                        <span className='font-semibold'>Passport Expire:</span>
+                                                        <span className='font-semibold tracking-tighter'>Expire Date:</span>
                                                         <span>{new Date(passenger.passportExpiry).toDateString()}</span>
                                                     </div>
                                                     <div className='flex flex-row gap-2'>
-                                                        <span className='font-semibold'>Passport Issuing Country:</span>
+                                                        <span className='font-semibold tracking-tighter'>Issuing Country:</span>
                                                         <span>{countryCodeToName[passenger.passportCountry as keyof typeof countryCodeToName]}</span>
                                                     </div>
                                                 </div>

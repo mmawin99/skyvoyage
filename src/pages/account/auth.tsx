@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
 import { CountryList } from "@/lib/country"
 import { Country } from "@/types/type"
 import { CountryCode, parsePhoneNumberFromString } from 'libphonenumber-js';
-import { signIn } from "next-auth/react"
+import { signIn, signOut } from "next-auth/react"
 const typedCountries = CountryList;
 
 export default function AuthPage() {
@@ -54,6 +54,9 @@ export default function AuthPage() {
     useEffect(() => {
       if (searchParams.has("signup")) {
         setActiveTab("signup")
+      }
+      if(searchParams.has("signout")) {
+        setActiveTab("signout")
       }
     }
     , [searchParams])
@@ -163,6 +166,26 @@ export default function AuthPage() {
             return
         }
     }
+    const signmeout = async () => {
+      setIsLoading(true)
+      const signout = await signOut({
+        redirect: false,
+        callbackUrl: "/account/auth?signin"
+      });
+      setIsLoading(false);
+      if (!signout?.url) {
+        setIsError(true)
+        setError("signout_failed")
+        return
+      } else {
+        setIsError(false)
+        setError("")
+        setActiveTab("signin")
+      }
+    }
+
+
+
     const handleSignIn = async ()=>{
       setIsLoading(true)
       if(email === "" || password === "") {
@@ -194,16 +217,28 @@ export default function AuthPage() {
   return (
     <div className={`min-h-screen flex items-center justify-center bg-[url("/userLoginSplash.jpg")] bg-cover bg-center p-4`}>
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
-        <div className={`${activeTab == "signup_success" || activeTab == "signin_success" ? "hidden" : "mb-6 text-center"}`}>
+        <div className={`${activeTab == "signup_success" || activeTab == "signin_success" || activeTab == "signout" ? "hidden" : "mb-6 text-center"}`}>
           <h1 className="text-2xl font-bold text-slate-900">Welcome to SkyVoyage</h1>
           <p className="text-slate-500 mt-1">Sign in or create your account</p>
         </div>
 
         <Tabs defaultValue="signin" className="w-full" value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className={`${activeTab == "signup_success" || activeTab == "signin_success" ? "hidden" : `grid grid-cols-2 mb-6 w-full`}`}>
+          <TabsList className={`${activeTab == "signup_success" || activeTab == "signin_success" || activeTab == "signout" ? "hidden" : `grid grid-cols-2 mb-6 w-full`}`}>
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
+          <TabsContent value="signout">
+            <div className="flex flex-col items-center justify-center h-full">
+              <TriangleAlert className="h-16 w-16 text-red-500" />
+              <h2 className="text-lg font-bold text-slate-900">Are you sure?</h2>
+              <p className="text-slate-500 mt-1">You can sign in back anytime you want.</p>
+              <Button variant="destructive" onClick={() => {
+                signmeout();
+              }} className="mt-4">
+                Sign me out
+              </Button>
+            </div>
+          </TabsContent>
           <TabsContent value="signup_success">
             <div className="flex flex-col items-center justify-center h-full">
               <Check className="h-16 w-16 text-green-500" />

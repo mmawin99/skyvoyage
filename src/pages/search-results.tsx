@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge"
 
 import { useSessionStorage } from "@uidotdev/usehooks"
 import LoadingApp from "@/components/loading"
+import { flightPriceCalculator } from "@/lib/price"
 
 
 export default function SearchResults() {
@@ -97,16 +98,7 @@ export default function SearchResults() {
   const [isSelectedReturnFlight, setIsSelectedReturnFlight] = useState<boolean>(false)
 
     // Format passenger information for display
-  const calculatePrice = useCallback((totalPrice: number, type: "Adult" | "Children" | "Infant", passengerCount:number = 1 ):number=>{
-    if (type === "Adult") {
-      return totalPrice * passengerCount
-    } else if (type === "Children") {
-      return Math.floor(totalPrice * 0.78553) * passengerCount
-    } else if (type === "Infant") {
-      return Math.floor(totalPrice * 0.22053) * passengerCount
-    }
-    return 0
-  }, [])
+  const calculatePrice = useCallback(flightPriceCalculator, [])
   const calculateTotalPrice = useCallback((total_price: number, pa:number = 0, pc:number = 0, pi:number = 0) => {
     let totalPrice = 0
     if (pa > 0)  totalPrice += calculatePrice(total_price, "Adult", pa)

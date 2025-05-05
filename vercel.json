@@ -1,3 +1,7 @@
 {
-    "framework": "nextjs"
+    "framework": "nextjs",
+    "github": {
+        "enabled": true,
+        "autoJobCancelation": true
+    }
 }

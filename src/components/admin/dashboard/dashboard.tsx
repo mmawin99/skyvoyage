@@ -29,7 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import MetricsCard from "./metrics"
 
-const refreshInterval = 60
+const refreshInterval = 150
 
 export default function AdminDashboard() {
     const [data, setData] = useState<DashboardData | null>(null)

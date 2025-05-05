@@ -636,7 +636,7 @@ export default function AdminDashboard() {
                 title="Total Revenue (THB)"
                 color="revenue"
                 desc={((data?.totalRevenue[0]?.percentChange ?? 0) > 0 ? "+" : "") + (data?.totalRevenue[0]?.percentChange || 0) + "% from previous period"}
-                value={`${data?.totalRevenue[0]?.totalRevenue.toLocaleString("en-US", { maximumFractionDigits: 1 }) || "0"}`}
+                value={`${data?.totalRevenue.reduce((sum, item) => sum + (item.totalRevenue || 0), 0).toLocaleString("en-US", { maximumFractionDigits: 1 }) || "0"}`}
                 loading={loading}
             />
             <MetricsCard

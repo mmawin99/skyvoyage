@@ -146,7 +146,7 @@ export const autocompleteModule = new Elysia({
         }else if(searchstring.startsWith("ap:")){
             console.log("Search with airport code")
             const airportCode = searchstring.split(":")[1].trim().toUpperCase()
-            if(airportCode.length != 3) return error(400, "invalid_airport_code")
+            if(airportCode.length != 3) return error(400, [])
             airlineList = await prisma.$queryRaw`
                 SELECT airlineCode, airlineName
                 FROM airline
@@ -228,8 +228,9 @@ export const autocompleteModule = new Elysia({
           `
         } else if (searchstring.includes(",")) {
             const [part1, part2] = searchstring.split(",").map(s => s.trim().toUpperCase())
-            if (!part1 || !part2) return error(400, "invalid_airport_pair")
-            if(part1.length != 3 || part2.length != 3) return error(400, "invalid_airport_code")
+            if (!part1 || !part2) return error(400, [])
+            if(part1.length != 3 || part2.length != 3) return error(400, [])
+            
             flightList = await prisma.$queryRaw`
                 SELECT flightNum, airlineCode, departAirportId, arriveAirportId, arrivalTime, departureTime 
                 FROM flight

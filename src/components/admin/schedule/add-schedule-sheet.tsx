@@ -226,8 +226,9 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
             <TabsContent value="single" className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label>Airlines Carrier</Label>
+                <span className="text-xs text-muted-foreground">(e.g. CX, SQ, Thai Airways, or operated airport in format ap:&#10100;code&#10101;)</span>
                 <DebouncedSearch<Airline>
-                  title="Airlines Carrier (e.g. CX, SQ, Thai Airways, or operated airport in format ap:{code})"
+                  title="Airlines Carrier"
                   selected={selectedCarrier ?? null}
                   onSelect={setSelectedCarrier}
                   results={carriers}
@@ -415,9 +416,10 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
 
             <TabsContent value="recurring" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label>Airline Carrier</Label>
+                <Label>Airlines Carrier</Label>
+                <span className="text-xs text-muted-foreground">(e.g. CX, SQ, Thai Airways, or operated airport in format ap:&#10100;code&#10101;)</span>
                 <DebouncedSearch<Airline>
-                  title="Airlines Carrier (e.g. CX, SQ, Thai Airways, or operated airport in format ap:{code})"
+                  title="Airlines Carrier"
                   selected={selectedCarrier ?? null}
                   onSelect={setSelectedCarrier}
                   results={carriers}

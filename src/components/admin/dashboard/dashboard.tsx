@@ -49,6 +49,8 @@ export default function AdminDashboard() {
     const calculateDateRange = useCallback((type: TimeRangeType): { from: Date; to: Date } => {
         const now = new Date()
         switch (type) {
+          case "1d":
+            return { from: subDays(now, 1), to: now }
           case "30d":
             return { from: subDays(now, 30), to: now }
           case "2w":
@@ -473,6 +475,13 @@ export default function AdminDashboard() {
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
             <div className="flex space-x-1">
               <Button
+                variant={timeRange === "1d" ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleTimeRangeChange("1d")}
+              >
+                1D
+              </Button>
+              <Button
                 variant={timeRange === "2w" ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleTimeRangeChange("2w")}
@@ -624,25 +633,29 @@ export default function AdminDashboard() {
         {/* Key Metrics */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <MetricsCard
-                title="Total Revenue"
-                desc={((data?.totalRevenue[0]?.percentChange ?? 0) > 0 ? "+" : "") + data?.totalRevenue[0]?.percentChange + "% from previous period"}
-                value={`฿ ${data?.totalRevenue[0]?.totalRevenue.toLocaleString("en-US", { maximumFractionDigits: 2 }) || "0"}`}
+                title="Total Revenue (THB)"
+                color="revenue"
+                desc={((data?.totalRevenue[0]?.percentChange ?? 0) > 0 ? "+" : "") + (data?.totalRevenue[0]?.percentChange || 0) + "% from previous period"}
+                value={`${data?.totalRevenue[0]?.totalRevenue.toLocaleString("en-US", { maximumFractionDigits: 1 }) || "0"}`}
                 loading={loading}
             />
             <MetricsCard
                 title="Total Bookings"
+                color="booking"
                 desc={"For the selected period"}
                 value={`${data?.bookingsOverTime.reduce((sum, item) => sum + Number.parseInt(item.totalBookings), 0) || 0}`}
                 loading={loading}
             />
             <MetricsCard
                 title="Recent Active Flights"
+                color="active_flight"
                 desc={"Currently in-flight"}
                 value={`${data?.recentFlights.filter((flight) => flight.status === "In-flight").length || 0}`}
                 loading={loading}
             />
             <MetricsCard
                 title="Seat Utilization"
+                color="seat_util"
                 desc={"Average across all flights"}
                 value={`${data?.seatUtilization.length ? (((data.seatUtilization.reduce(
                               (sum, item) => sum + Number.parseFloat(item.seat_utilization_percentage),

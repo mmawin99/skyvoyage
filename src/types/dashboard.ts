@@ -86,4 +86,4 @@ export interface PassengerDemographic {
     count: string
 }
 
-export type TimeRangeType = "30d" | "2w" | "3m" | "6m" | "1y" | "2y" | "custom"
+export type TimeRangeType = "1d" | "30d" | "2w" | "3m" | "6m" | "1y" | "2y" | "custom"

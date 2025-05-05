@@ -295,14 +295,21 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <Calendar mode="single" 
+                          <Calendar 
+                          mode="single" 
                           selected={depDate} 
-                          disabled={(date) => date.getTime() < new Date().setHours(0, 0, 0, 0)} // Disable dates before today
+                          disabled={(date) => {
+                            const today = new Date();
+                            const nextYear = new Date(today);
+                            nextYear.setFullYear(today.getFullYear() + 1);
+                            return date.getTime() < today.setHours(0, 0, 0, 0) || date.getTime() > nextYear.setHours(0, 0, 0, 0);
+                          }}
                           onSelect={(date) => {
-                            console.log("Selected date from calendar:", date?.toISOString())
-                            setDepDate(date)
+                            console.log("Selected date from calendar:", date?.toISOString());
+                            setDepDate(date);
                           }} 
-                          initialFocus />
+                          initialFocus 
+                          />
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -479,7 +486,12 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
                           <Calendar mode="single" selected={startDate} 
-                          disabled={(date) => date.getTime() < new Date().setHours(0, 0, 0, 0)} // Disable dates before today
+                          disabled={(date) => {
+                            const today = new Date();
+                            const nextYear = new Date(today);
+                            nextYear.setFullYear(today.getFullYear() + 1);
+                            return date.getTime() < today.setHours(0, 0, 0, 0) || date.getTime() > nextYear.setHours(0, 0, 0, 0);
+                          }}
                           onSelect={setStartDate}
                            initialFocus />
                         </PopoverContent>
@@ -502,7 +514,14 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
                           <Calendar mode="single" selected={endDate} 
-                          disabled={(date) => startDate ? date.getTime() < new Date(startDate).setHours(0, 0, 0, 0) : date.getTime() < new Date().setHours(0, 0, 0, 0)} // Disable dates before start date
+                          // disabled={(date) => startDate ? date.getTime() < new Date(startDate).setHours(0, 0, 0, 0) : date.getTime() < new Date().setHours(0, 0, 0, 0)}
+                          disabled={(date) => {
+                            const today = new Date();
+                            const nextYear = new Date(today);
+                            nextYear.setFullYear(today.getFullYear() + 1);
+                            return (startDate ? date.getTime() < new Date(startDate).setHours(0, 0, 0, 0) : 
+                                               date.getTime() < today.setHours(0, 0, 0, 0)) || date.getTime() > nextYear.setHours(0, 0, 0, 0);
+                          }}
                           onSelect={setEndDate} initialFocus />
                         </PopoverContent>
                       </Popover>

@@ -227,7 +227,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
               <div className="space-y-2">
                 <Label>Airlines Carrier</Label>
                 <DebouncedSearch<Airline>
-                  title="Airlines Carrier"
+                  title="Airlines Carrier (e.g. CX, SQ, Thai Airways, or operated airport in format ap:{code})"
                   selected={selectedCarrier ?? null}
                   onSelect={setSelectedCarrier}
                   results={carriers}
@@ -252,7 +252,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                 <div className="space-y-2">
                   <Label>Flight Number</Label>
                   <DebouncedSearch<Flight>
-                    title="Flight Number"
+                    title="Search for flight number (e.g. cnx, 123, or bkk,cnx)"
                     selected={selectedFlight ?? null}
                     onSelect={setSelectedFlight}
                     results={carrierFlights}
@@ -410,7 +410,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
               <div className="space-y-2">
                 <Label>Airline Carrier</Label>
                 <DebouncedSearch<Airline>
-                  title="Airlines Carrier"
+                  title="Airlines Carrier (e.g. CX, SQ, Thai Airways, or operated airport in format ap:{code})"
                   selected={selectedCarrier ?? null}
                   onSelect={setSelectedCarrier}
                   results={carriers}
@@ -435,7 +435,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                 <div className="space-y-2">
                   <Label>Flight Number</Label>
                   <DebouncedSearch<Flight>
-                    title="Flight Number"
+                    title="Search for flight number (e.g. cnx, 123, or bkk,cnx)"
                     selected={selectedFlight ?? null}
                     onSelect={setSelectedFlight}
                     results={carrierFlights}

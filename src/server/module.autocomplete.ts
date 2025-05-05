@@ -135,13 +135,27 @@ export const autocompleteModule = new Elysia({
         //html decode the search string
         const searchstring = decodeURIComponent(search)
         let airlineList:Airline[] = []
-        if(!searchstring.includes(" ")){
+        if(!searchstring.includes(" ") && !searchstring.startsWith("ap:")){
             const wildcard = `%${searchstring}%`
             airlineList = await prisma.$queryRaw`
                 SELECT airlineCode, airlineName FROM airline
                 WHERE airlineCode LIKE ${wildcard}
                 OR airlineName LIKE ${wildcard}
-                LIMIT 20;
+                LIMIT 30;
+            `
+        }else if(searchstring.startsWith("ap:")){
+            console.log("Search with airport code")
+            const airportCode = searchstring.split(":")[1].trim().toUpperCase()
+            if(airportCode.length != 3) return error(400, "invalid_airport_code")
+            airlineList = await prisma.$queryRaw`
+                SELECT airlineCode, airlineName
+                FROM airline
+                WHERE airlineCode IN (
+                    SELECT DISTINCT airlineCode
+                    FROM flight
+                    WHERE departAirportId = ${airportCode} OR arriveAirportId = ${airportCode}
+                )
+                LIMIT 40;
             `
         }else{
             const searchstringArray = searchstring.trim().split(/\s+/);
@@ -197,43 +211,58 @@ export const autocompleteModule = new Elysia({
         }
     })
     .post("/flight/:airline/:search", async({params:{airline, search}}:{params:{airline:string, search:string}})=>{
-        //html decode the search string
         const airlineCode = decodeURIComponent(airline)
-        //check if airlineCode is valid
-        if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
-
-            const searchstring = decodeURIComponent(search)
-            const emptySearch = searchstring === ""
-            const wildcard = `%${searchstring}%`
-            
-            const flightList: Flight[] = emptySearch
-              ? await prisma.$queryRaw`
-                  SELECT flightNum, airlineCode, departAirportId, arriveAirportId, arrivalTime, departureTime 
-                  FROM flight
-                  WHERE airlineCode = ${airlineCode}
-                  LIMIT 20;
-                `
-              : await prisma.$queryRaw`
-                  SELECT flightNum, airlineCode, departAirportId, arriveAirportId, arrivalTime, departureTime 
-                  FROM flight
-                  WHERE airlineCode = ${airlineCode}
-                    AND (
-                      flightNum LIKE ${wildcard} OR 
-                      departAirportId LIKE ${wildcard} OR 
-                      arriveAirportId LIKE ${wildcard}
-                    )
-                  LIMIT 20;
-                `
-        return flightList.map((flight)=>{
-            return {
-                flight_number: flight.flightNum,
-                airlineCode: flight.airlineCode,
-                depart_airport: flight.departAirportId,
-                arrive_airport: flight.arriveAirportId,
-                arrival_time: flight.arrivalTime,
-                departure_time: flight.departureTime
-            }
-        })
+        if (!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
+        
+        const searchstring = decodeURIComponent(search)
+        const emptySearch = searchstring === ""
+        
+        let flightList: Flight[]
+        
+        if (emptySearch) {
+          flightList = await prisma.$queryRaw`
+            SELECT flightNum, airlineCode, departAirportId, arriveAirportId, arrivalTime, departureTime 
+            FROM flight
+            WHERE airlineCode = ${airlineCode}
+            LIMIT 30;
+          `
+        } else if (searchstring.includes(",")) {
+            const [part1, part2] = searchstring.split(",").map(s => s.trim().toUpperCase())
+            if (!part1 || !part2) return error(400, "invalid_airport_pair")
+            if(part1.length != 3 || part2.length != 3) return error(400, "invalid_airport_code")
+            flightList = await prisma.$queryRaw`
+                SELECT flightNum, airlineCode, departAirportId, arriveAirportId, arrivalTime, departureTime 
+                FROM flight
+                WHERE airlineCode = ${airlineCode}
+                AND (
+                    (departAirportId = ${part1} AND arriveAirportId = ${part2}) OR
+                    (departAirportId = ${part2} AND arriveAirportId = ${part1})
+                )
+                LIMIT 30;
+            `
+        } else {
+          const wildcard = `%${searchstring}%`
+          flightList = await prisma.$queryRaw`
+            SELECT flightNum, airlineCode, departAirportId, arriveAirportId, arrivalTime, departureTime 
+            FROM flight
+            WHERE airlineCode = ${airlineCode}
+              AND (
+                flightNum LIKE ${wildcard} OR 
+                departAirportId LIKE ${wildcard} OR 
+                arriveAirportId LIKE ${wildcard}
+              )
+            LIMIT 30;
+          `
+        }
+        
+        return flightList.map((flight) => ({
+          flight_number: flight.flightNum,
+          airlineCode: flight.airlineCode,
+          depart_airport: flight.departAirportId,
+          arrive_airport: flight.arriveAirportId,
+          arrival_time: flight.arrivalTime,
+          departure_time: flight.departureTime
+        }))
     },{
         detail:{
             tags: ['Autocomplete'],

@@ -75,3 +75,21 @@ export const flightPriceCalculator = (totalPrice: number, type: "Adult" | "Child
     }
     return 0
   }
+
+export function customRoundPricing(num:number):number {
+    // Check if the number is negative, return 0 if it is
+    if(num < 0) return 0;
+    // Extract the ones digit and tens digit
+    const onesDigit = num % 10;
+    const tensDigit = Math.floor((num % 100) / 10);
+    
+    if (onesDigit === 0 && (tensDigit === 0 || tensDigit % 10 === 0)) {
+        // Already at a desired value (like 130, 200, etc.)
+        return num;
+    } else if (onesDigit >= 0) {
+        // Round up to the nearest 10
+        return Math.ceil(num / 10) * 10;
+    }
+    // Default return to handle all cases
+    return num;
+}

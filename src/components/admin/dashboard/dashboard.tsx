@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { DashboardData, TimeRangeType } from "@/types/dashboard"
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState, useRef } from "react"
 import { format, subDays, subWeeks, subMonths, subYears, set } from "date-fns"
 import { CalendarIcon, FilterIcon, RefreshCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -29,7 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import MetricsCard from "./metrics"
 
-const refreshInterval = 150
+const refreshInterval = 60 // 1 minute in seconds
 
 export default function AdminDashboard() {
     const [data, setData] = useState<DashboardData | null>(null)
@@ -45,6 +45,8 @@ export default function AdminDashboard() {
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [isFirstRan, setIsFirstRan] = useState<boolean>(false)
     const [isFiltering, setIsFiltering] = useState<boolean>(false)
+    const refFirstRan = useRef<boolean>(false)
+    const [isError, setIsError] = useState(false)
     // Calculate date range based on time range type
     const calculateDateRange = useCallback((type: TimeRangeType): { from: Date; to: Date } => {
         const now = new Date()
@@ -72,6 +74,8 @@ export default function AdminDashboard() {
     // Function to fetch dashboard data
     const fetchDashboardData = useCallback(async () => {
         if(isCalendarOpen) return // Prevent updating data on selecting date
+        console.log("[Fetch Data] Currently fetch overview stats.")
+        setIsError(false)
         setIsRefreshing(true)
         setLoading(true)
         try {
@@ -81,321 +85,22 @@ export default function AdminDashboard() {
     
             // Try to fetch from API
             try {
-            const response = await fetch(`/api/admin/overview?range=${fromDate},${toDate}&interval=${timeInterval}`)
-            const result = await response.json()
-    
-            if (result.success) {
-                setData(result.data)
-                setIsRefreshing(false)
-                setLoading(false)
-                return
-            }
+                const response = await fetch(`/api/admin/overview?range=${fromDate},${toDate}&interval=${timeInterval}`)
+                const result = await response.json()
+        
+                if (result.success) {
+                    setData(result.data)
+                    setIsRefreshing(false)
+                    setLoading(false)
+                    return
+                }
             } catch (apiError) {
                 setLoading(false)
+                setIsError(true)
                 console.error(apiError)
                 console.log("API not available, using mock data")
             }
-    
-            // If API fails, use mock data
-            const mockData = {
-            recentFlights: [
-                {
-                airlineCode: "ET",
-                flightNum: "608-1",
-                generatedRevenue: 0,
-                departAirportCode: "ADD",
-                arriveAirportCode: "BKK",
-                departureTime: "2025-05-04T20:55:00.000Z",
-                arrivalTime: "2025-05-05T05:30:00.000Z",
-                status: "In-flight",
-                nearDiff: "727",
-                },
-                {
-                airlineCode: "CX",
-                flightNum: "615",
-                generatedRevenue: 0,
-                departAirportCode: "HKG",
-                arriveAirportCode: "BKK",
-                departureTime: "2025-05-05T01:55:00.000Z",
-                arrivalTime: "2025-05-05T05:05:00.000Z",
-                status: "Completed",
-                nearDiff: "773",
-                },
-                {
-                airlineCode: "SQ",
-                flightNum: "705",
-                generatedRevenue: 0,
-                departAirportCode: "BKK",
-                arriveAirportCode: "SIN",
-                departureTime: "2025-05-05T02:35:00.000Z",
-                arrivalTime: "2025-05-05T05:05:00.000Z",
-                status: "Completed",
-                nearDiff: "773",
-                },
-                {
-                airlineCode: "EK",
-                flightNum: "384-1",
-                generatedRevenue: 0,
-                departAirportCode: "DXB",
-                arriveAirportCode: "BKK",
-                departureTime: "2025-05-04T23:05:00.000Z",
-                arrivalTime: "2025-05-05T05:05:00.000Z",
-                status: "Completed",
-                nearDiff: "773",
-                },
-                {
-                airlineCode: "TG",
-                flightNum: "920",
-                generatedRevenue: 0,
-                departAirportCode: "BKK",
-                arriveAirportCode: "FRA",
-                departureTime: "2025-05-04T16:40:00.000Z",
-                arrivalTime: "2025-05-05T04:55:00.000Z",
-                status: "Completed",
-                nearDiff: "1373",
-                },
-            ],
-            bookingsOverTime: [
-                {
-                timeInterval: "2025-05-04",
-                totalBookings: "3",
-                },
-                {
-                timeInterval: "2025-05-05",
-                totalBookings: "5",
-                },
-                {
-                timeInterval: "2025-05-06",
-                totalBookings: "7",
-                },
-            ],
-            totalRevenue: [
-                {
-                timeInterval: "2025-05-04",
-                totalRevenue: 264546.67,
-                percentChange: 0,
-                },
-                {
-                timeInterval: "2025-05-05",
-                totalRevenue: 285000.5,
-                percentChange: 7.73,
-                },
-                {
-                timeInterval: "2025-05-06",
-                totalRevenue: 312750.25,
-                percentChange: 9.74,
-                },
-            ],
-            revenueByRoute: [
-                {
-                timeInterval: "2025-05-04",
-                origin: "BKK",
-                destination: "CNX",
-                revenue: 659,
-                },
-                {
-                timeInterval: "2025-05-04",
-                origin: "BKK",
-                destination: "DXB",
-                revenue: 1500,
-                },
-                {
-                timeInterval: "2025-05-04",
-                origin: "CNX",
-                destination: "BKK",
-                revenue: 891,
-                },
-                {
-                timeInterval: "2025-05-04",
-                origin: "CNX",
-                destination: "DMK",
-                revenue: 472,
-                },
-                {
-                timeInterval: "2025-05-04",
-                origin: "DMK",
-                destination: "CNX",
-                revenue: 305,
-                },
-                {
-                timeInterval: "2025-05-04",
-                origin: "DXB",
-                destination: "BKK",
-                revenue: 1500,
-                },
-            ],
-            bookingStatus: [
-                {
-                status: "PAID",
-                count: "3",
-                },
-                {
-                status: "PENDING",
-                count: "1",
-                },
-                {
-                status: "CANCELLED",
-                count: "1",
-                },
-            ],
-            seatUtilization: [
-                {
-                flightId: "458675d5-12a7-423e-9b91-adbb583e65f1",
-                flightNum: "102",
-                airlineCode: "TG",
-                departureTime: "2025-05-13T00:25:00.000Z",
-                arrivalTime: "2025-05-13T01:45:00.000Z",
-                total_seats: "168",
-                seats_sold: "1",
-                seat_utilization_percentage: "0.5952",
-                },
-                {
-                flightId: "bce710c8-fa0f-46a7-b7b2-979a874629ed",
-                flightNum: "103",
-                airlineCode: "TG",
-                departureTime: "2025-05-24T02:25:00.000Z",
-                arrivalTime: "2025-05-24T03:50:00.000Z",
-                total_seats: "174",
-                seats_sold: "1",
-                seat_utilization_percentage: "0.5747",
-                },
-                {
-                flightId: "b5a7c560-1df4-45c2-8220-83705b1191c5",
-                flightNum: "123",
-                airlineCode: "DD",
-                departureTime: "2025-05-05T00:00:00.000Z",
-                arrivalTime: "2025-05-05T01:05:00.000Z",
-                total_seats: "189",
-                seats_sold: "1",
-                seat_utilization_percentage: "0.5291",
-                },
-                {
-                flightId: "6cbb1752-f226-4d76-8b31-faa800bcfacb",
-                flightNum: "122",
-                airlineCode: "DD",
-                departureTime: "2025-05-06T22:15:00.000Z",
-                arrivalTime: "2025-05-06T23:30:00.000Z",
-                total_seats: "189",
-                seats_sold: "1",
-                seat_utilization_percentage: "0.5291",
-                },
-                {
-                flightId: "110d55c7-bd34-47ad-94e7-3d9d7e6014bc",
-                flightNum: "370",
-                airlineCode: "EK",
-                departureTime: "2025-05-18T04:55:00.000Z",
-                arrivalTime: "2025-05-18T11:05:00.000Z",
-                total_seats: "312",
-                seats_sold: "1",
-                seat_utilization_percentage: "0.3205",
-                },
-            ],
-            revenuePassengerKilometers: [
-                {
-                flightId: "110d55c7-bd34-47ad-94e7-3d9d7e6014bc",
-                flightNum: "370",
-                airlineCode: "EK",
-                departureTime: "2025-05-18T04:55:00.000Z",
-                arrivalTime: "2025-05-18T11:05:00.000Z",
-                distance_km: 4903.712108428036,
-                seats_sold: "1",
-                RPK: 4903.712108428036,
-                },
-                {
-                flightId: "12277a95-f031-460d-8935-8f6788f54031",
-                flightNum: "371",
-                airlineCode: "EK",
-                departureTime: "2025-06-15T20:10:00.000Z",
-                arrivalTime: "2025-06-16T03:00:00.000Z",
-                distance_km: 4903.712108428036,
-                seats_sold: "1",
-                RPK: 4903.712108428036,
-                },
-                {
-                flightId: "458675d5-12a7-423e-9b91-adbb583e65f1",
-                flightNum: "102",
-                airlineCode: "TG",
-                departureTime: "2025-05-13T00:25:00.000Z",
-                arrivalTime: "2025-05-13T01:45:00.000Z",
-                distance_km: 596.7081267163222,
-                seats_sold: "1",
-                RPK: 596.7081267163222,
-                },
-            ],
-            topRoutes: [
-                {
-                origin: "BKK",
-                destination: "CNX",
-                bookingCount: "1",
-                },
-                {
-                origin: "BKK",
-                destination: "DXB",
-                bookingCount: "1",
-                },
-                {
-                origin: "CNX",
-                destination: "BKK",
-                bookingCount: "1",
-                },
-                {
-                origin: "CNX",
-                destination: "DMK",
-                bookingCount: "1",
-                },
-                {
-                origin: "DMK",
-                destination: "CNX",
-                bookingCount: "1",
-                },
-                {
-                origin: "DXB",
-                destination: "BKK",
-                bookingCount: "1",
-                },
-            ],
-            avgTicketPrice: [
-                {
-                origin: "CNX",
-                destination: "DMK",
-                averagePrice: 472,
-                },
-                {
-                origin: "DXB",
-                destination: "BKK",
-                averagePrice: 1500,
-                },
-                {
-                origin: "BKK",
-                destination: "DXB",
-                averagePrice: 1500,
-                },
-                {
-                origin: "DMK",
-                destination: "CNX",
-                averagePrice: 305,
-                },
-                {
-                origin: "CNX",
-                destination: "BKK",
-                averagePrice: 891,
-                },
-                {
-                origin: "BKK",
-                destination: "CNX",
-                averagePrice: 659,
-                },
-            ],
-            passengerDemographics: [
-                {
-                ageRange: "Adult",
-                nationality: "TH",
-                count: "1",
-                },
-            ],
-            }
-    
-            setData(mockData)
+            
         } catch (error) {
                 console.error("Error in dashboard:", error)
         } finally {
@@ -427,6 +132,7 @@ export default function AdminDashboard() {
         setNextRefresh((prev) => {
           if (prev <= 1) {
             fetchDashboardData()
+            console.log("[Fetch Data] From Auto Refresh.");
             return refreshInterval
           }
           return prev - 1
@@ -438,196 +144,201 @@ export default function AdminDashboard() {
   
     // Fetch data on initial load and when parameters change
     useEffect(() => {
-        fetchDashboardData()
-        setIsFirstRan(true)
+        if(!isFirstRan && !refFirstRan.current){
+          console.log("[Fetch Data] From First run.");
+          fetchDashboardData()
+          refFirstRan.current = true
+          setIsFirstRan(true)
+        }
     }, [])
-
+    useEffect(()=>{
+      if(isFiltering){
+        console.log("[Fetch Data] From detection of filtering.");
+        fetchDashboardData()
+        setIsFiltering(false)
+      }
+    }, [isFiltering])
     useEffect(()=>{
         if(isFirstRan){
+            console.log("[Fetch Data] From detection of changing.");
             fetchDashboardData()
             setIsFiltering(false)
         }
-    }, [dateRange, timeRange, timeInterval, isFiltering])
+    }, [dateRange, timeRange, timeInterval])
   
     // Colors for charts
     const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"]
   
     return (
       <div className="container mx-auto py-6 space-y-8">
-        <div className="flex flex-col space-y-2 md:flex-row md:justify-between md:items-center md:space-y-0">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-            <p className="text-muted-foreground">
-              Comprehensive overview of flight operations and revenue metrics
-            </p>
-            <p className="text-muted-foreground">
-                {isRefreshing ? (
-                    <span className="inline-flex items-center">
-                    <RefreshCcw className="h-3 w-3 animate-spin mr-1" />
-                    Refreshing...
-                    </span>
-                ) : (
-                    <span className="text-sm">Next refresh in {nextRefresh}s</span>
-                )}
-            </p>
-          </div>
+          <div className="flex flex-col space-y-2 md:flex-row md:justify-between md:items-center md:space-y-0">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+                <p className="text-muted-foreground">
+                  Comprehensive overview of flight operations and revenue metrics
+                </p>
+                <p className="text-muted-foreground">
+                    {isRefreshing ? (
+                        <span className="inline-flex items-center">
+                        <RefreshCcw className="h-3 w-3 animate-spin mr-1" />
+                        Refreshing...
+                        </span>
+                    ) : (
+                        <span className="text-sm">Next refresh in {nextRefresh}s</span>
+                    )}
+                </p>
+              </div>
   
-          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-            <div className="flex space-x-1">
-              <Button
-                variant={timeRange === "1d" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleTimeRangeChange("1d")}
-              >
-                1D
-              </Button>
-              <Button
-                variant={timeRange === "2w" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleTimeRangeChange("2w")}
-              >
-                2W
-              </Button>
-              <Button
-                variant={timeRange === "30d" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleTimeRangeChange("30d")}
-              >
-                30D
-              </Button>
-              <Button
-                variant={timeRange === "3m" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleTimeRangeChange("3m")}
-              >
-                3M
-              </Button>
-              <Button
-                variant={timeRange === "6m" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleTimeRangeChange("6m")}
-              >
-                6M
-              </Button>
-              <Button
-                variant={timeRange === "1y" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleTimeRangeChange("1y")}
-              >
-                1Y
-              </Button>
-            </div>
-  
-            <Popover open={isCalendarOpen}>
-                <PopoverTrigger asChild>
-                    <Button
-                    variant={timeRange === "custom" ? "default" : "outline"}
-                    className="w-full justify-start text-left font-normal sm:w-[250px]"
-                    onClick={() => {
-                        setTimeRange("custom")
-                        setIsCalendarOpen(true)
-                    }}
-                    >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formatDateRange()}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-4" align="end">
-                    <div className="flex flex-col space-y-4">
-                    {/* Header for the calendars */}
-                    <div className="flex justify-between items-center">
-                        <div className="text-base font-bold">From Date</div>
-                        <div className="text-base font-bold">To Date</div>
-                    </div>
-                    
-                    {/* Calendar containers */}
-                    <div className="flex space-x-4">
-                        {/* From Date Calendar */}
-                        <div className="border rounded-md shadow-sm">
-                        <Calendar
-                            mode="single"
-                            selected={dateRange.from}
-                            onSelect={(date) => {
-                            if (!date) return;
-                            
-                            // If selected date is after current "to" date, adjust "to" date
-                            if (dateRange.to && date > dateRange.to) {
-                                setDateRange({ from: date, to: date });
-                            } else {
-                                setDateRange({ from: date, to: dateRange.to });
-                            }
-                            }}
-                            numberOfMonths={1}
-                            defaultMonth={dateRange.from}
-                        />
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+                <div className="flex space-x-1">
+                  <Button
+                    variant={timeRange === "1d" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleTimeRangeChange("1d")}>
+                    1D
+                  </Button>
+                  <Button
+                    variant={timeRange === "2w" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleTimeRangeChange("2w")}>
+                    2W
+                  </Button>
+                  <Button
+                    variant={timeRange === "30d" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleTimeRangeChange("30d")}>
+                    30D
+                  </Button>
+                  <Button
+                    variant={timeRange === "3m" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleTimeRangeChange("3m")}>
+                    3M
+                  </Button>
+                  <Button
+                    variant={timeRange === "6m" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleTimeRangeChange("6m")}>
+                    6M
+                  </Button>
+                  <Button
+                    variant={timeRange === "1y" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleTimeRangeChange("1y")}>
+                    1Y
+                  </Button>
+                </div>
+                {/* Calendar Selection for time range */}
+                <Popover open={isCalendarOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                        variant={timeRange === "custom" ? "default" : "outline"}
+                        className="w-full justify-start text-left font-normal sm:w-[250px]"
+                        onClick={() => {
+                            setTimeRange("custom")
+                            setIsCalendarOpen(true)
+                        }}
+                        >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formatDateRange()}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-4" align="end">
+                        <div className="flex flex-col space-y-4">
+                        {/* Header for the calendars */}
+                        <div className="flex justify-between items-center">
+                            <div className="text-base font-bold">From Date</div>
+                            <div className="text-base font-bold">To Date</div>
                         </div>
                         
-                        {/* To Date Calendar */}
-                        <div className="border rounded-md shadow-sm">
-                        <Calendar
-                            mode="single"
-                            selected={dateRange.to}
-                            onSelect={(date) => {
-                            if (!date) return;
-                            
-                            // If selected date is before current "from" date, adjust "from" date
-                            if (dateRange.from && date < dateRange.from) {
-                                setDateRange({ from: date, to: date });
-                            } else {
-                                setDateRange({ from: dateRange.from, to: date });
-                            }
-                            }}
-                            numberOfMonths={1}
-                            defaultMonth={dateRange.to}
-                        />
-                        </div>
-                    </div>
-                    
-                    {/* Current selection display */}
-                    <div className="pt-4 border-t flex justify-between items-center">
-                        <div className="text-sm text-muted-foreground">
-                        {dateRange.from ? (
-                            <span>
-                            {dateRange.from.toLocaleDateString()} - {dateRange.to?.toLocaleDateString()}
-                            </span>
-                        ) : (
-                            <span>Pick a date range</span>
-                        )}
-                        </div>
-                        
-                        {/* Optional: Add buttons for common ranges */}
-                        <div className="flex space-x-2">
-                            <Button
-                                variant="default"
-                                onClick={()=>{
-                                    setIsCalendarOpen(false)
-                                    setIsFiltering(true)
-                                    setTimeRange("custom")
+                        {/* Calendar containers */}
+                        <div className="flex space-x-4">
+                            {/* From Date Calendar */}
+                            <div className="border rounded-md shadow-sm">
+                            <Calendar
+                                mode="single"
+                                selected={dateRange.from}
+                                onSelect={(date) => {
+                                if (!date) return;
+                                
+                                // If selected date is after current "to" date, adjust "to" date
+                                if (dateRange.to && date > dateRange.to) {
+                                    setDateRange({ from: date, to: date });
+                                } else {
+                                    setDateRange({ from: date, to: dateRange.to });
+                                }
                                 }}
-                            >
-                                <FilterIcon className="h-4 w-4" />
-                                Filter
-                            </Button>
+                                numberOfMonths={1}
+                                defaultMonth={dateRange.from}
+                            />
+                            </div>
+                            
+                            {/* To Date Calendar */}
+                            <div className="border rounded-md shadow-sm">
+                            <Calendar
+                                mode="single"
+                                selected={dateRange.to}
+                                onSelect={(date) => {
+                                if (!date) return;
+                                
+                                // If selected date is before current "from" date, adjust "from" date
+                                if (dateRange.from && date < dateRange.from) {
+                                    setDateRange({ from: date, to: date });
+                                } else {
+                                    setDateRange({ from: dateRange.from, to: date });
+                                }
+                                }}
+                                numberOfMonths={1}
+                                defaultMonth={dateRange.to}
+                            />
+                            </div>
                         </div>
-                    </div>
-                    </div>
-                </PopoverContent>
-            </Popover>
-  
-            <Select value={timeInterval} onValueChange={setTimeInterval}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Select interval" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="hour">Hourly</SelectItem>
-                <SelectItem value="day">Daily</SelectItem>
-                <SelectItem value="week">Weekly</SelectItem>
-                <SelectItem value="month">Monthly</SelectItem>
-                <SelectItem value="quarter">Quarterly</SelectItem>
-                <SelectItem value="year">Yearly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                        
+                        {/* Current selection display */}
+                        <div className="pt-4 border-t flex justify-between items-center">
+                            <div className="text-sm text-muted-foreground">
+                            {dateRange.from ? (
+                                <span>
+                                {dateRange.from.toLocaleDateString()} - {dateRange.to?.toLocaleDateString()}
+                                </span>
+                            ) : (
+                                <span>Pick a date range</span>
+                            )}
+                            </div>
+                            
+                            {/* Optional: Add buttons for common ranges */}
+                            <div className="flex space-x-2">
+                                <Button
+                                    variant="default"
+                                    onClick={()=>{
+                                        setIsCalendarOpen(false)
+                                        setIsFiltering(true)
+                                        setTimeRange("custom")
+                                    }}
+                                >
+                                    <FilterIcon className="h-4 w-4" />
+                                    Filter
+                                </Button>
+                            </div>
+                        </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+                {/* Time Interval */}
+                <Select value={timeInterval} onValueChange={setTimeInterval}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select interval" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hour">Hourly</SelectItem>
+                    <SelectItem value="day">Daily</SelectItem>
+                    <SelectItem value="week">Weekly</SelectItem>
+                    <SelectItem value="month">Monthly</SelectItem>
+                    <SelectItem value="quarter">Quarterly</SelectItem>
+                    <SelectItem value="year">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
         </div>
   
         {/* Key Metrics */}
@@ -635,6 +346,7 @@ export default function AdminDashboard() {
             <MetricsCard
                 title="Total Revenue (THB)"
                 color="revenue"
+                isError={isError}
                 desc={((data?.totalRevenue[0]?.percentChange ?? 0) > 0 ? "+" : "") + (data?.totalRevenue[0]?.percentChange || 0) + "% from previous period"}
                 value={`${data?.totalRevenue.reduce((sum, item) => sum + (item.totalRevenue || 0), 0).toLocaleString("en-US", { maximumFractionDigits: 1 }) || "0"}`}
                 loading={loading}
@@ -642,6 +354,7 @@ export default function AdminDashboard() {
             <MetricsCard
                 title="Total Bookings"
                 color="booking"
+                isError={isError}
                 desc={"For the selected period"}
                 value={`${data?.bookingsOverTime.reduce((sum, item) => sum + Number.parseInt(item.totalBookings), 0) || 0}`}
                 loading={loading}
@@ -649,6 +362,7 @@ export default function AdminDashboard() {
             <MetricsCard
                 title="Recent Active Flights"
                 color="active_flight"
+                isError={isError}
                 desc={"Currently in-flight"}
                 value={`${data?.recentFlights.filter((flight) => flight.status === "In-flight").length || 0}`}
                 loading={loading}
@@ -656,15 +370,16 @@ export default function AdminDashboard() {
             <MetricsCard
                 title="Seat Utilization"
                 color="seat_util"
+                isError={isError}
                 desc={"Average across all flights"}
                 value={`${data?.seatUtilization.length ? (((data.seatUtilization.reduce(
                               (sum, item) => sum + Number.parseFloat(item.seat_utilization_percentage),
-                              0) / data.seatUtilization.length) * 100).toFixed(2)) : "0"} %`}
+                              0) / data.seatUtilization.length)).toFixed(2)) : "0"} %`}
                 loading={loading}
             />
         </div>
         {/* Charts Row */}
-        <div className="grid gap-4 md:grid-cols-2">
+        {!isError && <div className="grid gap-4 md:grid-cols-2">
           {/* Revenue Over Time */}
             <Card className="col-span-1">
                 <CardHeader>
@@ -767,11 +482,11 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
-        </div>
+        </div>}
 
 
         {/* Recent Flights Table */}
-        <Card>
+        {!isError && <Card>
           <CardHeader>
             <CardTitle>Recent Flights</CardTitle>
             <CardDescription>Latest flight operations and status</CardDescription>
@@ -848,11 +563,11 @@ export default function AdminDashboard() {
               </Table>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
 
 
         {/* Second Row of Charts */}
-        <div className="grid gap-4 md:grid-cols-2">
+        {!isError && <div className="grid gap-4 md:grid-cols-2">
           {/* Top Routes */}
           <Card>
             <CardHeader>
@@ -930,16 +645,16 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
-        </div>
+        </div>}
 
   
         {/* Additional Metrics */}
-        <div className="grid gap-4 md:grid-cols-2">
+        {!isError && <div className="grid gap-4 md:grid-cols-2">
           {/* Average Ticket Price */}
           <Card>
             <CardHeader>
               <CardTitle>Average Ticket Price</CardTitle>
-              <CardDescription>By route</CardDescription>
+              <CardDescription>By route (on selected period)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border">
@@ -964,12 +679,21 @@ export default function AdminDashboard() {
                               </TableCell>
                             </TableRow>
                           ))
-                      : data?.avgTicketPrice.map((price, index) => (
+                      : data?.avgTicketPrice.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={2} className="text-center">
+                                  <div className="my-6">
+                                      No data available (on selected period)
+                                  </div>
+                            </TableCell>
+                          </TableRow>
+                      ) :
+                       data?.avgTicketPrice.map((price, index) => (
                           <TableRow key={index}>
                             <TableCell className="font-medium">
                               {price.origin} → {price.destination}
                             </TableCell>
-                            <TableCell className="text-right">${price.averagePrice.toLocaleString("en-US")}</TableCell>
+                            <TableCell className="text-right">${price.averagePrice.toLocaleString("en-US", { maximumFractionDigits: 2 })}</TableCell>
                           </TableRow>
                         ))}
                   </TableBody>
@@ -982,7 +706,7 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Seat Utilization</CardTitle>
-              <CardDescription>Top flights by seat utilization percentage</CardDescription>
+              <CardDescription>Top flights by seat utilization percentage (on selected period)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border">
@@ -1017,7 +741,6 @@ export default function AdminDashboard() {
                               Number.parseFloat(b.seat_utilization_percentage) -
                               Number.parseFloat(a.seat_utilization_percentage),
                           )
-                          .slice(0, 5)
                           .map((seat, index) => (
                             <TableRow key={index}>
                               <TableCell className="font-medium">
@@ -1025,7 +748,7 @@ export default function AdminDashboard() {
                               </TableCell>
                               <TableCell>{format(new Date(seat.departureTime), "MMM d, yyyy")}</TableCell>
                               <TableCell className="text-right">
-                                {(Number.parseFloat(seat.seat_utilization_percentage) * 100).toFixed(1)}%
+                                {(Number.parseFloat(seat.seat_utilization_percentage)).toFixed(2)}%
                               </TableCell>
                             </TableRow>
                           ))}
@@ -1034,7 +757,7 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div> }
       </div>
     )
 }

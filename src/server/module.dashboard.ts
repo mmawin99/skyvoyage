@@ -171,10 +171,10 @@ export const dashboardAdminModule = new Elysia({
                         WHERE 
                             ac.aircraftId = fo.aircraftId
                     ) > 0 THEN 
-                        (
+                        ROUND(
                             (
                                 SELECT 
-                                    COUNT(t.ticketId)
+                                    COUNT(t.ticketId) * 100.0
                                 FROM 
                                     ticket t
                                 WHERE 
@@ -191,8 +191,8 @@ export const dashboardAdminModule = new Elysia({
                                     seat s ON smi.seatMapId = s.seatMapId
                                 WHERE 
                                     ac.aircraftId = fo.aircraftId
-                            )
-                        ) * 100
+                            ), 2
+                        )
                     ELSE 0
                 END AS seat_utilization_percentage
             FROM 

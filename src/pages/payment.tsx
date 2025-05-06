@@ -15,6 +15,7 @@ import { AppFooter } from "@/components/footer"
 import { useSession } from "next-auth/react"
 import { CheckoutForm } from "@/components/user/booking-payment-form/checkout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { customRoundPricing } from "@/lib/price"
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -64,7 +65,7 @@ const BookingPayment = () => {
         const rate = data?.usd?.thb
         if (rate) {
           const thbAmount = totalFare * rate
-          setConvertedAmount(thbAmount) // in satang
+          setConvertedAmount(customRoundPricing(thbAmount)) // in satang
         }
       } catch (err) {
         console.error("Failed to fetch exchange rate", err)

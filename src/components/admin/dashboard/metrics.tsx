@@ -9,6 +9,7 @@ const MetricsCard = ({
     desc,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     icon,
+    isError,
     color,
     value,
     loading
@@ -18,8 +19,22 @@ const MetricsCard = ({
     color: "revenue" | "booking" |  "active_flight" |  "seat_util" | string,
     icon?: LucideIcon,
     value: string | number,
-    loading: boolean
+    loading: boolean,
+    isError: boolean
 }) => {
+    if (isError) {
+        return (
+            <Card className="bg-red-100">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-xl font-bold">{title}</CardTitle>
+                </CardHeader>
+                <CardContent className='flex flex-col gap-2'>
+                    <div className="text-5xl font-bold text-red-600">Error</div>
+                    <p className="text-xs text-muted-foreground">Failed to load data</p>
+                </CardContent>
+            </Card>
+        )
+    }
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">

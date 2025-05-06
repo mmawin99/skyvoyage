@@ -94,3 +94,9 @@ export function customRoundPricing(num:number):number {
     // Default return to handle all cases
     return num;
 }
+
+export function extractVAT(totalFare:number, vatRate = 0.07) {
+    const vat = (totalFare * vatRate) / (1 + vatRate);
+    const base = totalFare - vat;
+    return { basePrice: base, vatAmount: vat };
+}

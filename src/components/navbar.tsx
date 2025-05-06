@@ -27,7 +27,7 @@ export function Navbar() {
           <Link href="/" className="text-sm font-medium hover:text-sky-500 transition-colors">
             Home
           </Link>
-          <Link href="/flights" className="text-sm font-medium hover:text-sky-500 transition-colors">
+          <Link href="/" className="text-sm font-medium hover:text-sky-500 transition-colors">
             Flights
           </Link>
           <Link href="/account/my-booking" className="text-sm font-medium hover:text-sky-500 transition-colors">
@@ -92,7 +92,11 @@ export function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button className="bg-sky-500 hover:bg-sky-600">Book Now</Button>
+          <Button className="bg-sky-500 hover:bg-sky-600" asChild>
+            <Link href="/">
+              Book now
+            </Link>
+          </Button>
         </div>
 
         {/* Mobile Menu Button */}
@@ -115,7 +119,7 @@ export function Navbar() {
                 Home
               </Link>
               <Link
-                href="/flights"
+                href="/"
                 className="flex items-center gap-2 py-2 text-sm font-medium hover:text-sky-500"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -123,7 +127,7 @@ export function Navbar() {
                 Flights
               </Link>
               <Link
-                href="/bookings"
+                href="/account/my-booking"
                 className="flex items-center gap-2 py-2 text-sm font-medium hover:text-sky-500"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -140,15 +144,35 @@ export function Navbar() {
             </nav>
             <div className="py-4">
               <div className="flex flex-col gap-2">
-                <Button variant="outline" className="justify-start">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Login
+              {
+                sessionData?.user.role !== "user" ?
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link href="/account/auth?signin">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign in
+                  </Link>
+                </Button> : null}
+                {
+                sessionData?.user.role !== "user" ?
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link href="/account/auth?signup">
+                    <User className="mr-2 h-4 w-4" />
+                    Sign Up
+                  </Link>
+                </Button> : null}
+                {
+                sessionData?.user.role === "user" ?
+                <Button variant="outline" className="justify-start" asChild>
+                  <Link href={"/account/auth?signout"}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Signout
+                  </Link>
+                </Button> : null}
+                <Button className="bg-sky-500 hover:bg-sky-600" asChild>
+                  <Link href="/">
+                    Book now
+                  </Link>
                 </Button>
-                <Button variant="outline" className="justify-start">
-                  <User className="mr-2 h-4 w-4" />
-                  Sign Up
-                </Button>
-                <Button className="bg-sky-500 hover:bg-sky-600">Book Now</Button>
               </div>
             </div>
           </div>

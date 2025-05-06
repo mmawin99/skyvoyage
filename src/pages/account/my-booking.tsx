@@ -22,6 +22,8 @@ import { Badge } from "@/components/ui/badge"
 
 import { useSessionStorage } from "@uidotdev/usehooks"
 import LoadingApp from "@/components/loading"
+import { BookingDetails } from "@/components/booking-list/booking"
+import { toast } from "sonner"
 
 
 export default function SearchResults() {
@@ -55,6 +57,19 @@ export default function SearchResults() {
     },[isBookingLoaded, sessionData])
 
 
+      // User action handlers
+    const handleRefund = () => {
+        // toast({
+        // title: "Request Refund",
+        // description: "Processing refund request",
+        // })
+        toast.success("Refund request has been sent")
+    }
+
+    const handleCancel = () => {
+        toast.success("Booking cancelling request has been sent.")
+    }
+
     if(sessionStatus === "loading") return <LoadingApp />
 
     if(!sessionData || !sessionData.user || (sessionData?.user.role !== "user" && sessionStatus === "authenticated")) return (
@@ -71,15 +86,35 @@ export default function SearchResults() {
 
     return (
         <main className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="container mx-auto py-8 px-4">
-            <h1 className="text-2xl font-bold mb-6">
-                My Booking
-            </h1>
-
-
-        </div>
-        <AppFooter />
+            <Navbar />
+            <div className="container mx-auto py-8 px-4">
+                <h1 className="text-2xl font-bold mb-6">
+                    My Booking
+                </h1>
+            </div>
+            <Card>
+                <CardContent>
+                    <div className="container mx-auto py-8 px-4 flex flex-col gap-4">
+                        {
+                            bookingList.length === 0 ?
+                            <Alert className="mb-4" variant="destructive">
+                                <AlertTitle>No Booking Found</AlertTitle>
+                                <AlertDescription>You have no booking yet.</AlertDescription>
+                            </Alert> : null
+                        }
+                        {
+                            bookingList.map((booking, index) => {
+                                return (
+                                   <BookingDetails isAdmin={false} key={"booking-" + index} 
+                                    item={booking} onRefund={handleRefund} onCancel={handleCancel}
+                                   />
+                                )
+                            })
+                        }
+                    </div>
+                </CardContent>
+            </Card>
+            <AppFooter />
         </main>
     )
 }

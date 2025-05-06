@@ -2,112 +2,16 @@ import Elysia, {error} from "elysia"
 import { v4 as uuidv4 } from 'uuid';
 import Stripe from 'stripe'
 import { passenger as Passenger, PrismaClient } from "../../prisma-client";
-import { sanitizeBigInt } from "./lib";
-import { BookingStatus, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes, UniversalFlightSchedule, UniversalFlightSegmentSchedule } from "@/types/type";
+import { createUniversalFlightSchedule, sanitizeBigInt } from "./lib";
+import { BookingStatus, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes } from "@/types/type";
+import {BookingRow, FlightOperationRow, PassengerRow, TicketRow} from "@/types/booking"
+
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
     apiVersion: '2025-03-31.basil', // Use the latest API version
 })
 const prisma = new PrismaClient()
-
-interface BookingRow {
-  bookingId: string;
-  bookingDate: Date;
-  status: string;
-  userId: string;
-  paymentId: string | null;
-  totalAmount: number | null;
-  paymentMethod: string | null;
-  paymentDate: Date | null;
-}
-
-interface FlightOperationRow {
-  flightId: string;
-  flightNum: string;
-  airlineCode: string;
-  departureTime: Date;
-  arrivalTime: Date;
-  departureGate: string;
-  aircraftId: string;
-  aircraftModel: string;
-  departAirportId: string;
-  arriveAirportId: string;
-  departureAirportName: string;
-  departureAirportTimezone: string;
-  arrivalAirportName: string;
-  arrivalAirportTimezone: string;
-  airlineName: string;
-}
-
-interface PassengerRow {
-  passportNum: string;
-  passportCountry: string;
-  passportExpiry: Date;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: Date;
-  nationality: string;
-  ageRange: string;
-}
-
-interface TicketRow {
-  ticketId: string;
-  farePackage: string;
-  baggageAllowanceWeight: number;
-  baggageAllowancePrice: number;
-  mealSelection: string;
-  mealPrice: number;
-  ticketPrice: number;
-  flightId: string;
-  passportNum: string;
-  seatId: string;
-  seatNum: string;
-  seatClass: string;
-  seatPrice: number;
-}
-
-// Helper function to create a UniversalFlightSchedule from flight operations
-function createUniversalFlightSchedule(flights: FlightOperationRow[]): UniversalFlightSchedule {
-    // Generate a unique ID for this schedule
-    const id = flights.map(f => f.flightId).join('-');
-    
-    // Calculate duration in minutes
-    const startTime = new Date(flights[0].departureTime);
-    const endTime = new Date(flights[flights.length - 1].arrivalTime);
-    const durationMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
-    
-    // Create segments
-    const segments: UniversalFlightSegmentSchedule[] = flights.map(flight => ({
-      flightId: flight.flightId,
-      flightNum: flight.flightNum,
-      airlineCode: flight.airlineCode,
-      airlineName: flight.airlineName,
-      departureTime: new Date(flight.departureTime).toISOString(),
-      arrivalTime: new Date(flight.arrivalTime).toISOString(),
-      aircraftModel: flight.aircraftModel,
-      departureAirport: flight.departureAirportName,
-      arrivalAirport: flight.arrivalAirportName,
-      departTimezone: flight.departureAirportTimezone,
-      arriveTimezone: flight.arrivalAirportTimezone
-    }));
-    
-    return {
-      id,
-      price: {
-        SUPER_SAVER: 0, // These values would need to be calculated based on your pricing logic
-        SAVER: 0,
-        STANDARD: 0,
-        FLEXI: 0,
-        FULL_FLEX: 0
-      },
-      duration: durationMinutes,
-      stopCount: segments.length - 1,
-      segments,
-      departureAirport: flights[0].departureAirportName,
-      arrivalAirport: flights[flights.length - 1].arrivalAirportName
-    };
-}
 
 export const bookingModule = new Elysia({
     prefix: '/booking',
@@ -630,7 +534,12 @@ export const bookingModule = new Elysia({
         },
         totalFare: totalFare,
         passenger: transformedPassengers,
-        ticket: booking.bookingId
+        ticket: booking.bookingId,
+        payment: {
+          paymentId: booking.paymentId,
+          paymentMethod: booking.paymentMethod,
+          paymentDate: booking.paymentDate ? new Date(booking.paymentDate).toISOString() : null
+        }
       };
       
       // Add return route if exists
@@ -660,4 +569,3 @@ export const bookingModule = new Elysia({
     });
   }
 });
-

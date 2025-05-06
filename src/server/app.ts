@@ -10,6 +10,7 @@ import { flightModule } from "./module.flight";
 import { seatmapModule } from "./module.seatmap";
 import { bookingModule } from "./module.booking";
 import { dashboardAdminModule } from "./module.dashboard";
+import { adminQueryModule } from "./module.adminQuery";
 
 export const app = new Elysia({
    prefix: '/api'
@@ -67,6 +68,7 @@ export const app = new Elysia({
       .use(seatmapModule)         //See module.seatmap.ts
       .use(bookingModule)         //See module.booking.ts
       .use(dashboardAdminModule)  //See module.dashboard.ts
+      .use(adminQueryModule)      //See module.adminQuery.ts
       ;
       // app.listen(4000, ()=>{
       //   console.log(`| CPE241 Term Project - SkyVoyage API`);

@@ -446,4 +446,9 @@ export type BookingStatus = "PAID" | "CANCELLED" | "REFUNDED"
 
 export interface searchSelectedBookingRoutes extends searchSelectedRoutes{
     status: BookingStatus
+    payment:{
+        paymentId: string | null,
+        paymentDate: string | null,
+        paymentMethod: string | null
+    }
 }

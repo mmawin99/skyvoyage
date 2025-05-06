@@ -2,6 +2,8 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import { UniversalFlightSchedule, UniversalFlightSegmentSchedule } from '@/types/type';
+import { FlightOperationRow } from '@/types/booking';
 dotenv.config();
 export const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET) || (() => {
     throw new Error("JWT_SECRET is not defined in the environment variables");
@@ -117,4 +119,46 @@ export function getTimeInterval(query: { interval?: string }, defaultInterval: s
     default:
       return '%Y-%m-%d';
   }
+}
+
+// Helper function to create a UniversalFlightSchedule from flight operations
+export function createUniversalFlightSchedule(flights: FlightOperationRow[]): UniversalFlightSchedule {
+  // Generate a unique ID for this schedule
+  const id = flights.map(f => f.flightId).join('-');
+  
+  // Calculate duration in minutes
+  const startTime = new Date(flights[0].departureTime);
+  const endTime = new Date(flights[flights.length - 1].arrivalTime);
+  const durationMinutes = Math.floor((endTime.getTime() - startTime.getTime()) / 60000);
+  
+  // Create segments
+  const segments: UniversalFlightSegmentSchedule[] = flights.map(flight => ({
+    flightId: flight.flightId,
+    flightNum: flight.flightNum,
+    airlineCode: flight.airlineCode,
+    airlineName: flight.airlineName,
+    departureTime: new Date(flight.departureTime).toISOString(),
+    arrivalTime: new Date(flight.arrivalTime).toISOString(),
+    aircraftModel: flight.aircraftModel,
+    departureAirport: flight.departureAirportName,
+    arrivalAirport: flight.arrivalAirportName,
+    departTimezone: flight.departureAirportTimezone,
+    arriveTimezone: flight.arrivalAirportTimezone
+  }));
+  
+  return {
+    id,
+    price: {
+      SUPER_SAVER: 0, // These values would need to be calculated based on your pricing logic
+      SAVER: 0,
+      STANDARD: 0,
+      FLEXI: 0,
+      FULL_FLEX: 0
+    },
+    duration: durationMinutes,
+    stopCount: segments.length - 1,
+    segments,
+    departureAirport: flights[0].departureAirportName,
+    arrivalAirport: flights[flights.length - 1].arrivalAirportName
+  };
 }

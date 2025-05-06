@@ -1,6 +1,7 @@
 // import { FareType } from "@/types/type";
 type FareType = "SUPER_SAVER" | "SAVER" | "STANDARD" | "FLEXI" | "FULL_FLEX"
 export const cabinClassPrice = (price:number, cabinClass: "Y" | "F" | "C" | "W" , FarePackage: FareType)=>{
+    price = customRoundPricing(price)
     if(cabinClass === "Y"){
         switch(FarePackage){
             case "SUPER_SAVER":

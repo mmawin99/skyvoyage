@@ -32,32 +32,35 @@ export default function SearchResults() {
     const isBookingLoaded = useRef<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(true)
     const [bookingList, setBookingList] = useState<searchSelectedBookingRoutes[]>([])
-    useEffect(()=>{
-        const fetchBooking = async () => {
-            if(isBookingLoaded.current) return
-            if(!sessionData) return
-            if(!sessionData?.user) return
-            if(!sessionData?.user.uuid) return
-            if(sessionData?.user.uuid == "") return
-            setIsLoading(true)
-            isBookingLoaded.current = true
-            const response = await fetch(`/api/booking/mybookings/${sessionData?.user.uuid}`, {
-                
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            })
-            const data = await response.json()
-            if(data.booking){
-                setIsLoading(false)
-                setBookingList(data.booking)
-            }else{
-                setIsLoading(false)
-                setBookingList([])
-            }
+    const fetchBooking = useCallback(
+    async () => {
+        if(isBookingLoaded.current) return
+        if(!sessionData) return
+        if(!sessionData?.user) return
+        if(!sessionData?.user.uuid) return
+        if(sessionData?.user.uuid == "") return
+        setIsLoading(true)
+        isBookingLoaded.current = true
+        const response = await fetch(`/api/booking/mybookings/${sessionData?.user.uuid}`, {
+            
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+        const data = await response.json()
+        if(data.booking){
+            setIsLoading(false)
+            setBookingList(data.booking)
+        }else{
+            setIsLoading(false)
+            setBookingList([])
         }
+    }, [sessionData])
+    
+    useEffect(()=>{
         fetchBooking()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     },[isBookingLoaded, sessionData])
 
 
@@ -91,6 +94,7 @@ export default function SearchResults() {
             if(data.status){
                 console.log("Refund Data: ", data)
                 toast.success("Refund successfully.")
+                fetchBooking()
             }else{
                 toast.error("Refund failed: " + data.message)
             }
@@ -127,6 +131,7 @@ export default function SearchResults() {
             if(data.status){
                 console.log("Cancel Data: ", data)
                 toast.success("Cancel successfully.")
+                fetchBooking()
             }else{
                 toast.error("Cancel failed: " + data.message)
             }

@@ -5,7 +5,6 @@ export interface DashboardData {
     revenueByRoute: RevenueByRoute[]
     bookingStatus: BookingStats[]
     seatUtilization: SeatUtilization[]
-    revenuePassengerKilometers: RPK[]
     topRoutes: TopRoute[]
     avgTicketPrice: AvgTicketPrice[]
     passengerDemographics: PassengerDemographic[]
@@ -55,17 +54,6 @@ export interface SeatUtilization {
     total_seats: string
     seats_sold: string
     seat_utilization_percentage: string
-}
-  
-export interface RPK {
-    flightId: string
-    flightNum: string
-    airlineCode: string
-    departureTime: string
-    arrivalTime: string
-    distance_km: number
-    seats_sold: string
-    RPK: number
 }
   
 export interface TopRoute {

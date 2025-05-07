@@ -1,7 +1,7 @@
 import Elysia, { error } from "elysia";
 
 import { PrismaClient } from "../../prisma-client";
-import { BookingStatus, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes } from "@/types/type";
+import { BookingStatus, BookingUserDetails, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes } from "@/types/type";
 import { createUniversalFlightSchedule, stripePayment as stripe } from "@/server/lib";
 import {BookingRow, FlightOperationRow, PassengerRow, TicketRow} from "@/types/booking"
 import Stripe from "stripe";
@@ -198,7 +198,13 @@ export const adminQueryModule = new Elysia({
         } catch (error) {
           console.error("Error retrieving payment method:", error);
         }
-      
+        const user:BookingUserDetails[] = await prisma.$queryRaw`
+          SELECT 
+          firstname,
+          lastname,
+          email
+          FROM user WHERE uuid = ${booking.userId}
+        `
         // Create the booking object in searchSelectedBookingRoutes format
         const transformedBooking: searchSelectedBookingRoutes = {
           departRoute: [departRoute],
@@ -232,7 +238,13 @@ export const adminQueryModule = new Elysia({
               data: paymentRefundData,
               status: paymentRefundData ? true : false,
             }
-          }
+          },
+          userId: booking.userId,
+          userDetails: user.length > 0 ? {
+            firstname: user[0].firstname,
+            lastname: user[0].lastname,
+            email: user[0].email
+          } : undefined,
         };
         
         // Add return route if exists

@@ -38,7 +38,7 @@ const MetricsCard = ({
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-bold">{title}</CardTitle>
+                <CardTitle className="text-base lg:text-xl font-bold">{title}</CardTitle>
             </CardHeader>
             <CardContent className='flex flex-col gap-2'>
                 {loading ? (
@@ -50,7 +50,7 @@ const MetricsCard = ({
                     <>
                     <div className={
                         cn(
-                            "text-5xl font-bold",
+                            "text-4xl lg:text-5xl font-bold",
                             color == "revenue" && "text-blue-600",
                             color == "booking" && "text-green-600",
                             color == "active_flight" && "text-amber-600",

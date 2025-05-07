@@ -461,6 +461,14 @@ export interface searchSelectedBookingRoutes extends searchSelectedRoutes{
             refundId: string | null
         }
     }
+    userId: string,
+    userDetails?: BookingUserDetails
+}
+
+export interface BookingUserDetails {
+    firstname: string,
+    lastname: string,
+    email: string,
 }
 
 export interface BookingRefundAndCancelType{

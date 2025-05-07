@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia';
 import { getDateRange, getTimeInterval, sanitizeBigInt } from "@/server/lib"; // Assuming these helper functions are defined
 import { PrismaClient } from "../../prisma-client";
-import { AvgTicketPrice, BookingOverTime, BookingStats, PassengerDemographic, RecentFlight, RevenueByRoute, RPK, SeatUtilization, TopRoute, TotalRevenue } from '../types/dashboard'; // Assuming this is the correct path to your types
+import { AvgTicketPrice, BookingOverTime, BookingStats, PassengerDemographic, RecentFlight, RevenueByRoute, SeatUtilization, TopRoute, TotalRevenue } from '../types/dashboard'; // Assuming this is the correct path to your types
 const prisma = new PrismaClient();
 
 export const dashboardAdminModule = new Elysia({
@@ -39,8 +39,8 @@ export const dashboardAdminModule = new Elysia({
                 SELECT
                     DATE_FORMAT(paymentDate, ${interval}) AS timeInterval,
                     SUM(amount) AS totalRevenue
-                FROM payment
-                WHERE paymentDate BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ')
+                FROM payment JOIN booking b ON payment.bookingId = b.bookingId
+                WHERE b.status = 'PAID' AND (paymentDate BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ'))
                 GROUP BY timeInterval
                 ORDER BY timeInterval
             ) AS subquery;
@@ -56,7 +56,7 @@ export const dashboardAdminModule = new Elysia({
         JOIN flightOperate fo ON t.flightId = fo.flightId
         JOIN flight f ON f.flightNum = fo.flightNum AND fo.airlineCode = f.airlineCode
         JOIN booking b ON t.bookingId = b.bookingId
-        WHERE b.bookingDate BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ')
+        WHERE b.status = 'PAID' AND (b.bookingDate BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ'))
         GROUP BY timeInterval, origin, destination
         ORDER BY timeInterval
         `;
@@ -71,65 +71,7 @@ export const dashboardAdminModule = new Elysia({
         GROUP BY b.status
         `;
 
-        // 4.2 Revenue Passenger Kilometers (RPK)
-        const revenuePassengerKilometers:RPK[] = await prisma.$queryRaw`
-            SELECT 
-                fo.flightId,
-                fo.flightNum,
-                fo.airlineCode,
-                fo.departureTime,
-                fo.arrivalTime,
-                -- Distance calculation using Haversine formula (kilometers)
-                6371 * 
-                ACOS(
-                    COS(RADIANS(dep.latitude)) * 
-                    COS(RADIANS(arr.latitude)) * 
-                    COS(RADIANS(dep.longitude) - RADIANS(arr.longitude)) + 
-                    SIN(RADIANS(dep.latitude)) * 
-                    SIN(RADIANS(arr.latitude))
-                ) AS distance_km,
-                -- Count sold seats (tickets)
-                (
-                    SELECT 
-                        COUNT(t.ticketId)
-                    FROM 
-                        ticket t
-                    WHERE 
-                        t.flightId = fo.flightId
-                ) AS seats_sold,
-                -- RPK calculation
-                (
-                    SELECT 
-                        COUNT(t.ticketId)
-                    FROM 
-                        ticket t
-                    WHERE 
-                        t.flightId = fo.flightId
-                ) * 
-                (
-                    6371 * 
-                    ACOS(
-                        COS(RADIANS(dep.latitude)) * 
-                        COS(RADIANS(arr.latitude)) * 
-                        COS(RADIANS(dep.longitude) - RADIANS(arr.longitude)) + 
-                        SIN(RADIANS(dep.latitude)) * 
-                        SIN(RADIANS(arr.latitude))
-                    )
-                ) AS RPK
-            FROM 
-                flightOperate fo
-            JOIN 
-                flight f ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
-            JOIN 
-                airport dep ON f.departAirportId = dep.airportCode
-            JOIN 
-                airport arr ON f.arriveAirportId = arr.airportCode
-            WHERE 
-                fo.departureTime BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ')
-            ORDER BY 
-                RPK DESC, fo.departureTime ASC
-            LIMIT 10;
-        `
+
         // 4.3 Seat Utilization
         const seatUtilization:SeatUtilization[] = await prisma.$queryRaw`
             SELECT 
@@ -215,7 +157,8 @@ export const dashboardAdminModule = new Elysia({
             FROM flightOperate fo
             JOIN flight f ON f.flightNum = fo.flightNum AND fo.airlineCode = f.airlineCode
             JOIN ticket t ON fo.flightId = t.flightId
-            WHERE fo.departureTime BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ')
+            JOIN booking b ON t.bookingId = b.bookingId
+            WHERE b.status = 'PAID' AND (fo.departureTime BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ'))
             GROUP BY origin, destination
             ORDER BY bookingCount DESC
             LIMIT 10;
@@ -230,7 +173,8 @@ export const dashboardAdminModule = new Elysia({
         FROM flightOperate fo
         JOIN flight f ON f.flightNum = fo.flightNum AND fo.airlineCode = f.airlineCode
         JOIN ticket t ON fo.flightId = t.flightId
-        WHERE fo.departureTime BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ')
+        JOIN booking b ON t.bookingId = b.bookingId
+        WHERE b.status = 'PAID' AND (fo.departureTime BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ'))
         GROUP BY origin, destination
         `;
 
@@ -243,7 +187,8 @@ export const dashboardAdminModule = new Elysia({
         FROM passenger p
         JOIN ticket t ON p.passportNum = t.passportNum AND p.userId = t.userId
         JOIN flightOperate f ON t.flightId = f.flightId
-        WHERE f.departureTime BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ')
+        JOIN booking b ON t.bookingId = b.bookingId
+        WHERE b.status = 'PAID' AND (f.departureTime BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ'))
         GROUP BY p.ageRange, p.nationality
         ORDER BY count DESC
         `;
@@ -284,7 +229,6 @@ export const dashboardAdminModule = new Elysia({
                 revenueByRoute:sanitizeBigInt(revenueByRoute),
                 bookingStatus:sanitizeBigInt(bookingStatus),
                 seatUtilization:sanitizeBigInt(seatUtilization),
-                revenuePassengerKilometers:sanitizeBigInt(revenuePassengerKilometers),
                 topRoutes:sanitizeBigInt(topRoutes),
                 avgTicketPrice:sanitizeBigInt(avgTicketPrice),
                 passengerDemographics:sanitizeBigInt(passengerDemographics)

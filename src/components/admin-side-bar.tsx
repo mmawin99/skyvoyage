@@ -3,11 +3,9 @@ import * as React from "react"
 import {
   Building2,
   CalendarClock,
-  CalendarRange,
   ChevronsLeftRightEllipsis,
   ChevronsUpDown,
   ClipboardListIcon,
-  CreditCardIcon,
   HelpCircleIcon,
   LayoutGrid,
   LogOutIcon,
@@ -59,18 +57,8 @@ const data = {
     {
       title: "User Booking",
       url: "/admin/user-booking",
-      icon: CalendarRange,
-    },
-    {
-      title: "Tickets",
-      url: "/admin/tickets",
       icon: TicketsPlane,
     },
-    {
-      title: "Payments",
-      url: "/admin/payments",
-      icon: CreditCardIcon,
-    }
   ],
   navSecondary: [
     {

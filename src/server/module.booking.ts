@@ -561,7 +561,8 @@ export const bookingModule = new Elysia({
             data: paymentRefundData,
             status: paymentRefundData ? true : false,
           }
-        }
+        },
+        userId: booking.userId,
       };
       
       // Add return route if exists

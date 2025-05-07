@@ -171,7 +171,7 @@ export default function AdminDashboard() {
   
     return (
       <div className="container mx-auto py-6 space-y-8">
-          <div className="flex flex-col space-y-2 md:flex-row md:justify-between md:items-center md:space-y-0">
+          <div className="flex flex-col space-y-2 xl:flex-row xl:justify-between xl:items-center xl:space-y-0">
               <div>
                 <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
                 <p className="text-muted-foreground">
@@ -189,7 +189,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
   
-              <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+              <div className="flex flex-col space-y-2 lg:flex-row lg:space-y-0 lg:space-x-2">
                 <div className="flex space-x-1">
                   <Button
                     variant={timeRange === "1d" ? "default" : "outline"}
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
         </div>
   
         {/* Key Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricsCard
                 title="Total Revenue (THB)"
                 color="revenue"

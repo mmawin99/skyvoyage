@@ -150,7 +150,26 @@ export function BookingDetails({
             <span className="ml-3">{getStatusBadge(item.status)}</span>
           </CardTitle>
           <CardDescription className="mt-1.5">
-            {item.queryString.origin} to {item.queryString.destination} •{" "}
+            {
+              item.queryString.tripType !== "roundtrip" ?
+                (
+                  <>
+                      <span className="font-bold">{item.selectedDepartRoute.flight.departureAirport}</span> 
+                      <span className="text-muted-foreground"> to </span>
+                      <span className="font-bold">{item.selectedDepartRoute.flight.arrivalAirport}</span>
+                      {" "}•{" "}
+                  </>
+                )
+              : (
+                  <>
+                      <span className="font-bold">{item.selectedDepartRoute.flight.departureAirport}</span> 
+                      <span className="text-muted-foreground"> to </span>
+                      <span className="font-bold">{item?.selectedReturnRoute?.flight.departureAirport}</span>
+                      {" "}•{" "}
+                  </>
+                )
+            }
+            {/* {item.select} to {item.queryString.destination} •{" "} */}
             {item.queryString.tripType === "roundtrip" ? "Round Trip" : "One Way"}
           </CardDescription>
         </div>
@@ -319,8 +338,8 @@ export function BookingDetails({
               <CardContent>
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4">
                   <div className="text-center mb-2 md:mb-0">
-                    <div className="text-xl font-bold">{item.selectedDepartRoute.flight.departureAirport}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xl text-left font-bold">{item.selectedDepartRoute.flight.departureAirport}</div>
+                    <div className="text-sm text-left text-muted-foreground">
                       {item.selectedDepartRoute.flight.segments[0].departureTime
                         ? formatTime(item.selectedDepartRoute.flight.segments[0].departureTime)
                         : "N/A"}
@@ -343,8 +362,8 @@ export function BookingDetails({
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold">{item.selectedDepartRoute.flight.arrivalAirport}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xl text-right font-bold">{item.selectedDepartRoute.flight.arrivalAirport}</div>
+                    <div className="text-sm text-right text-muted-foreground">
                       {item.selectedDepartRoute.flight.segments[item.selectedDepartRoute.flight.segments.length - 1]
                         .arrivalTime
                         ? formatTime(
@@ -407,8 +426,8 @@ export function BookingDetails({
                 <CardContent>
                   <div className="flex flex-col md:flex-row justify-between items-center mb-4">
                     <div className="text-center mb-2 md:mb-0">
-                      <div className="text-xl font-bold">{item.selectedReturnRoute.flight.departureAirport}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xl text-left font-bold">{item.selectedReturnRoute.flight.departureAirport}</div>
+                      <div className="text-sm text-left text-muted-foreground">
                         {item.selectedReturnRoute.flight.segments[0].departureTime
                           ? formatTime(item.selectedReturnRoute.flight.segments[0].departureTime)
                           : "N/A"}
@@ -431,8 +450,8 @@ export function BookingDetails({
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="text-xl font-bold">{item.selectedReturnRoute.flight.arrivalAirport}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xl text-right font-bold">{item.selectedReturnRoute.flight.arrivalAirport}</div>
+                      <div className="text-sm text-right text-muted-foreground">
                         {item.selectedReturnRoute.flight.segments[item.selectedReturnRoute.flight.segments.length - 1]
                           .arrivalTime
                           ? formatTime(

@@ -2,15 +2,13 @@ import Elysia, {error} from "elysia"
 import { v4 as uuidv4 } from 'uuid';
 import Stripe from 'stripe'
 import { passenger as Passenger, PrismaClient } from "../../prisma-client";
-import { createUniversalFlightSchedule, sanitizeBigInt } from "./lib";
+import { createUniversalFlightSchedule, sanitizeBigInt, stripePayment as stripe } from "@/server/lib";
 import { BookingStatus, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes } from "@/types/type";
 import {BookingRow, FlightOperationRow, PassengerRow, TicketRow} from "@/types/booking"
 
 
 // Initialize Stripe with your secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-    apiVersion: '2025-03-31.basil', // Use the latest API version
-})
+
 const prisma = new PrismaClient()
 
 export const bookingModule = new Elysia({
@@ -377,7 +375,9 @@ export const bookingModule = new Elysia({
         p.paymentId,
         p.amount as totalAmount,
         p.method as paymentMethod,
-        p.paymentDate
+        p.paymentDate,
+        p.refundedId as refundId,
+        p.refundedDate as refundDate
       FROM booking b
       LEFT JOIN payment p ON p.bookingId = b.bookingId
       WHERE b.userId = ${userId}
@@ -512,7 +512,22 @@ export const bookingModule = new Elysia({
 
       // Create depart route
       const departRoute = createUniversalFlightSchedule(departFlights);
-      
+
+      //Payment retrival
+      let paymentMethodData: Stripe.PaymentMethod | null = null;
+      let paymentRefundData: Stripe.Refund | null = null;
+      try {
+        if (booking.paymentMethod) {
+           paymentMethodData = await stripe.paymentMethods.retrieve(booking.paymentMethod);
+            // paymentIntentData = await stripe.paymentIntents.retrieve(booking.paymentId);
+        }
+        if (booking.refundId) {
+          paymentRefundData = await stripe.refunds.retrieve(booking.refundId);
+        }
+      } catch (error) {
+        console.error("Error retrieving payment method:", error);
+      }
+
       // Create the booking object in searchSelectedBookingRoutes format
       const transformedBooking: searchSelectedBookingRoutes = {
         departRoute: [departRoute],
@@ -538,7 +553,14 @@ export const bookingModule = new Elysia({
         payment: {
           paymentId: booking.paymentId,
           paymentMethod: booking.paymentMethod,
-          paymentDate: booking.paymentDate ? new Date(booking.paymentDate).toISOString() : null
+          paymentDate: booking.paymentDate ? new Date(booking.paymentDate).toISOString() : null,
+          data: paymentMethodData,
+          refunding: {
+            refundId: booking.refundId,
+            refundDate: booking.refundDate ? new Date(booking.refundDate).toISOString() : null,
+            data: paymentRefundData,
+            status: paymentRefundData ? true : false,
+          }
         }
       };
       
@@ -568,4 +590,99 @@ export const bookingModule = new Elysia({
       error: err instanceof Error ? err.message : "Unknown error occurred"
     });
   }
-});
+})
+.patch("/cancel/:userId/:bookingId", async ({ params }:{ params:{bookingId:string, userId:string}}) => {
+    try{
+      const { bookingId, userId } = params;
+      const booking:{ bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
+        SELECT b.bookingId, b.status, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
+      `;
+      if(booking.length == 0){
+        return error(404, {
+          status: false,
+          message: "Booking not found",
+        })
+      }else if(booking[0].status != "PAID"){
+        return error(400, {
+          status: false,
+          message: "Booking is not eligible for refund",
+        })
+      }else if(booking.length != 1){
+        return error(400,{
+          status: false,
+          message: "How did you get here!",
+        })
+      }else{
+        // Update the booking status to CANCELLED
+        await prisma.$executeRaw`
+          UPDATE booking SET status = 'CANCELLED' WHERE bookingId = ${bookingId}
+        `
+        await prisma.$executeRaw`
+          UPDATE payment SET refundedId = NULL, refundedDate = NOW(), refundAmount = 0 WHERE bookingId = ${bookingId}
+        `
+        return {
+          status: true,
+          message: "Booking cancelled successfully",
+          bookingId: booking[0].bookingId,
+          amount: booking[0].amount,
+        }
+      }
+    }catch(err){
+      console.error("Error fetching booking:", err);
+      return error(500, {
+        status: false,
+        error: err instanceof Error ? err.message : "Unknown error occurred"
+      });
+    }
+})
+.patch("/refund/:userId/:bookingId", async ({ params }:{ params:{bookingId:string, userId:string}}) => {
+    try{
+      const { bookingId, userId } = params;
+      const booking:{ bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
+        SELECT b.bookingId, b.status, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
+      `;
+      if(booking.length == 0){
+        return error(404, {
+          status: false,
+          message: "Booking not found",
+        })
+      }else if(booking[0].status != "PAID"){
+        return error(400, {
+          status: false,
+          message: "Booking is not eligible for refund",
+        })
+      }else if(booking.length != 1){
+        return error(400,{
+          status: false,
+          message: "How did you get here!",
+        })
+      }else{
+        // Refund the payment here
+        const refund:Stripe.Refund = await stripe.refunds.create({
+          payment_intent: booking[0].paymentId,
+          amount: booking[0].amount,
+          reason: "requested_by_customer",
+        })
+        // Update the booking status to REFUNDED
+        await prisma.$executeRaw`
+          UPDATE booking SET status = 'REFUNDED' WHERE bookingId = ${bookingId}
+        `
+        await prisma.$executeRaw`
+          UPDATE payment SET refundedId = ${refund.id}, refundedDate = NOW(), refundAmount = ${booking[0].amount} WHERE bookingId = ${bookingId}
+        `
+        return {
+          status: true,
+          message: "Refund successful",
+          refundId: refund.id,
+          bookingId: booking[0].bookingId,
+          amount: booking[0].amount,
+        }
+      }
+    }catch(err){
+      console.error("Error fetching booking:", err);
+      return error(500, {
+        status: false,
+        error: err instanceof Error ? err.message : "Unknown error occurred"
+      });
+    }
+})

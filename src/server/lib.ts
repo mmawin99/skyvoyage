@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { UniversalFlightSchedule, UniversalFlightSegmentSchedule } from '@/types/type';
 import { FlightOperationRow } from '@/types/booking';
+import Stripe from 'stripe';
 dotenv.config();
 export const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET) || (() => {
     throw new Error("JWT_SECRET is not defined in the environment variables");
@@ -162,3 +163,7 @@ export function createUniversalFlightSchedule(flights: FlightOperationRow[]): Un
     arrivalAirport: flights[flights.length - 1].arrivalAirportName
   };
 }
+
+export const stripePayment = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: '2025-03-31.basil', // Use the latest API version
+})

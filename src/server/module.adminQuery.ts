@@ -2,8 +2,9 @@ import Elysia, { error } from "elysia";
 
 import { PrismaClient } from "../../prisma-client";
 import { BookingStatus, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes } from "@/types/type";
-import { createUniversalFlightSchedule } from "@/server/lib";
+import { createUniversalFlightSchedule, stripePayment as stripe } from "@/server/lib";
 import {BookingRow, FlightOperationRow, PassengerRow, TicketRow} from "@/types/booking"
+import Stripe from "stripe";
 
 const prisma = new PrismaClient()
 
@@ -40,7 +41,9 @@ export const adminQueryModule = new Elysia({
           p.paymentId,
           p.amount as totalAmount,
           p.method as paymentMethod,
-          p.paymentDate
+          p.paymentDate,
+          p.refundedId as refundId,
+          p.refundedDate as refundDate
         FROM booking b
         LEFT JOIN payment p ON p.bookingId = b.bookingId
         ORDER BY b.bookingDate DESC
@@ -181,6 +184,21 @@ export const adminQueryModule = new Elysia({
         // Create depart route
         const departRoute = createUniversalFlightSchedule(departFlights);
         
+        //Payment retrival
+        let paymentMethodData: Stripe.PaymentMethod | null = null;
+        let paymentRefundData: Stripe.Refund | null = null;
+        try {
+          if (booking.paymentMethod) {
+            paymentMethodData = await stripe.paymentMethods.retrieve(booking.paymentMethod);
+              // paymentIntentData = await stripe.paymentIntents.retrieve(booking.paymentId);
+          }
+          if (booking.refundId) {
+            paymentRefundData = await stripe.refunds.retrieve(booking.refundId);
+          }
+        } catch (error) {
+          console.error("Error retrieving payment method:", error);
+        }
+      
         // Create the booking object in searchSelectedBookingRoutes format
         const transformedBooking: searchSelectedBookingRoutes = {
           departRoute: [departRoute],
@@ -204,9 +222,16 @@ export const adminQueryModule = new Elysia({
           passenger: transformedPassengers,
           ticket: booking.bookingId,
           payment: {
-            paymentId: booking.paymentId || null,
-            paymentMethod: booking.paymentMethod || null,
-            paymentDate: booking.paymentDate ? new Date(booking.paymentDate).toISOString() : null
+            paymentId: booking.paymentId,
+            paymentMethod: booking.paymentMethod,
+            paymentDate: booking.paymentDate ? new Date(booking.paymentDate).toISOString() : null,
+            data: paymentMethodData,
+            refunding: {
+              refundId: booking.refundId,
+              refundDate: booking.refundDate ? new Date(booking.refundDate).toISOString() : null,
+              data: paymentRefundData,
+              status: paymentRefundData ? true : false,
+            }
           }
         };
         

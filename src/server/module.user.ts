@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid'
 import Elysia, { error } from "elysia";
 import { user as User } from "../../prisma-client";
 import * as jose from 'jose'
-import { hashDataWithSHA256AndSalt, JWT_SECRET } from "./lib";
+import { hashDataWithSHA256AndSalt, JWT_SECRET } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
 
 const prisma = new PrismaClient()

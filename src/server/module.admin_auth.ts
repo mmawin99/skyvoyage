@@ -1,6 +1,6 @@
 import Elysia, { error } from "elysia";
 import { admin as Admin } from "../../prisma-client";
-import { hashDataWithSHA256AndSalt } from './lib';
+import { hashDataWithSHA256AndSalt } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
 
 const prisma = new PrismaClient()

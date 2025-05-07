@@ -88,3 +88,10 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
   if(filter) return farePackage.filter((item) => item.type === filter)
   return farePackage.filter((item) => item.available)
 }
+
+export const formatFareType = (type: FareType) => {
+    return type
+      .split("_")
+      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(" ")
+}

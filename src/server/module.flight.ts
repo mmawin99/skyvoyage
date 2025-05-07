@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
 import Elysia, { error } from "elysia";
 // import modelAircraft from "../../data/model_name.json"
-import { sanitizeBigInt } from './lib';
+import { sanitizeBigInt } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
 import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitSchedule, UniversalFlightSchedule } from '@/types/type';
 

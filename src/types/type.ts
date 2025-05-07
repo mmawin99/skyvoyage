@@ -3,6 +3,9 @@
 //     airlineCode: string,
 //     airlineName: string
 // };
+
+import Stripe from "stripe"
+
   
 // export interface Aircraft {
 //     aircraftId: string,
@@ -449,6 +452,21 @@ export interface searchSelectedBookingRoutes extends searchSelectedRoutes{
     payment:{
         paymentId: string | null,
         paymentDate: string | null,
-        paymentMethod: string | null
+        paymentMethod: string | null,
+        data: Stripe.PaymentMethod | null,
+        refunding:{
+            status: boolean,
+            data: Stripe.Refund | null,
+            refundDate: string | null,
+            refundId: string | null
+        }
     }
+}
+
+export interface BookingRefundAndCancelType{
+    status: boolean
+    message: string
+    refundId?: string
+    bookingId: string
+    amount: number
 }

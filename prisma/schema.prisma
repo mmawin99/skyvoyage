@@ -150,12 +150,15 @@ model passenger_booking {
 }
 
 model payment {
-  paymentId  String   @id @db.VarChar(36)
-  amount     Float    @default(0)
-  method     String   @db.VarChar(30)
-  paymentDate DateTime @default(now()) @db.DateTime(3)
-  bookingId  String   @unique @db.VarChar(36)
-  booking    booking  @relation(fields: [bookingId], references: [bookingId])
+  paymentId    String    @id @db.VarChar(36)
+  amount       Float     @default(0)
+  method       String    @db.VarChar(30)
+  paymentDate  DateTime  @default(now()) @db.DateTime(3)
+  bookingId    String    @unique @db.VarChar(36)
+  refundedId   String?   @db.VarChar(30)
+  refundedDate DateTime? @db.DateTime(3)
+  refundAmount Float?    @default(0)
+  booking      booking   @relation(fields: [bookingId], references: [bookingId])
 }
 
 model seatmap_info {

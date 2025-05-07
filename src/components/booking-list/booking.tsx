@@ -20,6 +20,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookingStatus, CabinClassType, searchSelectedBookingRoutes } from "@/types/type"
 import { extractVAT } from "@/lib/price"
+import { formatFareType } from "@/lib/farePackage"
 
 // Props for the BookingDetails component
 interface BookingDetailsProps {
@@ -36,8 +37,8 @@ interface BookingDetailsProps {
   onModifyPayment?: () => void
   onDeletePayment?: () => void
   // User actions
-  onRefund?: () => void
-  onCancel?: () => void
+  onRefund?: (bookingId: string) => void
+  onCancel?: (bookingId: string) => void
 }
 
 // Helper function to format duration from minutes to hours and minutes
@@ -184,10 +185,14 @@ export function BookingDetails({
           <div className="flex gap-2">
             {item.status === "PAID" && (
               <>
-                <Button variant="destructive" onClick={onCancel} className="cursor-pointer">
+                <Button variant="destructive" onClick={()=>{
+                  onCancel?.(item?.ticket ?? "")
+                }} className="cursor-pointer">
                   Cancel
                 </Button>
-                <Button variant="outline" onClick={onRefund} className="cursor-pointer">
+                <Button variant="outline" onClick={()=>{
+                  onRefund?.(item?.ticket ?? "")
+                }} className="cursor-pointer">
                   Request Refund
                 </Button>
               </>
@@ -269,7 +274,7 @@ export function BookingDetails({
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Payment ID:</span>
-                        <span>{item.payment.paymentId || "N/A"}</span>
+                        <span>{item.payment.paymentId?.substring(0, 10) + "..." || "N/A"}</span>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -279,7 +284,13 @@ export function BookingDetails({
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Payment Method:</span>
-                        <span>{item.payment.paymentMethod || "N/A"}</span>
+                        <span className="first-letter:uppercase">
+                          {
+                            item.payment.data?.type == "promptpay" ? "Prompt Pay" : 
+                            item.payment.data?.type == "card" ? "Credit Card" : 
+                            item.payment.data?.type || "N/A"
+                          }
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -302,7 +313,7 @@ export function BookingDetails({
                   <Plane className="mr-2 h-4 w-4" /> Departure Flight
                 </CardTitle>
                 <CardDescription>
-                  {formatDate(item.queryString.departDateStr)} • {item.selectedDepartRoute.selectedFare} Fare
+                  {formatDate(item.selectedDepartRoute.flight.segments[0].departureTime)} • {formatFareType(item.selectedDepartRoute.selectedFare)} Fare
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -365,7 +376,7 @@ export function BookingDetails({
                               <div className="font-medium">{segment.departureAirport}</div>
                               <div className="text-sm">{formatTime(segment.departureTime)}</div>
                             </div>
-                            <div>
+                            <div className="text-right">
                               <div className="text-sm text-muted-foreground">Arrival</div>
                               <div className="font-medium">{segment.arrivalAirport}</div>
                               <div className="text-sm">{formatTime(segment.arrivalTime)}</div>
@@ -390,7 +401,7 @@ export function BookingDetails({
                     <Plane className="mr-2 h-4 w-4 transform rotate-180" /> Return Flight
                   </CardTitle>
                   <CardDescription>
-                    {formatDate(item.queryString.returnDateStr)} • {item.selectedReturnRoute.selectedFare} Fare
+                    {formatDate(item?.selectedReturnRoute?.flight.segments[0].departureTime ?? "")} • {formatFareType(item.selectedReturnRoute.selectedFare)} Fare
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -453,7 +464,7 @@ export function BookingDetails({
                                 <div className="font-medium">{segment.departureAirport}</div>
                                 <div className="text-sm">{formatTime(segment.departureTime)}</div>
                               </div>
-                              <div>
+                              <div className="text-right">
                                 <div className="text-sm text-muted-foreground">Arrival</div>
                                 <div className="font-medium">{segment.arrivalAirport}</div>
                                 <div className="text-sm">{formatTime(segment.arrivalTime)}</div>
@@ -614,11 +625,17 @@ export function BookingDetails({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <div className="text-sm text-muted-foreground">Payment ID</div>
-                    <div className="font-medium">{item.payment.paymentId || "Not Available"}</div>
+                    <div className="font-medium">{item.payment.paymentId?.substring(0, 10) || "Not Available"}</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Payment Method</div>
-                    <div className="font-medium">{item.payment.paymentMethod || "Not Available"}</div>
+                    <div className="font-medium">
+                        {
+                            item.payment.data?.type == "promptpay" ? "Prompt Pay" : 
+                            item.payment.data?.type == "card" ? "Credit Card" : 
+                            item.payment.data?.type || "N/A"
+                        }
+                    </div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Payment Date</div>
@@ -673,7 +690,7 @@ export function BookingDetails({
         </div>
         <div className="text-sm text-muted-foreground">
           <Clock className="inline-block mr-1 h-4 w-4" />
-          Last Updated: {item.payment.paymentDate ? formatDate(item.payment.paymentDate) : "N/A"}
+          Booked on {item.payment.paymentDate ? formatDate(item.payment.paymentDate) : "N/A"}
         </div>
       </CardFooter>
     </Card>

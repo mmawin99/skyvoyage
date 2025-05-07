@@ -2,7 +2,7 @@ import Elysia, { error } from "elysia";
 import { flight as Flight, airport as Airport, airline as Airline, aircraft as Aircraft } from "../../prisma-client";
 // import countries from "i18n-iso-countries";
 import modelAircraft from "../../data/model_name.json"
-import { sanitizeBigInt } from "./lib";
+import { sanitizeBigInt } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
 import { Schedule } from "@/types/type";
 import { countryNameToCode } from "@/lib/country";

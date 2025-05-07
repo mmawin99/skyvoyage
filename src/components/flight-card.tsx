@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { FarePackage, FareType, UniversalFlightSchedule } from "@/types/type"
-import { FarePackageList } from './../lib/farePackage';
+import { FarePackageList, formatFareType } from './../lib/farePackage';
 
 
 interface FlightCardProps {
@@ -104,12 +104,7 @@ export default function FlightCard({ flight, cabinclass, onSelect }: FlightCardP
   // Sample fare packages data
   const farePackages: FarePackage[] = FarePackageList(flight, cabinclass);
   // Format fare type for display
-  const formatFareType = (type: FareType) => {
-    return type
-      .split("_")
-      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-      .join(" ")
-  }
+  
 
   // Handle fare selection
   const handleSelectFare = (fare: FareType) => {

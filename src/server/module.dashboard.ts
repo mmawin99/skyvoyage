@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { getDateRange, getTimeInterval, sanitizeBigInt } from './lib'; // Assuming these helper functions are defined
+import { getDateRange, getTimeInterval, sanitizeBigInt } from "@/server/lib"; // Assuming these helper functions are defined
 import { PrismaClient } from "../../prisma-client";
 import { AvgTicketPrice, BookingOverTime, BookingStats, PassengerDemographic, RecentFlight, RevenueByRoute, RPK, SeatUtilization, TopRoute, TotalRevenue } from '../types/dashboard'; // Assuming this is the correct path to your types
 const prisma = new PrismaClient();

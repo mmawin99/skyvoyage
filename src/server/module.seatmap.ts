@@ -1,5 +1,5 @@
 import Elysia from "elysia";
-import { sanitizeBigInt } from './lib';
+import { sanitizeBigInt } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
 import { SeatmapAPI } from "@/types/type";
 

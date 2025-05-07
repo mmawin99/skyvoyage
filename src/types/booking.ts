@@ -7,6 +7,8 @@ export interface BookingRow {
     totalAmount: number | null;
     paymentMethod: string | null;
     paymentDate: Date | null;
+    refundId: string | null;
+    refundDate: Date | null;
 }
   
 export interface FlightOperationRow {

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Slider } from "@/components/ui/slider"
 import { ArrowRight, Clock, Filter, Loader2, Plane, TriangleAlert } from "lucide-react"
-import { CabinClassType, FareType, PassengerFillOut, PassengerTicket, searchSelectedFlight, searchSelectedBookingRoutes, UniversalFlightSchedule, UniversalFlightSegmentSchedule } from "@/types/type"
+import { CabinClassType, FareType, PassengerFillOut, PassengerTicket, searchSelectedFlight, searchSelectedBookingRoutes, UniversalFlightSchedule, UniversalFlightSegmentSchedule, BookingRefundAndCancelType } from "@/types/type"
 import { NextRouter, useRouter } from "next/router"
 import { useBackendURL } from "@/components/backend-url-provider"
 import { useSession } from "next-auth/react"
@@ -30,6 +30,7 @@ export default function SearchResults() {
     const router:NextRouter = useRouter()
     const {data:sessionData, status:sessionStatus} = useSession()
     const isBookingLoaded = useRef<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(true)
     const [bookingList, setBookingList] = useState<searchSelectedBookingRoutes[]>([])
     useEffect(()=>{
         const fetchBooking = async () => {
@@ -38,6 +39,7 @@ export default function SearchResults() {
             if(!sessionData?.user) return
             if(!sessionData?.user.uuid) return
             if(sessionData?.user.uuid == "") return
+            setIsLoading(true)
             isBookingLoaded.current = true
             const response = await fetch(`/api/booking/mybookings/${sessionData?.user.uuid}`, {
                 
@@ -48,8 +50,10 @@ export default function SearchResults() {
             })
             const data = await response.json()
             if(data.booking){
+                setIsLoading(false)
                 setBookingList(data.booking)
             }else{
+                setIsLoading(false)
                 setBookingList([])
             }
         }
@@ -58,16 +62,77 @@ export default function SearchResults() {
 
 
       // User action handlers
-    const handleRefund = () => {
-        // toast({
-        // title: "Request Refund",
-        // description: "Processing refund request",
-        // })
-        toast.success("Refund request has been sent")
+    const handleRefund = async (bookingId: string) => {
+        if(!sessionData) {
+            toast.error("Session data not found, cannot process refund request.");
+            return
+        }
+        if(!sessionData?.user) {
+            toast.error("Session data not found, cannot process refund request.");
+            return
+        }
+        if(!sessionData?.user.uuid) {
+            toast.error("Session data not found, cannot process refund request.");
+            return
+        }
+        if(sessionData?.user.uuid == "") {
+            toast.error("Session data not found, cannot process refund request.");
+            return
+        }
+        if(bookingId === "") toast.error("Booking ID is empty")
+        try{
+            const result = await fetch(`/api/booking/refund/${sessionData?.user.uuid}/${bookingId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            const data:BookingRefundAndCancelType = await result.json()
+            if(data.status){
+                console.log("Refund Data: ", data)
+                toast.success("Refund successfully.")
+            }else{
+                toast.error("Refund failed: " + data.message)
+            }
+        }catch(error){
+            toast.error("Error processing refund request: " + error)
+        }
     }
-
-    const handleCancel = () => {
-        toast.success("Booking cancelling request has been sent.")
+    const handleCancel = async (bookingId: string) => {
+        if(!sessionData) {
+            toast.error("Session data not found, cannot process refund request.");
+            return
+        }
+        if(!sessionData?.user) {
+            toast.error("Session data not found, cannot process refund request.");
+            return
+        }
+        if(!sessionData?.user.uuid) {
+            toast.error("Session data not found, cannot process refund request.");
+            return
+        }
+        if(sessionData?.user.uuid == "") {
+            toast.error("Session data not found, cannot process refund request.");
+            return
+        }
+        if(bookingId === "") toast.error("Booking ID is empty")
+        try{
+            const result = await fetch(`/api/booking/cancel/${sessionData?.user.uuid}/${bookingId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+            const data:BookingRefundAndCancelType = await result.json()
+            if(data.status){
+                console.log("Cancel Data: ", data)
+                toast.success("Cancel successfully.")
+            }else{
+                toast.error("Cancel failed: " + data.message)
+            }
+        }catch(error){
+            toast.error("Error processing cancel request: " + error)
+        }
     }
 
     if(sessionStatus === "loading") return <LoadingApp />
@@ -91,29 +156,32 @@ export default function SearchResults() {
                 <h1 className="text-2xl font-bold mb-6">
                     My Booking
                 </h1>
+                <div className="py-8 flex flex-col gap-4">
+                    {
+                        isLoading ?
+                        <div className="flex flex-row items-center justify-center gap-2 mb-4">
+                            <Loader2 className="animate-spin h-5 w-5 text-gray-500" />
+                            <span className="text-gray-500">Loading...</span>
+                        </div> : null
+                    }
+                    {
+                        !isLoading && bookingList.length === 0 ?
+                        <Alert className="mb-4" variant="destructive">
+                            <AlertTitle>No Booking Found</AlertTitle>
+                            <AlertDescription>You have no booking yet.</AlertDescription>
+                        </Alert> : null
+                    }
+                    {
+                        !isLoading && bookingList.length > 0 ? bookingList.map((booking, index) => {
+                            return (
+                            <BookingDetails isAdmin={false} key={"booking-" + index} 
+                                item={booking} onRefund={handleRefund} onCancel={handleCancel}
+                            />
+                            )
+                        }) : null
+                    }
+                </div>
             </div>
-            <Card>
-                <CardContent>
-                    <div className="container mx-auto py-8 px-4 flex flex-col gap-4">
-                        {
-                            bookingList.length === 0 ?
-                            <Alert className="mb-4" variant="destructive">
-                                <AlertTitle>No Booking Found</AlertTitle>
-                                <AlertDescription>You have no booking yet.</AlertDescription>
-                            </Alert> : null
-                        }
-                        {
-                            bookingList.map((booking, index) => {
-                                return (
-                                   <BookingDetails isAdmin={false} key={"booking-" + index} 
-                                    item={booking} onRefund={handleRefund} onCancel={handleCancel}
-                                   />
-                                )
-                            })
-                        }
-                    </div>
-                </CardContent>
-            </Card>
             <AppFooter />
         </main>
     )

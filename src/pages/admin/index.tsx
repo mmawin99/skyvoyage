@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const AdminHome = () => {
 
     return (
-        <AdminWrapper>
+        <AdminWrapper adminPermission={["SUPER",'DATA_ENTRY','USER']}>
              <SidebarProvider>
                 <AdminSideBar />
                 <SidebarInset>

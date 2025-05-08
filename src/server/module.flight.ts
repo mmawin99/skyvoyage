@@ -4,6 +4,7 @@ import Elysia, { error } from "elysia";
 import { sanitizeBigInt } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
 import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitSchedule, UniversalFlightSchedule } from '@/types/type';
+import { SubmitFlight } from '@/types/type';
 
 const prisma = new PrismaClient()
 
@@ -362,11 +363,11 @@ export const flightModule = new Elysia({
                 
                 try{
                     const sql = `
-                    INSERT INTO flightOperate (flightId, flightNum, airlineCode, departureTime, arrivalTime, departureGate, aircraftId)
-                    VALUES ('${flightId}', '${flightNum}', '${airlineCode}', '${formatterSQLTIME(departureTime.toISOString())}', '${formatterSQLTIME(arrivalTime.toISOString())}', '${gate}', '${aircraftId}')
-                `
+                        INSERT INTO flightOperate (flightId, flightNum, airlineCode, departureTime, arrivalTime, departureGate, aircraftId)
+                        VALUES ('${flightId}', '${flightNum}', '${airlineCode}', '${formatterSQLTIME(departureTime.toISOString())}', '${formatterSQLTIME(arrivalTime.toISOString())}', '${gate}', '${aircraftId}')
+                    `
                 
-                await prisma.$executeRawUnsafe(sql)
+                    await prisma.$executeRawUnsafe(sql)
                 }catch(err){
                     console.error(err)
                     return error(500, {
@@ -391,6 +392,36 @@ export const flightModule = new Elysia({
                 })
             }
         }
+    })
+    .post("/addFlight", async({body}:{body:SubmitFlight})=>{
+        try{
+
+            const { flightNum, airlineCode, departAirportId, arriveAirportId, departureTime, arrivalTime } = body
+            
+            if (!flightNum || !airlineCode || !departAirportId || !arriveAirportId || !departureTime || !arrivalTime) {
+                return error(400, {
+                    status: false,
+                    message: 'Missing required fields',
+                })
+            }
+            
+            await prisma.$executeRaw`
+                INSERT INTO flight (flightNum, airlineCode, departAirportId, arriveAirportId, departureTime, arrivalTime) 
+                VALUES (${flightNum}, ${airlineCode}, ${departAirportId}, ${arriveAirportId}, ${departureTime}, ${arrivalTime})
+            `
+            return {
+                status: true,
+                message: 'Flight added successfully',
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
+
     })
     .post("/schedule/:size/:kind/:page", async ({params,body}:{params:{ query: string, size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, body:{query:string}})=>{
         const timeStart = Date.now()

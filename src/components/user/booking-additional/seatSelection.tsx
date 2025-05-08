@@ -8,11 +8,13 @@ import { PassengerFillOut, PassengerTicket, searchSelectedFlight, searchSelected
 import { ArrowRight } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
-export const SeatSelectionCard = ({onInteract}:{
+export const SeatSelectionCard = ({onInteract,isError, setError}:{
     onInteract: ()=> void
+    isError: boolean
+    setError: React.Dispatch<React.SetStateAction<boolean>>
 }) => {
     return (
-        <Card className="p-0 flex-col md:flex-row overflow-hidden gap-0">
+        <Card className={`p-0 flex-col md:flex-row overflow-hidden gap-0 ${isError ? "border-2 border-red-500 bg-amber-100" : ""}`}>
           <CardImage
                 src="./seat.jpg" 
                 alt="Pick Your Seat" 
@@ -29,7 +31,10 @@ export const SeatSelectionCard = ({onInteract}:{
                     <p>Select the seat that suits you best &mdash; whether you prefer extra legroom, a window view, or quick access to the aisle. Secure your comfort and enjoy a more personalized flying experience.</p>
                 </CardContent>
                 <CardFooter>
-                    <Button variant={"default"} onClick={onInteract} className="cursor-pointer">Pick Your Seat</Button>
+                    <Button variant={"default"} onClick={()=>{
+                      onInteract();
+                      setError(false);
+                    }} className="cursor-pointer">Pick Your Seat</Button>
                 </CardFooter>
             </div>
             <CardImage

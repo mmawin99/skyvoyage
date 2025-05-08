@@ -6,7 +6,7 @@ import React from 'react'
 const AdminUserManagement = () => {
 
     return (
-        <AdminWrapper>
+        <AdminWrapper adminPermission={["SUPER"]}>
              <SidebarProvider>
                 <AdminSideBar />
                 <SidebarInset>

@@ -222,7 +222,8 @@ export const bookingModule = new Elysia({
               flightId,
               passportNum,
               userId,
-              seatId
+              seatId,
+              isInfant
             )
             VALUES (
               ${ticketId},
@@ -250,7 +251,8 @@ export const bookingModule = new Elysia({
               ${ticket.fid},
               ${passenger.passportNum},
               ${userid},
-              ${seatIdToUse}
+              ${seatIdToUse},
+              ${passenger.ageRange === 'Infant' ? true : false}
             )
           `;
         }
@@ -639,8 +641,8 @@ export const bookingModule = new Elysia({
 .patch("/refund/:userId/:bookingId", async ({ params }:{ params:{bookingId:string, userId:string}}) => {
     try{
       const { bookingId, userId } = params;
-      const booking:{ bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
-        SELECT b.bookingId, b.status, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
+      const booking:{ bookingDate:Date,bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
+        SELECT b.bookingId, b.status, b.bookingDate, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
       `;
       if(booking.length == 0){
         return error(404, {
@@ -656,6 +658,12 @@ export const bookingModule = new Elysia({
         return error(400,{
           status: false,
           message: "How did you get here!",
+        })
+        //IF bookingDate is not after May 8th, 2025, then refund is not eligible at ()
+      }else if(new Date(booking[0].bookingDate) < new Date("2025-05-08T06:00:00Z")){
+        return error(400, {
+          status: false,
+          message: "Booking is not eligible for refund.",
         })
       }else{
         // Refund the payment here

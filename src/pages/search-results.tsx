@@ -330,7 +330,9 @@ export default function SearchResults() {
         setAirlines(uniqueAirlines);
         setSelectedAirlines(uniqueAirlines);
   
-        const allFlights = [...departJSON["data"], ...(returnJSON?.["data"] || [])];
+        const allFlights = [...departJSON["data"], ...(returnJSON?.["data"] || [])].sort((a,b)=>{
+          return a.segments[0].departureTime.localeCompare(b.segments[0].departureTime)
+        });
         const prices = allFlights.map((flight: UniversalFlightSchedule) => flight.price.SUPER_SAVER).filter((price: number) => price !== -1);
         if (prices.length > 0) {
           setMinPrice(Math.min(...prices));

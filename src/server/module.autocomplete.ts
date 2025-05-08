@@ -1,5 +1,5 @@
 import Elysia, { error } from "elysia";
-import { flight as Flight, airport as Airport, airline as Airline, aircraft as Aircraft } from "../../prisma-client";
+import { flight as Flight, airport as Airport, airline as Airline, aircraft as Aircraft, seatmap_info as SeatmapInfo } from "../../prisma-client";
 // import countries from "i18n-iso-countries";
 import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt } from "@/server/lib";
@@ -98,7 +98,11 @@ export const autocompleteModule = new Elysia({
             return airportReturn
         }catch(e){
             console.error(e)
-            return error(500, "internal_server_error")
+            return error(500, {
+                status: false,
+                message: "Internal server error",
+                error: e
+            })
         }
     },{
         detail:{
@@ -131,7 +135,7 @@ export const autocompleteModule = new Elysia({
             }
         }
     })
-    .post("/airline/:search", async({params:{search}}:{params:{search:string}})=>{
+    .get("/airline/:search", async({params:{search}}:{params:{search:string}})=>{
         //html decode the search string
         const searchstring = decodeURIComponent(search)
         let airlineList:Airline[] = []
@@ -210,7 +214,7 @@ export const autocompleteModule = new Elysia({
             }
         }
     })
-    .post("/flight/:airline/:search", async({params:{airline, search}}:{params:{airline:string, search:string}})=>{
+    .get("/flight/:airline/:search", async({params:{airline, search}}:{params:{airline:string, search:string}})=>{
         const airlineCode = decodeURIComponent(airline)
         if (!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
         
@@ -296,7 +300,7 @@ export const autocompleteModule = new Elysia({
             }
         }
     })
-    .post("/schedule/:airline/:page", async({params:{airline, page}}:{params:{airline:string,page:number}})=>{
+    .get("/schedule/:airline/:page", async({params:{airline, page}}:{params:{airline:string,page:number}})=>{
         //html decode the search string
         try{
 
@@ -340,7 +344,11 @@ export const autocompleteModule = new Elysia({
             return flightList
         }catch(e){
             console.error(e)
-            return error(500, "internal_server_error")
+            return error(500, {
+                status: false,
+                message: "Internal server error",
+                error: e
+            })
         }
     },{
         detail:{
@@ -377,7 +385,7 @@ export const autocompleteModule = new Elysia({
             }
         }
     })
-    .post("/model/:airline", async({params:{airline}}:{params:{airline:string}})=>{
+    .get("/model/:airline", async({params:{airline}}:{params:{airline:string}})=>{
         //html decode the search string
         const airlineCode = decodeURIComponent(airline)
         //check if airlineCode is valid
@@ -422,25 +430,34 @@ export const autocompleteModule = new Elysia({
             }
         }
     })
-    .post("/registration/:airline/:model", async({params:{airline, model}}:{params:{airline:string, model:string}})=>{
+    .get("/registration/:airline/:model", async({params:{airline, model}}:{params:{airline:string, model:string}})=>{
         //html decode the search string
-        const airlineCode = decodeURIComponent(airline)
-        const modelName = decodeURIComponent(model)
-        //check if airlineCode is valid
-        if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
-        //check if modelName is valid
-        if(!modelName) return error(400, "invalid_model_name")
+        try{
+            const airlineCode = decodeURIComponent(airline)
+            const modelName = decodeURIComponent(model)
+            //check if airlineCode is valid
+            if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
+            //check if modelName is valid
+            if(!modelName) return error(400, "invalid_model_name")
 
-        const aircraftList:Aircraft[] = await prisma.$queryRaw`
-            SELECT \`aircraftId\`, \`model\`, \`ownerAirlineCode\` FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode} AND \`model\` = ${modelName};
-        `
-        return aircraftList.map((aircraft)=>{ 
-            return {
-                registration: aircraft.aircraftId,
-                model: aircraft.model,
-                airlineCode: aircraft.ownerAirlineCode,
-            }
-        })
+            const aircraftList:Aircraft[] = await prisma.$queryRaw`
+                SELECT \`aircraftId\`, \`model\`, \`ownerAirlineCode\` FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode} AND \`model\` = ${modelName};
+            `
+            return aircraftList.map((aircraft)=>{ 
+                return {
+                    registration: aircraft.aircraftId,
+                    model: aircraft.model,
+                    airlineCode: aircraft.ownerAirlineCode,
+                }
+            })
+        }catch(e){
+            console.error(e)
+            return error(500, {
+                status: false,
+                message: "Internal server error",
+                error: e
+            })
+        }
     },{
         detail:{
             tags: ['Autocomplete'],
@@ -470,41 +487,50 @@ export const autocompleteModule = new Elysia({
             }
         }
     })
-    .post("/aircraft/:airline/:size/:page", async({params}:{params:{airline:string, size:number, page:number}})=>{
+    .get("/aircraft/:airline/:size/:page", async({params}:{params:{airline:string, size:number, page:number}})=>{
         //html decode the search string
-        const {airline, size, page} = params
-        //check if airlineCode is valid
-        const airlineCode = decodeURIComponent(airline)
-        if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
-        if(!page || page < 1) return error(400, "invalid_page_number")
-        if(!size || size < 1) return error(400, "invalid_page_size")
-        
-        const offset = (page - 1) * size
-        const limit = size
+        try{
+            const {airline, size, page} = params
+            //check if airlineCode is valid
+            const airlineCode = decodeURIComponent(airline)
+            if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
+            if(!page || page < 1) return error(400, "invalid_page_number")
+            if(!size || size < 1) return error(400, "invalid_page_size")
+            
+            const offset = (page - 1) * size
+            const limit = size
 
-        const aircraftList:AircraftExtends[] = await prisma.$queryRaw`
-            SELECT \`aircraftId\`, \`model\`, \`ownerAirlineCode\`,
-            (SELECT COUNT(*) FROM flightOperate fo WHERE fo.aircraftId = ac.aircraftId) AS totalFlight 
-            FROM \`aircraft\` ac 
-            WHERE \`ownerAirlineCode\` = ${airlineCode}
-            LIMIT ${limit} OFFSET ${offset};
-        `
-        const totalCount: number = await prisma.$queryRaw`
-            SELECT COUNT(*) as count FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode};
-        `
-        return {
-            status: true,
-            data: sanitizeBigInt(aircraftList).map((aircraft:AircraftExtends)=>{
-                return {
-                    registration: aircraft.aircraftId,
-                    model: aircraft.model,
-                    airlineCode: aircraft.ownerAirlineCode,
-                    totalFlight: aircraft.totalFlight,
-                }
-            }),
-            totalCount: sanitizeBigInt(totalCount)[0].count,
-            page: page,
-            pageSize: size,
+            const aircraftList:AircraftExtends[] = await prisma.$queryRaw`
+                SELECT \`aircraftId\`, \`model\`, \`ownerAirlineCode\`,
+                (SELECT COUNT(*) FROM flightOperate fo WHERE fo.aircraftId = ac.aircraftId) AS totalFlight 
+                FROM \`aircraft\` ac 
+                WHERE \`ownerAirlineCode\` = ${airlineCode}
+                LIMIT ${limit} OFFSET ${offset};
+            `
+            const totalCount: number = await prisma.$queryRaw`
+                SELECT COUNT(*) as count FROM \`aircraft\` WHERE \`ownerAirlineCode\` = ${airlineCode};
+            `
+            return {
+                status: true,
+                data: sanitizeBigInt(aircraftList).map((aircraft:AircraftExtends)=>{
+                    return {
+                        registration: aircraft.aircraftId,
+                        model: aircraft.model,
+                        airlineCode: aircraft.ownerAirlineCode,
+                        totalFlight: aircraft.totalFlight,
+                    }
+                }),
+                totalCount: sanitizeBigInt(totalCount)[0].count,
+                page: page,
+                pageSize: size,
+            }
+        }catch(e){
+            console.error(e)
+            return error(500, {
+                status: false,
+                message: "Internal server error",
+                error: e
+            })
         }
     },{
         detail:{
@@ -537,6 +563,68 @@ export const autocompleteModule = new Elysia({
                                     },
                                     pageSize:{
                                         type:"number"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                400:{
+                    description: "Bad request",
+                }
+            }
+        }
+    })
+    .get("/seatmap/:airline/:model", async({params:{airline, model}}:{params:{airline:string, model:string}})=>{
+        //html decode the search string
+        try{
+            const airlineCode = decodeURIComponent(airline)
+            const modelName = decodeURIComponent(model)
+            //check if airlineCode is valid
+            if(!airlineCode || airlineCode.length != 2) return error(400, "invalid_airline_code")
+            //check if modelName is valid
+            if(!modelName) return error(400, "invalid_model_name")
+
+            const aircraftList:SeatmapInfo[] = await prisma.$queryRaw`
+                SELECT
+                \`seatMapId\`,
+                \`airlineCode\`,
+                \`aircraftModel\`,
+                \`version\`
+                FROM \`seatmap_info\` 
+                WHERE \`airlineCode\` = ${airlineCode} AND \`aircraftModel\` = ${modelName};
+
+            `
+            return aircraftList.map((aircraft)=>{ 
+                return {
+                    id: aircraft.seatMapId,
+                    version: aircraft.version
+                }
+            })
+        }catch(e){
+            console.error(e)
+            return error(500, {
+                status: false,
+                message: "Internal server error",
+                error: e
+            })
+        }
+    },{
+        detail:{
+            tags: ['Autocomplete'],
+            description: "This endpoint is used to get the autocomplete data for the flight search.",
+            responses:{
+                200:{
+                    description: "Successfully fetched autocomplete data",
+                    content:{
+                        "application/json": {
+                            schema: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        id: {type: "string"},
+                                        version: {type: "string"}
                                     }
                                 }
                             }

@@ -223,7 +223,7 @@ const PassengerInfo = () => {
                         {
                             
                             !(interactOpen === "seat") &&
-                            <SeatSelectionCard onInteract={()=>{ setInteractOpen("seat");  }} />
+                            <SeatSelectionCard setError={setIsSeatError} isError={isSeatError} onInteract={()=>{ setInteractOpen("seat");  }} />
                         }
                         <MealSelectionCard onInteract={()=>{  }} />
                         <div className='flex flex-col md:flex-row w-full justify-center md:justify-end gap-2'>

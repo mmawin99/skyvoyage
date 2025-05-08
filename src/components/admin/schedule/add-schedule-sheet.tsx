@@ -232,6 +232,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                   selected={selectedCarrier ?? null}
                   onSelect={setSelectedCarrier}
                   results={carriers}
+                  requestMethod="GET"
                   setResults={setCarriers}
                   loading={loadingCarrier}
                   setLoading={setLoadingCarrier}
@@ -256,6 +257,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                     title="Search for flight number (e.g. cnx, 123, or bkk,cnx)"
                     selected={selectedFlight ?? null}
                     onSelect={setSelectedFlight}
+                    requestMethod="GET"
                     results={carrierFlights}
                     setResults={setCarrierFlights}
                     loading={loadingFlight}
@@ -367,6 +369,8 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                       title="Aircraft Model"
                       selected={selectedModel ?? null}
                       onSelect={setSelectedModel}
+                      loadBefore={true}
+                      requestMethod="GET"
                       results={aircraftModels}
                       setResults={setAircraftModels}
                       loading={loadingModel}
@@ -392,6 +396,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                         title="Aircraft Registration"
                         selected={selectedRegistration ?? null}
                         onSelect={setSelectedRegistration}
+                        requestMethod="GET"
                         results={aircraftRegistrations}
                         setResults={setAircraftRegistrations}
                         loading={loadingRegistration}
@@ -422,6 +427,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                   title="Airlines Carrier"
                   selected={selectedCarrier ?? null}
                   onSelect={setSelectedCarrier}
+                  requestMethod="GET"
                   results={carriers}
                   setResults={setCarriers}
                   loading={loadingCarrier}
@@ -447,6 +453,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                     title="Search for flight number (e.g. cnx, 123, or bkk,cnx)"
                     selected={selectedFlight ?? null}
                     onSelect={setSelectedFlight}
+                    requestMethod="GET"
                     results={carrierFlights}
                     setResults={setCarrierFlights}
                     loading={loadingFlight}
@@ -572,6 +579,8 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                       title="Aircraft Model"
                       selected={selectedModel ?? null}
                       onSelect={setSelectedModel}
+                      requestMethod="GET"
+                      loadBefore={true}
                       results={aircraftModels}
                       setResults={setAircraftModels}
                       loading={loadingModel}
@@ -596,6 +605,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
 
           <div className="flex justify-end gap-2">
             <Button variant="outline"
+              className="cursor-pointer"
               disabled={
                 isLoading ||
                 !selectedCarrier ||
@@ -607,6 +617,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
               Cancel
             </Button>
             <Button
+              className="cursor-pointer"
               onClick={() => setNeedSubmit(true)}
               disabled={
                 isLoading ||

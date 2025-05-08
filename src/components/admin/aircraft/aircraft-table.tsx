@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AircraftRegistration } from '@/types/type'
-import { ArrowUpDown, Edit, Trash2 } from 'lucide-react'
-import React from 'react'
+import { Edit, Trash2 } from 'lucide-react'
+import React, { useState } from 'react'
 
 const AircraftTableWithEditor = ({
     aircraft,
@@ -13,8 +13,18 @@ const AircraftTableWithEditor = ({
     aircraft: AircraftRegistration[]
     isLoading: boolean
 }) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [sortColumn, setSortColumn] = useState<keyof AircraftRegistration>("registration")
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+
     const handleSort = (column: keyof AircraftRegistration) => {
-        console.log("Sorting by:", column)
+        if (sortColumn === column) {
+            // setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+        }else{
+            // setSortColumn(column)
+            // setSortDirection("asc")
+        }
     }
     return (
         <div className="rounded-md border w-full">
@@ -24,19 +34,19 @@ const AircraftTableWithEditor = ({
                     <TableHead>
                         <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("registration")}>
                         Registration
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                         </Button>
                     </TableHead>
                     <TableHead>
                         <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("airlineCode")}>
                         Airline
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                         </Button>
                     </TableHead>
                     <TableHead>
                         <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("model")}>
                         Model
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                         </Button>
                     </TableHead>
                     <TableHead>Total flight</TableHead>

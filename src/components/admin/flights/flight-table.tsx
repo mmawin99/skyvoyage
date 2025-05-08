@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, ArrowUpDown } from "lucide-react"
+import { Search } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { adminFlightListType } from "@/types/type"
 
@@ -19,16 +19,17 @@ export default function FlightTable({ flights, isLoading,
   searchQuery,
   setSearchQuery
 }: FlightScheduleTableProps) {
-    
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [sortColumn, setSortColumn] = useState<keyof adminFlightListType>("flightNum")
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
     const handleSort = (column: keyof adminFlightListType) => {
         if (sortColumn === column) {
-            setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+            // setSortDirection(sortDirection === "asc" ? "desc" : "asc")
         }else{
-            setSortColumn(column)
-            setSortDirection("asc")
+            // setSortColumn(column)
+            // setSortDirection("asc")
         }
     }
 
@@ -54,35 +55,38 @@ export default function FlightTable({ flights, isLoading,
               <TableHead className="w-[100px]">
                 <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("flightNum")}>
                   Flight #
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
                 <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("departAirportId")}>
                   Departure Airport
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
                 <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("utcDepartureTime")}>
                   Departure UTC time
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
                 <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("arriveAirportId")}>
                   Arrival Airport
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
                 <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("utcArrivalTime")}>
                   Arrival UTC time
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
                 Schedule Count
+              </TableHead>
+              <TableHead>
+                Manage
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -121,6 +125,10 @@ export default function FlightTable({ flights, isLoading,
                     <TableCell>({flight.arriveAirportId}) {flight.arriveAirportName}</TableCell>
                     <TableCell>{flight.utcArrivalTime}</TableCell>
                     <TableCell>{flight.flightCount}</TableCell>
+                    <TableCell className="flex gap-2">
+                      <Button variant="default" className="w-24 cursor-pointer" onClick={() => {}}>Edit</Button>
+                      <Button variant="destructive" className="w-24 cursor-pointer" onClick={() => {}}>Delete</Button>
+                    </TableCell>
                 </TableRow>
             )) : (
               <TableRow>

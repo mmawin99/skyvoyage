@@ -96,7 +96,8 @@ export default function SearchResults() {
                 toast.success("Refund successfully.")
                 fetchBooking()
             }else{
-                toast.error("Refund failed: " + data.message)
+                // console.log("Refund Data: ", data)
+                toast.error("Refund failed: " + (data.message || data.error))
             }
         }catch(error){
             toast.error("Error processing refund request: " + error)
@@ -133,7 +134,7 @@ export default function SearchResults() {
                 toast.success("Cancel successfully.")
                 fetchBooking()
             }else{
-                toast.error("Cancel failed: " + data.message)
+                toast.error("Cancel failed: " + (data.message || data.error))
             }
         }catch(error){
             toast.error("Error processing cancel request: " + error)

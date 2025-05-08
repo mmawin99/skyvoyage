@@ -206,6 +206,22 @@ export interface SubmitSchedule {
     //End for recurring flights
 }
 
+export interface SubmitFlight{
+    flightNum: string,
+    airlineCode: string,
+    departAirportId: string,
+    arriveAirportId: string,
+    departureTime: string,
+    arrivalTime: string
+}
+
+export interface SubmitAircraft{
+    aircraftId: string,
+    ownerAirlineCode: string,
+    model: string,
+    seatMapId: string,
+}
+
 export interface AuthUser {
     role: string,
     id?: string, // Optional, only for admin
@@ -477,4 +493,12 @@ export interface BookingRefundAndCancelType{
     refundId?: string
     bookingId: string
     amount: number
+    error?: string
 }
+
+export interface SeatMapVersionType{
+    id: string,
+    version: number,
+}
+
+export type adminPermission = "SUPER" | "DATA_ENTRY" | "USER"

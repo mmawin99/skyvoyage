@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 const Schedules = () => {
     return (
-        <AdminWrapper>
+        <AdminWrapper adminPermission={["SUPER",'DATA_ENTRY']}>
             <SidebarProvider>
                 <AdminSideBar />
                 <SidebarInset>

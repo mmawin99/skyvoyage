@@ -7,7 +7,7 @@ import AircraftAdmin from '@/components/admin/aircraft/aircraft-admin'
 const AircraftManagement = () => {
 
     return (
-        <AdminWrapper>
+        <AdminWrapper adminPermission={["SUPER",'DATA_ENTRY']}>
              <SidebarProvider>
                 <AdminSideBar />
                 <SidebarInset>

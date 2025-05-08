@@ -85,6 +85,12 @@ const PassengerFilling = ({
         };
         const passengerAge = calculateAge(dateOfBirth)
         const passengerAgeRange = selectedRoute?.passenger?.[currentPassenger]?.ageRange || "Adult"
+        //Check if passenger isn't exist in the list of passenger
+        if((selectedRoute?.passenger ?? []).filter(i=>i.passportNum == passportNum).length > 0){
+            setIsError(true)
+            setError("passenger_exist")
+            return;
+        }
         if(passengerAgeRange == "Adult" && passengerAge < 12){
             setIsError(true)
             setError("adult_age_error")
@@ -195,54 +201,54 @@ const PassengerFilling = ({
                         <CardDescription>Please fill in passenger details</CardDescription>
                     </div>
                     <div>
-                    <Popover open={loadPassengerOpen} onOpenChange={setLoadPassengerOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={loadPassengerOpen}>
-                                Load Exist Passenger
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent side='bottom' sideOffset={10} className="p-0">
-                            <Command>
-                            <CommandInput placeholder="Search passenger..." />
-                            <CommandList>
-                                <CommandEmpty>No passenger found.</CommandEmpty>
-                                <CommandGroup>
-                                    {
-                                        existPassenger.filter(i=>{
-                                            return i.ageRange == selectedRoute.passenger?.[currentPassenger].ageRange
-                                        }).map((passenger) => (
-                                            <CommandItem className=""
-                                            key={passenger.passportNum}
-                                            value={`${passenger.passportNum} ${passenger.firstName} ${passenger.lastName}`}
-                                            onSelect={() => {
-                                                setPassportNum(passenger.passportNum)
-                                                setpassportCountry(passenger.passportCountry)
-                                                setpassportExpiry(passenger.passportExpiry)
-                                                setFirstName(passenger.firstName)
-                                                setLastName(passenger.lastName)
-                                                setDateOfBirth(passenger.dateOfBirth)
-                                                setNationality(passenger.nationality)
-                                                setTitleName(passenger.title)
-                                                setLoadPassengerOpen(false)
-                                            }}
-                                            >
-                                            <Check
-                                                className={cn(
-                                                "mr-2 h-4 w-4",
-                                                passportNum === passenger.passportNum ? "opacity-100" : "opacity-0",
-                                                )}
-                                            />
-                                            {passenger.firstName} {passenger.lastName} ({passenger.passportNum})
-                                            </CommandItem>
-                                        ))
-                                    }
-                                </CommandGroup>
-                            </CommandList>
-                            </Command>
-                        </PopoverContent>
+                        <Popover open={loadPassengerOpen} onOpenChange={setLoadPassengerOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={loadPassengerOpen}>
+                                    Load Exist Passenger
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent side='bottom' sideOffset={10} className="p-0">
+                                <Command>
+                                <CommandInput placeholder="Search passenger..." />
+                                <CommandList>
+                                    <CommandEmpty>No passenger found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {
+                                            existPassenger.filter(i=>{
+                                                return i.ageRange == selectedRoute.passenger?.[currentPassenger].ageRange
+                                            }).map((passenger) => (
+                                                <CommandItem className=""
+                                                key={passenger.passportNum}
+                                                value={`${passenger.passportNum} ${passenger.firstName} ${passenger.lastName}`}
+                                                onSelect={() => {
+                                                    setPassportNum(passenger.passportNum)
+                                                    setpassportCountry(passenger.passportCountry)
+                                                    setpassportExpiry(passenger.passportExpiry)
+                                                    setFirstName(passenger.firstName)
+                                                    setLastName(passenger.lastName)
+                                                    setDateOfBirth(passenger.dateOfBirth)
+                                                    setNationality(passenger.nationality)
+                                                    setTitleName(passenger.title)
+                                                    setLoadPassengerOpen(false)
+                                                }}
+                                                >
+                                                <Check
+                                                    className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    passportNum === passenger.passportNum ? "opacity-100" : "opacity-0",
+                                                    )}
+                                                />
+                                                {passenger.firstName} {passenger.lastName} ({passenger.passportNum})
+                                                </CommandItem>
+                                            ))
+                                        }
+                                    </CommandGroup>
+                                </CommandList>
+                                </Command>
+                            </PopoverContent>
                         </Popover>
                     </div>
                 </CardHeader>
@@ -254,6 +260,7 @@ const PassengerFilling = ({
                             <AlertDescription>
                                 {
                                     error && 
+                                    error == "passenger_exist" ? "Passenger already exist in the booking." :
                                     error == "query_empty" ? "The system malfunctioned because the session was modified by a user without permission to modify it." :
                                     error == "information_empty" ? "Information can not be empty." :
                                     error == "invalid_dob" ? "Invalid Date of Birth." :

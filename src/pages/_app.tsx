@@ -52,7 +52,7 @@ export default function App({ Component, pageProps }: AppProps) {
                     <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
                         <BackendProvider>
                             <main className={`font-noto`}>
-                                <Toaster />
+                                <Toaster expand={true} visibleToasts={4} richColors />
                                 <Component {...pageProps} />
                             </main>
                         </BackendProvider>

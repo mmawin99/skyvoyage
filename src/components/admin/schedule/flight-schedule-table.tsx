@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, ArrowUpDown } from "lucide-react"
+import { Search } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
@@ -21,15 +21,17 @@ export default function FlightScheduleTable({ flights, isLoading,
   searchQuery,
   setSearchQuery
  }: FlightScheduleTableProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [sortColumn, setSortColumn] = useState<keyof ScheduleListAdmin>("flightNum")
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   console.log(flights)
   const handleSort = (column: keyof ScheduleListAdmin) => {
     if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+      // setSortDirection(sortDirection === "asc" ? "desc" : "asc")
     } else {
-      setSortColumn(column)
-      setSortDirection("asc")
+      // setSortColumn(column)
+      // setSortDirection("asc")
     }
   }
 
@@ -121,26 +123,26 @@ export default function FlightScheduleTable({ flights, isLoading,
               <TableHead className="w-[100px]">
                 <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("flightNum")}>
                   Flight #
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
                 <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("airlineName")}>
                   Carrier
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>Route</TableHead>
               <TableHead>
                 <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("departureTime")}>
                   Departure
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
                 <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("arrivalTime")}>
                   Arrival
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>Aircraft</TableHead>

@@ -720,8 +720,8 @@ export const flightModule = new Elysia({
                         AND fo.departureTime > UTC_TIMESTAMP() + INTERVAL 90 MINUTE
                         
                     GROUP BY fo.flightId
-                    HAVING COUNT(s.seatId) > COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID' OR b.status = 'UNPAID') THEN 1 ELSE NULL END) 
-                    AND COUNT(s.seatId) - COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID' OR b.status = 'UNPAID') THEN 1 ELSE NULL END) > ${passengerCount};
+                    HAVING COUNT(s.seatId) > COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID') THEN 1 ELSE NULL END) 
+                    AND COUNT(s.seatId) - COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID') THEN 1 ELSE NULL END) > ${passengerCount};
                 `
                 if(transitCount == 0){
                     return {
@@ -853,7 +853,7 @@ export const flightModule = new Elysia({
                             JOIN seat s ON t.seatId = s.seatId
                             JOIN booking b ON t.bookingId = b.bookingId
                             WHERE s.class = ${flightClass}
-                            AND (b.status = 'PAID' OR b.status = 'UNPAID')
+                            AND (b.status = 'PAID')
                             GROUP BY t.flightId
                         ) AS ticket_info1 ON fo1.flightId = ticket_info1.flightId
 
@@ -876,7 +876,7 @@ export const flightModule = new Elysia({
                             JOIN seat s ON t.seatId = s.seatId
                             JOIN booking b ON t.bookingId = b.bookingId
                             WHERE s.class = ${flightClass}
-                            AND (b.status = 'PAID' OR b.status = 'UNPAID')
+                            AND (b.status = 'PAID')
                             GROUP BY t.flightId
                         ) AS ticket_info2 ON fo2.flightId = ticket_info2.flightId
 
@@ -1083,18 +1083,16 @@ export const flightModule = new Elysia({
                         a1.airlineName AS airlineNameFrom,
                         t.flightNumTo,
                         t.airlineCodeTo,
-                        a2.airlineName AS airlineNameTo
+                        a2.airlineName AS airlineNameTo,
+                        f1.departAirportId AS departureAirportCode,
+                        f1.arriveAirportId AS transitAirportCode,
+                        f2.arriveAirportId AS arrivalAirportCode
                     FROM transit t
                     JOIN airline a1 ON a1.airlineCode = t.airlineCodeFrom
                     JOIN airline a2 ON a2.airlineCode = t.airlineCodeTo
+                    JOIN flight f1 ON f1.flightNum = t.flightNumFrom AND f1.airlineCode = t.airlineCodeFrom
+                    JOIN flight f2 ON f2.flightNum = t.flightNumTo AND f2.airlineCode = t.airlineCodeTo
                     WHERE t.airlineCodeFrom = ${airline} OR t.airlineCodeTo = ${airline}
-                    GROUP BY 
-                        t.flightNumFrom, 
-                        t.airlineCodeFrom, 
-                        a1.airlineName, 
-                        t.flightNumTo, 
-                        t.airlineCodeTo, 
-                        a2.airlineName
                     LIMIT ${limit} OFFSET ${offset};
                 `
                 totalCount = await prisma.$queryRaw`
@@ -1110,19 +1108,19 @@ export const flightModule = new Elysia({
                         a1.airlineName AS airlineNameFrom,
                         t.flightNumTo,
                         t.airlineCodeTo,
-                        a2.airlineName AS airlineNameTo
+                        a2.airlineName AS airlineNameTo,
+                        f1.departAirportId AS departureAirportCode,
+                        f1.arriveAirportId AS transitAirportCode,
+                        f2.arriveAirportId AS arrivalAirportCode
                     FROM transit t
                     JOIN airline a1 ON a1.airlineCode = t.airlineCodeFrom
                     JOIN airline a2 ON a2.airlineCode = t.airlineCodeTo
-                    WHERE (t.flightNumFrom LIKE ${wildcardValue} OR t.flightNumTo LIKE ${wildcardValue})
+                    JOIN flight f1 ON f1.flightNum = t.flightNumFrom AND f1.airlineCode = t.airlineCodeFrom
+                    JOIN flight f2 ON f2.flightNum = t.flightNumTo AND f2.airlineCode = t.airlineCodeTo
+                    WHERE (t.flightNumFrom LIKE ${wildcardValue} OR t.flightNumTo LIKE ${wildcardValue}
+                    OR f1.departAirportId LIKE ${wildcardValue} OR f2.arriveAirportId LIKE ${wildcardValue}
+                    OR f1.arriveAirportId LIKE ${wildcardValue} OR f2.departAirportId LIKE ${wildcardValue})
                     AND (t.airlineCodeFrom = ${airline} OR t.airlineCodeTo = ${airline})
-                    GROUP BY 
-                        t.flightNumFrom, 
-                        t.airlineCodeFrom, 
-                        a1.airlineName, 
-                        t.flightNumTo, 
-                        t.airlineCodeTo, 
-                        a2.airlineName
                     LIMIT ${limit} OFFSET ${offset};
                 `
                 totalCount = await prisma.$queryRaw`
@@ -1130,7 +1128,11 @@ export const flightModule = new Elysia({
                     FROM transit t
                     JOIN airline a1 ON a1.airlineCode = t.airlineCodeFrom
                     JOIN airline a2 ON a2.airlineCode = t.airlineCodeTo
-                    WHERE (t.flightNumFrom LIKE ${wildcardValue} OR t.flightNumTo LIKE ${wildcardValue} OR da.name LIKE ${wildcardValue} OR ta.name LIKE ${wildcardValue} OR aa.name LIKE ${wildcardValue})
+                    JOIN flight f1 ON f1.flightNum = t.flightNumFrom AND f1.airlineCode = t.airlineCodeFrom
+                    JOIN flight f2 ON f2.flightNum = t.flightNumTo AND f2.airlineCode = t.airlineCodeTo
+                    WHERE (t.flightNumFrom LIKE ${wildcardValue} OR t.flightNumTo LIKE ${wildcardValue}
+                    OR f1.departAirportId LIKE ${wildcardValue} OR f2.arriveAirportId LIKE ${wildcardValue}
+                    OR f1.arriveAirportId LIKE ${wildcardValue} OR f2.departAirportId LIKE ${wildcardValue})
                     AND (t.airlineCodeFrom = ${airline} OR t.airlineCodeTo = ${airline})
                 `
             }
@@ -1146,7 +1148,7 @@ export const flightModule = new Elysia({
             }
             return {
                 status: true,
-                message: 'Flight list retrieved successfully',
+                message: 'Transit list retrieved successfully',
                 totalCount: sanitizeBigInt(totalCount)[0].count,
                 page: page,
                 size: size,
@@ -1176,7 +1178,7 @@ export const flightModule = new Elysia({
             },
             responses: {
                 200: {
-                    description: 'Flight list retrieved successfully',
+                    description: 'Transit list retrieved successfully',
                     content: {
                         'application/json': {
                             schema: {

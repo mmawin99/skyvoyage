@@ -215,6 +215,13 @@ export interface SubmitFlight{
     arrivalTime: string
 }
 
+export interface SubmitTransit{
+    flightNumFrom: string,
+    flightNumTo: string,
+    airlineCodeFrom: string,
+    airlineCodeTo: string
+}
+
 export interface SubmitAircraft{
     aircraftId: string,
     ownerAirlineCode: string,
@@ -446,9 +453,9 @@ export interface adminTransitListType{
     airlineNameFrom: string,
     airlineCodeTo: string,
     airlineNameTo: string,
-    // departureAirportName: string,
-    // transitAirportName: string,
-    // arrivalAirportName: string,
+    departureAirportCode: string,
+    transitAirportCode: string,
+    arrivalAirportCode: string,
 }
 export interface loadExistPassengerType{
     passportNum: string,

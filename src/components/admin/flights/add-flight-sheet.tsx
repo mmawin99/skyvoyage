@@ -76,6 +76,12 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
             setErrorSubmit("")
             setIsError(false)
             onOpenChange(false)
+            //Reset the form
+            setFlightNum("")
+            setDepartureAirport(null)
+            setArrivalAirport(null)
+            setDepTime("00:00:00")
+            setArrTime("00:00:00")
         }, () => {
             setLoadingSubmit(false)
             setErrorSubmit("Failed to add flight")
@@ -202,15 +208,18 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
                             disabled={
                                 isLoading ||
                                 !carrier.name ||
-                                !carrier.code
+                                !carrier.code ||
+                                !flightNum ||
+                                !departureAirport ||
+                                !arrivalAirport
                             }>
                             {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Saving...
+                                Adding...
                             </>
                             ) : (
-                            "Save Schedule"
+                            "Add Flight"
                             )}
                         </Button>
                     </div>

@@ -51,6 +51,20 @@ export function ScrollableSelectPopover<T>({
         getSearchValue(item).toLowerCase().includes(searchTerm.toLowerCase())
     )
 
+    useEffect(()=>{
+        if (open) {
+            console.log("Searching for Trigger")
+            setSearchTerm("Trigger")
+            setPage(1)
+            setTimeout(()=>{
+                console.log("Resetting Search")
+                setSearchTerm("")
+                setPage(1)
+                scrollRef.current?.scrollTo(0, 0)
+            }, 2000);
+        }
+    }, [open])
+
     useEffect(() => {
         setVisibleData(filteredData.slice(0, page * pageSize))
     // eslint-disable-next-line react-hooks/exhaustive-deps

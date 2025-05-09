@@ -62,7 +62,7 @@ export default function AircraftAdmin() {
 
     const handleAddAircraft = async (newFlight: SubmitAircraft, onSuccess: ()=> void, onError: ()=> void) => {
         setIsLoading(true)
-        const response = await fetch(`${backendURL}/flight/addFlight`,{
+        const response = await fetch(`${backendURL}/flight/addAircraft`,{
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -74,12 +74,12 @@ export default function AircraftAdmin() {
             const data = await response.json()
             console.log(data)
             onSuccess()
-            toast.success("Flight added successfully")
+            toast.success("Aircraft added successfully")
             const currStatusAdded = newAircraftAdded
             setNewAircraftAdded(!currStatusAdded)
         }else{
-            toast.error("Failed to add flight, Check console for more details.")
-            console.error("Error adding flight:", await response.json())
+            toast.error("Failed to add Aircraft, Check console for more details.")
+            console.error("Error adding Aircraft:", await response.json())
             onError()
         }
         setIsLoading(false)
@@ -179,7 +179,7 @@ export default function AircraftAdmin() {
                 <AddAircraftSheet
                     open={isAddAircraftOpen}
                     onOpenChange={setIsAddAircraftOpen}
-                    onAddFlight={handleAddAircraft}
+                    onAddAircraft={handleAddAircraft}
                     isLoading={isLoading}
                     carrier={{
                         name: selectedCarrier?.name ?? "",

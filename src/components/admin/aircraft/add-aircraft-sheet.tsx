@@ -29,12 +29,12 @@ const aircraftModel = (airline:string):AircraftModel[]=>{
 interface AddAircraftSheetProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onAddFlight: (flight: SubmitAircraft, onSuccess: () => void, onError: () => void) => void
+    onAddAircraft: (flight: SubmitAircraft, onSuccess: () => void, onError: () => void) => void
     isLoading: boolean
     carrier: {name:string, code:string}
 }
 
-export default function AddAircraftSheet({ open, onOpenChange, onAddFlight, isLoading, carrier }: AddAircraftSheetProps) {
+export default function AddAircraftSheet({ open, onOpenChange, onAddAircraft, isLoading, carrier }: AddAircraftSheetProps) {
     const [scheduleType, setScheduleType] = useState("single")
     
     const { backend: backendURL }: BackendURLType = useBackendURL();
@@ -56,33 +56,29 @@ export default function AddAircraftSheet({ open, onOpenChange, onAddFlight, isLo
     const [needSubmit, setNeedSubmit] = useState<boolean>(false)
 
     const handleSubmit = useCallback(async ()=>{
-        // if(!departureAirport || !arrivalAirport) {
-        //     toast.error("Departure and Arrival airports are required")
-        //     return
-        // }
-        // if(!flightNum) {
-        //     toast.error("Flight number is required")
-        //     return
-        // }
-        // setLoadingSubmit(true)
-        // onAddFlight({
-        //     flightNum: flightNum,
-        //     departureTime: depTime,
-        //     arrivalTime: arrTime,
-        //     departAirportId: departureAirport.code,
-        //     arriveAirportId: arrivalAirport.code,
-        //     airlineCode: carrier.code
-        // }, () => {
-        //     setLoadingSubmit(false)
-        //     setErrorSubmit("")
-        //     setIsError(false)
-        //     onOpenChange(false)
-        // }, () => {
-        //     setLoadingSubmit(false)
-        //     setErrorSubmit("Failed to add flight")
-        //     setIsError(true)
-        // })
-    }, [])
+        if(!registration || !selectedModel?.model || !seatmapId) {
+            toast.error("Please fill in all the fields")
+            return
+        }
+        onAddAircraft({
+            aircraftId: registration,
+            model: selectedModel?.model,
+            seatMapId: seatmapId?.id,
+            ownerAirlineCode: carrier.code
+        },  () => {
+            setLoadingSubmit(false)
+            setErrorSubmit("")
+            setIsError(false)
+            onOpenChange(false)
+            setSelectedModel(null)
+            setSeatmapId(null)
+            setRegistration("")
+        }, () => {
+            setLoadingSubmit(false)
+            setErrorSubmit("Failed to add flight")
+            setIsError(true)
+        })
+    }, [carrier.code, onAddAircraft, onOpenChange, registration, seatmapId, selectedModel?.model])
     
     useEffect(() => {
         if(needSubmit){
@@ -212,10 +208,10 @@ export default function AddAircraftSheet({ open, onOpenChange, onAddFlight, isLo
                                 {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
+                                    Adding...
                                 </>
                                 ) : (
-                                "Save Schedule"
+                                "Add Aircraft"
                                 )}
                             </Button>
                         </div>

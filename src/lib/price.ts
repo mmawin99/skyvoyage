@@ -100,3 +100,14 @@ export function extractVAT(totalFare:number, vatRate = 0.07) {
     const base = totalFare - vat;
     return { basePrice: base, vatAmount: vat };
 }
+
+export function shortenNumber(num:number):string {
+    if (num >= 1e9) {
+        return (num / 1e9).toFixed(1) + " B";
+    } else if (num >= 1e6) {
+        return (num / 1e6).toFixed(1) + " M";
+    } else if (num >= 1e3) {
+        return (num / 1e3).toFixed(1) + " K";
+    }
+    return num.toString();
+}

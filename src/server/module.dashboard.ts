@@ -195,23 +195,23 @@ export const dashboardAdminModule = new Elysia({
         //8. Recent Flights
         const recentFlights:RecentFlight[] = await prisma.$queryRaw`
             SELECT
-            fo.airlineCode,
-            fo.flightNum,
-            IFNULL(SUM(t.ticketPrice + t.baggageAllowancePrice + t.mealPrice), 0) AS generatedRevenue,
-            f.departAirportId AS departAirportCode,
-            f.arriveAirportId AS arriveAirportCode,
-            fo.departureTime,
-            fo.arrivalTime,
-            CASE
-                WHEN NOW() < fo.departureTime THEN 'Upcoming'
-                WHEN NOW() >= fo.departureTime AND NOW() < fo.arrivalTime THEN 'In-flight'
-                WHEN NOW() >= fo.arrivalTime THEN 'Completed'
-                ELSE 'Unknown'
-            END AS status,
-            LEAST(
-                ABS(TIMESTAMPDIFF(SECOND, fo.departureTime, NOW())),
-                ABS(TIMESTAMPDIFF(SECOND, fo.arrivalTime, NOW()))
-            ) AS nearDiff
+                fo.airlineCode,
+                fo.flightNum,
+                IFNULL(SUM(t.ticketPrice + t.baggageAllowancePrice + t.mealPrice), 0) AS generatedRevenue,
+                f.departAirportId AS departAirportCode,
+                f.arriveAirportId AS arriveAirportCode,
+                fo.departureTime,
+                fo.arrivalTime,
+                CASE
+                    WHEN NOW() < fo.departureTime THEN 'Upcoming'
+                    WHEN NOW() >= fo.departureTime AND NOW() < fo.arrivalTime THEN 'In-flight'
+                    WHEN NOW() >= fo.arrivalTime THEN 'Completed'
+                    ELSE 'Unknown'
+                END AS status,
+                LEAST(
+                    ABS(TIMESTAMPDIFF(SECOND, fo.departureTime, NOW())),
+                    ABS(TIMESTAMPDIFF(SECOND, fo.arrivalTime, NOW()))
+                ) AS nearDiff
             FROM flightOperate fo
             JOIN flight f ON fo.flightNum = f.flightNum AND fo.airlineCode = f.airlineCode
             LEFT JOIN ticket t ON t.flightId = fo.flightId

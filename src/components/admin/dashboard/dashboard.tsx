@@ -28,6 +28,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import MetricsCard from "./metrics"
+import { shortenNumber } from './../../../lib/price';
 
 const refreshInterval = 60 // 1 minute in seconds
 
@@ -348,7 +349,7 @@ export default function AdminDashboard() {
                 color="revenue"
                 isError={isError}
                 desc={((data?.totalRevenue[0]?.percentChange ?? 0) > 0 ? "+" : "") + (data?.totalRevenue[0]?.percentChange || 0) + "% from previous period"}
-                value={`${data?.totalRevenue.reduce((sum, item) => sum + (item.totalRevenue || 0), 0).toLocaleString("en-US", { maximumFractionDigits: 1 }) || "0"}`}
+                value={shortenNumber(data?.totalRevenue.reduce((sum, item) => sum + (item.totalRevenue || 0), 0) || 0)}
                 loading={loading}
             />
             <MetricsCard

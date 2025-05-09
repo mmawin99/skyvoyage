@@ -3,7 +3,7 @@ import Elysia, { error } from "elysia";
 // import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
-import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitSchedule, UniversalFlightSchedule } from '@/types/type';
+import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitAircraft, SubmitSchedule, UniversalFlightSchedule } from '@/types/type';
 import { SubmitFlight } from '@/types/type';
 
 const prisma = new PrismaClient()
@@ -422,6 +422,34 @@ export const flightModule = new Elysia({
             })
         }
 
+    })
+    .post("/addAircraft", async({body}:{body:SubmitAircraft})=>{
+        try{
+            const { ownerAirlineCode, model, aircraftId, seatMapId } = body
+            
+            if (!ownerAirlineCode || !model || !aircraftId || !seatMapId) {
+                return error(400, {
+                    status: false,
+                    message: 'Missing required fields',
+                })
+            }
+            
+            await prisma.$executeRaw`
+                INSERT INTO aircraft (ownerAirlineCode, model, aircraftId, seatMapId) 
+                VALUES (${ownerAirlineCode}, ${model}, ${aircraftId}, ${seatMapId})
+            `
+            return {
+                status: true,
+                message: 'Aircraft added successfully',
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
     })
     .post("/schedule/:size/:kind/:page", async ({params,body}:{params:{ query: string, size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, body:{query:string}})=>{
         const timeStart = Date.now()

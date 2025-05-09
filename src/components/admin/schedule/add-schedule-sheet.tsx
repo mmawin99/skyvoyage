@@ -369,7 +369,9 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                       title="Aircraft Model"
                       selected={selectedModel ?? null}
                       onSelect={setSelectedModel}
+                      dependent={selectedCarrier?.code}
                       loadBefore={true}
+                      enableSearch={false}
                       requestMethod="GET"
                       results={aircraftModels}
                       setResults={setAircraftModels}
@@ -580,7 +582,9 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                       selected={selectedModel ?? null}
                       onSelect={setSelectedModel}
                       requestMethod="GET"
+                      dependent={selectedCarrier?.code}
                       loadBefore={true}
+                      enableSearch={false}
                       results={aircraftModels}
                       setResults={setAircraftModels}
                       loading={loadingModel}

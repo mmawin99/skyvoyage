@@ -113,18 +113,18 @@ export function DebouncedSearch<T>({
       <PopoverContent className="w-full p-0" align="start">
         <Command className="md:min-w-[450px]" shouldFilter={false}>
           <div className="flex items-center border-b px-3 w-full">
-            {!loadBefore || (loadBefore && enableSearch) && <CommandInput
+            {!loadBefore || (loadBefore && enableSearch) ? <CommandInput
               placeholder={placeholder}
               value={searchText}
               onValueChange={debouncedSearch}
               className="md:min-w-[370px]"
-            />}
+            /> : null}
             {
-              loadBefore && !enableSearch && (
+              (loadBefore && !enableSearch) ? (
                 <div className="flex flex-row items-center gap-2 py-1.5 text-sm text-muted-foreground">
                   <span className="pl-4">Select value below</span>
                 </div>
-              )
+              ) : null
             }
             {searchText && (
               <Button

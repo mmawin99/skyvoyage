@@ -279,4 +279,4 @@ export const adminQueryModule = new Elysia({
         error: err instanceof Error ? err.message : "Unknown error occurred"
       });
     }
-  });
+})

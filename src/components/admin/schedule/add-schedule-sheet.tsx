@@ -18,6 +18,7 @@ import { DebouncedSearch } from "../../reusable/search"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 // import { Card, CardContent, CardHeader } from "../ui/card"
 import { Alert, AlertDescription, AlertTitle } from "../../ui/alert"
+import { toast } from "sonner"
 
 interface AddScheduleSheetProps {
   open: boolean
@@ -91,6 +92,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
     let submission: SubmitSchedule;
     if (scheduleType === "single") {
       if(!depDate || !arrDate) {
+        toast.error("Please select departure and arrival date")
         return
       }
       console.log("Single flight schedule")
@@ -121,6 +123,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
 
     } else {
       if(!startDate || !endDate) {
+        toast.error("Please select start and end date")
         return
       }
       // const startDateTime = new Date(startDate!)
@@ -611,11 +614,11 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
             <Button variant="outline"
               className="cursor-pointer"
               disabled={
-                isLoading ||
-                !selectedCarrier ||
-                !selectedFlight ||
-                !selectedModel ||
-                (scheduleType === "single" && !selectedRegistration)
+                isLoading // ||
+                // !selectedCarrier ||
+                // !selectedFlight ||
+                // !selectedModel ||
+                // (scheduleType === "single" && !selectedRegistration)
               }
               onClick={() => onOpenChange(false)}>
               Cancel

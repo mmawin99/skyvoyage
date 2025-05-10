@@ -30,7 +30,6 @@ interface AddFlightSheetProps {
 }
 
 export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoading, carrier }: AddFlightSheetProps) {
-    const [scheduleType, setScheduleType] = useState("single")
     
     const { backend: backendURL }: BackendURLType = useBackendURL();
 
@@ -46,8 +45,7 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
     const [depTime, setDepTime] = useState("00:00:00")
     const [arrTime, setArrTime] = useState("00:00:00")
 
-    // For recurring schedules
-  
+
     const [loadingSubmit, setLoadingSubmit] = useState<boolean>(false)
     const [errorSubmit, setErrorSubmit] = useState<string>("")
     const [isError, setIsError] = useState<boolean>(false)
@@ -195,9 +193,9 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
                         <Button variant="outline"
                             className="cursor-pointer"
                             disabled={
-                                isLoading ||
-                                !carrier.name ||
-                                !carrier.code
+                                 isLoading // ||
+                                // !carrier.name ||
+                                // !carrier.code
                             }
                             onClick={() => onOpenChange(false)}>
                             Cancel

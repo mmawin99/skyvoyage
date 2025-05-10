@@ -1,0 +1,102 @@
+[
+    {
+        "name": "VOML",
+        "price": 15,
+        "description": "Vegetarian oriental meal prepared in Chinese style. "
+    },
+    {
+        "name": "BBML",
+        "price": 10,
+        "description": "Baby meal for infant aged at more than 6 months old."
+    },
+    {
+        "name": "BLML",
+        "price": 5,
+        "description": "Soft meal. Recommended passengers with stomach or intestinal problems"
+    },
+    {
+        "name": "CHML",
+        "price": 5,
+        "description": "Child meal for children aged 2 years and older."
+    },
+    {
+        "name": "DBML",
+        "price": 15,
+        "description": "Diabetic meal suitable for both non-insulin and insulin dependent diabetics."
+    },
+    {
+        "name": "FPML",
+        "price": 10,
+        "description": "Fruit platter meal prepared with fresh fruits or dried fruits."
+    },
+    {
+        "name": "GFML",
+        "price": 10,
+        "description": "Gluten free diet, avoids gluten, which is found in wheat, rye, barley and oats."
+    },
+    {
+        "name": "HNML",
+        "price": 10,
+        "description": "Hindu meal containing lamb, fish or other meats. No beef, no veal and no pork. Non-Vegetarian"
+    },
+    {
+        "name": "AVML",
+        "price": 5,
+        "description": "Indian vegetarian meal"
+    },
+    {
+        "name": "KSML",
+        "price": 5,
+        "description": "Kosher meal conforms to the requirements of Jewish dietary laws."
+    },
+    {
+        "name": "LCML",
+        "price": 0,
+        "description": "Low calorie diet meal"
+    },
+    {
+        "name": "LFML",
+        "price": 0,
+        "description": "Low fat / cholesterol meal"
+    },
+    {
+        "name": "LSML",
+        "price": 0,
+        "description": "Low salt meal with minimum sodium content."
+    },
+    {
+        "name": "MOML",
+        "price": 10,
+        "description": "Muslim meal, contains no pork, bacon, ham or alcohol. Cooked according to Halal rules. "
+    },
+    {
+        "name": "NLML",
+        "price": 10,
+        "description": "Low lactose meal. Omission of all foods containing milk, lactose, milk solids, whey, curd, and skimmed milk."
+    },
+    {
+        "name": "SFML",
+        "price": 20,
+        "description": "Seafood meal."
+    },
+    {
+        "name": "RVML",
+        "price": 10,
+        "description": "Raw vegetarian meal is a mixture of fresh vegetable and fruits."
+    },
+    {
+        "name": "VGML",
+        "price": 10,
+        "description": "Strict European vegetarian. No animal products of any type."
+    },
+    {
+        "name": "VJML",
+        "price": 10,
+        "description": "Vegetarian Jain meal / strict Indian vegetarian. Based on Jain customs."
+    },
+    {
+        "name": "VLML",
+        "price": 10,
+        "description": "Non-strict vegetarian prepared with dairy products (eggs, cheese, fruits, vegetables, grains and nuts)"
+    }
+]

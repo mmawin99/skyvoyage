@@ -92,9 +92,9 @@ export default function TransitAdmin() {
             const currStatus = newTransitAdded
             setNewTransitAdded(!currStatus)
         }else{
-        toast.error("Failed to add transit, Check console for more details.")
-        console.error("Error adding transit:", await response.json())
-        onError()
+            toast.error("Failed to add transit, Check console for more details.")
+            console.error("Error adding transit:", await response.json())
+            onError()
         }
         setIsLoading(false)
     }
@@ -121,11 +121,11 @@ export default function TransitAdmin() {
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Transit Management</h1>
                 <Button onClick={() => { 
-                if((selectedCarrier?.name ?? "") == ""){
-                    toast.error("Please select an airline first.")
-                }else{
+                // if((selectedCarrier?.name ?? "") == ""){
+                    // toast.error("Please select an airline first.")
+                // }else{
                     setIsAddTransitOpen(true)
-                }
+                // }
                 }} className="gap-1">
                 <PlusCircle className="h-4 w-4" />
                     Add Transit

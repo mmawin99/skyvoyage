@@ -433,6 +433,14 @@ export interface ticketBaggageUpdatorType {
     price: number
 }
 
+export interface ticketMealUpdatorType {
+    passengerIndex: number,
+    ticketIndex: number,
+    mealIndex: number,
+    mealLabel: string,
+    price: number
+}
+
 export interface adminFlightListType {
     flightNum: string,
     airlineCode: string,

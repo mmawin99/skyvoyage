@@ -180,7 +180,7 @@ export default function SearchResults() {
                     {
                         !isLoading && bookingList.length > 0 ? bookingList.map((booking, index) => {
                             return (
-                            <BookingDetails isAdmin={false} key={"booking-" + index} 
+                            <BookingDetails defaultOpen={index === 0} isAdmin={false} key={"booking-" + index} 
                                 item={booking} onRefund={handleRefund} onCancel={handleCancel}
                             />
                             )

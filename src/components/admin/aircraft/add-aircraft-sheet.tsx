@@ -65,7 +65,7 @@ export default function AddAircraftSheet({ open, onOpenChange, onAddAircraft, is
             model: selectedModel?.model,
             seatMapId: seatmapId?.id,
             ownerAirlineCode: carrier.code
-        },  () => {
+        }, () => {
             setLoadingSubmit(false)
             setErrorSubmit("")
             setIsError(false)
@@ -184,12 +184,12 @@ export default function AddAircraftSheet({ open, onOpenChange, onAddAircraft, is
                             <Button variant="outline"
                                 className="cursor-pointer"
                                 disabled={
-                                    isLoading ||
-                                    !carrier.name ||
-                                    !carrier.code ||
-                                    !registration ||
-                                    !selectedModel?.model ||
-                                    !seatmapId
+                                    isLoading // ||
+                                    // !carrier.name ||
+                                    // !carrier.code ||
+                                    // !registration ||
+                                    // !selectedModel?.model ||
+                                    // !seatmapId
                                 }
                                 onClick={() => onOpenChange(false)}>
                                 Cancel

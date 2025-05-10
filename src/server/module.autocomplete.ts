@@ -240,8 +240,7 @@ export const autocompleteModule = new Elysia({
                 FROM flight
                 WHERE airlineCode = ${airlineCode}
                 AND (
-                    (departAirportId = ${part1} AND arriveAirportId = ${part2}) OR
-                    (departAirportId = ${part2} AND arriveAirportId = ${part1})
+                    (departAirportId = ${part1} AND arriveAirportId = ${part2})
                 )
                 LIMIT 30;
             `

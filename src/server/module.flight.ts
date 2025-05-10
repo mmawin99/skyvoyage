@@ -3,7 +3,7 @@ import Elysia, { error } from "elysia";
 // import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
-import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitAircraft, SubmitSchedule, UniversalFlightSchedule } from '@/types/type';
+import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitAircraft, SubmitSchedule, SubmitTransit, UniversalFlightSchedule } from '@/types/type';
 import { SubmitFlight } from '@/types/type';
 
 const prisma = new PrismaClient()
@@ -441,6 +441,32 @@ export const flightModule = new Elysia({
             return {
                 status: true,
                 message: 'Aircraft added successfully',
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
+    })
+    .post("/addTransit", async({body}:{body:SubmitTransit})=>{
+        try{
+            const { flightNumFrom, flightNumTo, airlineCodeFrom, airlineCodeTo } = body
+            if (!flightNumFrom || !flightNumTo || !airlineCodeFrom || !airlineCodeTo) {
+                return error(400, {
+                    status: false,
+                    message: 'Missing required fields',
+                })
+            }
+            await prisma.$executeRaw`
+                INSERT INTO transit (flightNumFrom, flightNumTo, airlineCodeFrom, airlineCodeTo) 
+                VALUES (${flightNumFrom}, ${flightNumTo}, ${airlineCodeFrom}, ${airlineCodeTo})
+            `
+            return {
+                status: true,
+                message: 'Transit added successfully',
             }
         }catch(err){
             console.error(err)

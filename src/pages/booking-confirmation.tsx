@@ -2,7 +2,7 @@
 import { AppFooter } from '@/components/footer'
 import { Navbar } from '@/components/navbar'
 import { Button } from '@/components/ui/button'
-import { CabinClassType, PassengerTicket, searchSelectedRoutes, SeatmapAPI, SeatmapFetch, ticketBaggageUpdatorType, UniversalFlightSchedule } from '@/types/type'
+import { CabinClassType, PassengerFillOut, PassengerTicket, searchSelectedRoutes, SeatmapAPI, SeatmapFetch, ticketBaggageUpdatorType, ticketMealUpdatorType, UniversalFlightSchedule } from '@/types/type'
 import { useSessionStorage } from '@uidotdev/usehooks'
 import { ArrowLeft, Link, SearchX, TriangleAlert } from 'lucide-react'
 import { NextRouter, useRouter } from 'next/router'
@@ -10,7 +10,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import BookingSummary from '@/components/user/booking/booking-summary'
 import { useSession } from 'next-auth/react'
 import PolicyDialogs from '@/components/user/booking-passenger/policy'
-import MealSelectionCard from '@/components/user/booking-additional/mealSelection'
+import {MealAdditionForm, MealSelectionCard} from '@/components/user/booking-additional/mealSelection'
 import { BaggageAdditionCard, BaggageAdditionForm } from '@/components/user/booking-additional/BaggageSelection'
 import { SeatSelectionCard, SeatSelectionForm } from '@/components/user/booking-additional/seatSelection';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -22,6 +22,7 @@ const PassengerInfo = () => {
     const [policyOpen, setPolicyOpen] = useState<PolicyDialogsType>(null)
     const [interactOpen, setInteractOpen] = useState<InteractCardType>(null)
     const [baggageDefault,setBaggageDefault] = useState<ticketBaggageUpdatorType[]>([]);
+    const [mealDefault, setMealDefault] = useState<ticketMealUpdatorType[]>([]);
     const [selectedRoute, setSelectedRoute] = useSessionStorage<searchSelectedRoutes>("selectedRoute", {
         departRoute: [],
         selectedDepartRoute: {
@@ -63,6 +64,10 @@ const PassengerInfo = () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             setIsReady(false)
             setSeatErrorMessage("");
+            let isMarkSeatErrorBefore = false;
+            if(isSeatError){
+                isMarkSeatErrorBefore = true;
+            }
             setIsSeatError(false)
             const isAllAdultAndChildren = selectedRoute.passenger?.every((passenger) => {
                 if (passenger.ageRange === "Adult" || passenger.ageRange === "Children") {
@@ -76,14 +81,58 @@ const PassengerInfo = () => {
             });
             console.log("isAllAdultAndChildren", isAllAdultAndChildren, selectedRoute);
             if (!isAllAdultAndChildren) {
-                setIsSeatError(true);
-                setSeatErrorMessage("Please select a seat for all adult and children passengers.");
+                if(isMarkSeatErrorBefore){
+                    setIsSeatError(false);
+                    console.log("seatTemp", seatMapTemporary);
+                    // setSeatErrorMessage(");
+                    // Step 1: Create a flightId => seats queue map
+                    const availableSeatsMap: Record<string, { seatId: string; price: number }[]> = {};
+
+                    seatMapTemporary.forEach((seatmap) => {
+                    availableSeatsMap[seatmap.flightId] = seatmap.data
+                        .filter((seat) => seat.seatStatus === "available")
+                        .map((seat) => ({
+                        seatId: seat.seatId,
+                        price: seat.price,
+                        }));
+                    });
+
+                    // Step 2: Assign seats one-by-one for each ticket per passenger
+                    const updatedPassenger:PassengerFillOut[] = (selectedRoute.passenger ?? []).map((passenger) => {
+                        if (passenger.ageRange === "Adult" || passenger.ageRange === "Children") {
+                            const updatedTickets = passenger.ticket.map((ticket) => {
+                            const available = availableSeatsMap[ticket.fid];
+                            if (available && available.length > 0) {
+                                const seat = available.shift(); // Take the first available seat
+                                return {
+                                ...ticket,
+                                seatId: seat?.seatId ?? null,
+                                seatPrice: seat?.price ?? 0,
+                                };
+                            }
+                            return ticket;
+                            });
+
+                            return { ...passenger, ticket: updatedTickets };
+                        }
+                        return passenger;
+                    });
+                    setSelectedRoute((prev) => ({
+                        ...prev,
+                        passenger: updatedPassenger as PassengerFillOut[] | undefined,
+                    }));
+                    console.log("We force select seat for all adult and children passenger, you can go to payment now.");
+                    router.push("/payment");
+                }else{
+                    setIsSeatError(true);
+                    setSeatErrorMessage("Please select a seat for all adult and children passengers, or click continue again with automatic seat selection.");
+                }
             } else {
                 router.push("/payment");
             }
         }
 
-    }, [isReady, selectedRoute, router])
+    }, [isReady, selectedRoute, router, isSeatError, seatMapTemporary, setSelectedRoute])
     console.log(totalAddtionalServicesFare)
     const updateMultiplePassengerTickets = (
         updates: {
@@ -217,6 +266,17 @@ const PassengerInfo = () => {
                             )
                         }
                         {
+                            interactOpen === "meal" && (
+                                <MealAdditionForm
+                                    onClose={()=>{ setInteractOpen(null); }}
+                                    selectedRoute={selectedRoute}
+                                    updatePassenger={updateMultiplePassengerTickets}
+                                    defaultValue={mealDefault}
+                                    setDefaultValue={setMealDefault}
+                                />
+                            )
+                        }
+                        {
                             !(interactOpen === "baggage") &&
                             <BaggageAdditionCard onInteract={()=>{ setInteractOpen("baggage") }} />
                         }
@@ -225,7 +285,10 @@ const PassengerInfo = () => {
                             !(interactOpen === "seat") &&
                             <SeatSelectionCard setError={setIsSeatError} isError={isSeatError} onInteract={()=>{ setInteractOpen("seat");  }} />
                         }
-                        <MealSelectionCard onInteract={()=>{  }} />
+                        {
+                            !(interactOpen === "meal") &&
+                            <MealSelectionCard onInteract={()=>{ setInteractOpen("meal") }} />
+                        }
                         <div className='flex flex-col md:flex-row w-full justify-center md:justify-end gap-2'>
                             <Button variant={"ghost"} onClick={()=>{ setPolicyOpen("foreign") }} className='flex flex-row gap-2 border-2 border-slate-300 rounded-full cursor-pointer'><Link /><span>Foreign Items</span></Button>
                             <Button variant={"ghost"} onClick={()=>{ setPolicyOpen("purchase") }} className='flex flex-row gap-2 border-2 border-slate-300 rounded-full cursor-pointer'><Link /><span>Purchase Policy</span></Button>

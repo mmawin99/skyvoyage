@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search } from "lucide-react"
+import { Edit, Search, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { ScheduleListAdmin } from "@/types/type"
@@ -147,6 +147,7 @@ export default function FlightScheduleTable({ flights, isLoading,
               </TableHead>
               <TableHead>Aircraft</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Manage</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -198,12 +199,22 @@ export default function FlightScheduleTable({ flights, isLoading,
                     </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(getFlightStatus(flight))}</TableCell>
+                  <TableCell>
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  No flights found.
+                <TableCell colSpan={8} className="h-24 text-center">
+                  No schedules found.
                 </TableCell>
               </TableRow>
             )}

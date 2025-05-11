@@ -6,25 +6,25 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Edit, Search, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { adminFlightListType } from "@/types/type"
+import { AirlineAPIType } from "@/types/type"
 
-interface FlightScheduleTableProps {
-  flights: adminFlightListType[]
+interface AirlineTableProps {
+  airlines: AirlineAPIType[]
   isLoading: boolean
   searchQuery: string
   setSearchQuery: (query: string) => void
 }
 
-export default function FlightTable({ flights, isLoading,
+export default function AirlineTable({ airlines, isLoading,
   searchQuery,
   setSearchQuery
-}: FlightScheduleTableProps) {
+}: AirlineTableProps) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [sortColumn, setSortColumn] = useState<keyof adminFlightListType>("flightNum")
+    const [sortColumn, setSortColumn] = useState<keyof AirlineAPIType>("airlineCode")
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
-    const handleSort = (column: keyof adminFlightListType) => {
+    const handleSort = (column: keyof AirlineAPIType) => {
         if (sortColumn === column) {
             // setSortDirection(sortDirection === "asc" ? "desc" : "asc")
         }else{
@@ -53,37 +53,34 @@ export default function FlightTable({ flights, isLoading,
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px]">
-                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("flightNum")}>
-                  Flight #
+                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("airlineCode")}>
+                  Airline Code
                   {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("departAirportId")}>
-                  Departure Airport
+                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("airlineName")}>
+                  Airline Name
                   {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("utcDepartureTime")}>
-                  Departure UTC time
+                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("numAssociateFlight")}>
+                  Total Flights
                   {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("arriveAirportId")}>
-                  Arrival Airport
+                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("numAssociateSchedule")}>
+                  Total Schedule
                   {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("utcArrivalTime")}>
-                  Arrival UTC time
+                <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => handleSort("numAssociateAircraft")}>
+                  Total Aircraft
                   {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
                 </Button>
-              </TableHead>
-              <TableHead>
-                Schedule Count
               </TableHead>
               <TableHead>
                 Manage
@@ -112,19 +109,25 @@ export default function FlightTable({ flights, isLoading,
                   <TableCell>
                     <Skeleton className="h-6 w-40" />
                   </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-6 w-24" />
-                  </TableCell>
                 </TableRow>
               ))
-            ) : flights.length != 0 ? flights.map((flight, index)=>( 
-                <TableRow key={index+ "_" +flight.flightNum + "_" + flight.airlineCode + "_flight-table-entries"} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell>{flight.airlineCode} {flight.flightNum}</TableCell>
-                    <TableCell>({flight.departAirportId}) {flight.departAirportName}</TableCell>
-                    <TableCell>{flight.utcDepartureTime}</TableCell>
-                    <TableCell>({flight.arriveAirportId}) {flight.arriveAirportName}</TableCell>
-                    <TableCell>{flight.utcArrivalTime}</TableCell>
-                    <TableCell>{flight.flightCount}</TableCell>
+            ) : airlines.length != 0 ? airlines.map((airline, index)=>( 
+                <TableRow key={index+ "_" + airline.airlineCode + "_" + airline.airlineName + "_airline-table-entries"} className="cursor-pointer hover:bg-muted/50">
+                    <TableCell>
+                      {airline.airlineCode}
+                    </TableCell>
+                    <TableCell>
+                      {airline.airlineName}
+                    </TableCell>
+                    <TableCell>
+                      {airline.numAssociateFlight}
+                    </TableCell>
+                    <TableCell>
+                      {airline.numAssociateSchedule}
+                    </TableCell>
+                    <TableCell>
+                      {airline.numAssociateAircraft}
+                    </TableCell>
                     <TableCell className="flex gap-2">
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4 mr-1" />
@@ -138,8 +141,8 @@ export default function FlightTable({ flights, isLoading,
                 </TableRow>
             )) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  No flights found.
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No airline found.
                 </TableCell>
               </TableRow>
             )}

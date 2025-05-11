@@ -2,24 +2,24 @@ import { AdminHeader, AdminSideBar } from '@/components/admin-side-bar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AdminWrapper } from '@/components/adminWrapper'
 import React from 'react'
-import AircraftAdmin from '@/components/admin/aircraft/aircraft-admin'
 import { Metadata } from 'next'
+import AirlineAdmin from '@/components/admin/airline/airline-admin'
 export const metadata: Metadata = {
-    title: "Aircraft",
-    description: "Manage Aircraft with ease",
+    title: "Airline",
+    description: "Manage Airline with ease",
 }
-const AircraftManagement = () => {
+const AirlineManagement = () => {
 
     return (
         <AdminWrapper adminPermission={["SUPER",'DATA_ENTRY']}>
             <SidebarProvider>
                 <AdminSideBar />
                 <SidebarInset>
-                    <AdminHeader title="Aircraft Management" link="/admin/aircraft" />
+                    <AdminHeader title="Airline Management" link="/admin/airlines" />
                     <div className="flex flex-1 flex-col">
                         <div className="@container/main flex flex-1 flex-col gap-2">
                             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4">
-                                <AircraftAdmin /> 
+                                <AirlineAdmin /> 
                             </div>
                         </div>
                     </div>
@@ -29,4 +29,4 @@ const AircraftManagement = () => {
     )
 }
 
-export default AircraftManagement
+export default AirlineManagement

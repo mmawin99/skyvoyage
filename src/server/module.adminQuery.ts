@@ -1,8 +1,8 @@
 import Elysia, { error } from "elysia";
 
 import { PrismaClient } from "../../prisma-client";
-import { BookingStatus, UserDetailType, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes, UserDetailAPIType, AdminDetailAPIType } from "@/types/type";
-import { createUniversalFlightSchedule, stripePayment as stripe } from "@/server/lib";
+import { BookingStatus, UserDetailType, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes, UserDetailAPIType, AdminDetailAPIType, AirportAPIType, AirlineAPIType } from "@/types/type";
+import { createUniversalFlightSchedule, sanitizeBigInt, stripePayment as stripe } from "@/server/lib";
 import {BookingRow, FlightOperationRow, PassengerRow, TicketRow} from "@/types/booking"
 import Stripe from "stripe";
 
@@ -433,4 +433,208 @@ export const adminQueryModule = new Elysia({
         });
     }
 
+})
+
+.get("/airport/:size/:page", async ({params, query}:{params:{
+    size: number,
+    page: number
+}, query:{query:string}}) => {
+    try {
+        const { size, page } = params;
+        const offset = (page - 1) * size;
+        const searchQuery = query.query || "";
+        if(searchQuery == ""){
+                const airports:AirportAPIType[] = await prisma.$queryRaw`
+                SELECT 
+                    airportCode,
+                    \`name\`,
+                    country,
+                    city,
+                    timezone,
+                    latitude,
+                    longitude,
+                    altitude,
+                   (SELECT COUNT(*) FROM flight WHERE flight.departAirportId = airportCode OR flight.arriveAirportId = airportCode) AS numAssociateFlight,
+                    (SELECT COUNT(*) FROM airline WHERE airline.airlineCode IN (SELECT DISTINCT airlineCode FROM flight f2 WHERE f2.departAirportId = airportCode OR f2.arriveAirportId = airportCode)) AS numAssociateAirline
+                FROM airport
+                LIMIT ${size} OFFSET ${offset}
+            `;
+            if (!airports || airports.length === 0) {
+                return {
+                    status: true,
+                    data: [],
+                    pagination: {
+                        total: 0,
+                        page,
+                        size
+                    }
+                };
+            }else{
+                let totalCount: { count: number }[] = [];
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) as count FROM airport
+                `;
+                const total = Number(totalCount[0]?.count || 0);
+                return {
+                    status: true,
+                    data: sanitizeBigInt(airports),
+                    pagination: {
+                        total,
+                        page,
+                        size
+                    }
+                };
+            }
+        }else{
+            const wildcard = `%${searchQuery}%`;
+            const airports:AirportAPIType[] = await prisma.$queryRaw`
+                SELECT 
+                    airportCode,
+                    \`name\`,
+                    country,
+                    city,
+                    timezone,
+                    latitude,
+                    longitude,
+                    altitude,
+                    (SELECT COUNT(*) FROM flight WHERE flight.departAirportId = airportCode OR flight.arriveAirportId = airportCode) AS numAssociateFlight,
+                    (SELECT COUNT(*) FROM airline WHERE airline.airlineCode IN (SELECT DISTINCT airlineCode FROM flight f2 WHERE f2.departAirportId = airportCode OR f2.arriveAirportId = airportCode)) AS numAssociateAirline
+                FROM airport
+                WHERE airportCode LIKE ${wildcard} OR 
+                      \`name\` LIKE ${wildcard} OR country LIKE ${wildcard} OR city LIKE ${wildcard}
+                LIMIT ${size} OFFSET ${offset}
+            `;
+            if (!airports || airports.length === 0) {
+                return {
+                    status: true,
+                    data: [],
+                    pagination: {
+                        total: 0,
+                        page,
+                        size
+                    }
+                };
+            }else{
+                let totalCount: { count: number }[] = [];
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) as count FROM airport
+                    WHERE airportCode LIKE ${wildcard} OR 
+                    \`name\` LIKE ${wildcard} OR country LIKE ${wildcard} OR city LIKE ${wildcard}
+                `;
+                const total = Number(totalCount[0]?.count || 0);
+                return {
+                    status: true,
+                    data: sanitizeBigInt(airports),
+                    pagination: {
+                        total,
+                        page,
+                        size
+                    }
+                };
+            }
+        }
+
+    } catch (err) {
+        console.error("Error fetching airports:", err);
+        return error(500, {
+            status: false,
+            error: err instanceof Error ? err.message : "Unknown error occurred"
+        });
+    }
+})
+.get("/airline/:size/:page", async ({params, query}:{params:{
+    size: number,
+    page: number
+}, query:{query:string}}) => {
+    try {
+        const { size, page } = params;
+        const offset = (page - 1) * size;
+        const searchQuery = query.query || "";
+        if(searchQuery == ""){
+            const airlines:AirlineAPIType[] = await prisma.$queryRaw`
+                SELECT 
+                    airlineCode,
+                    airlineName,
+                    (SELECT COUNT(*) FROM flight WHERE flight.airlineCode = airlineCode) AS numAssociateFlight,
+                    (SELECT COUNT(*) FROM aircraft WHERE aircraft.ownerAirlineCode = airlineCode) AS numAssociateAircraft,
+                    (SELECT COUNT(*) FROM flightOperate WHERE flightOperate.airlineCode = airlineCode) AS numAssociateSchedule
+                FROM airline
+                LIMIT ${size} OFFSET ${offset}
+            `;
+            if (!airlines || airlines.length === 0) {
+                return {
+                    status: true,
+                    data: [],
+                    pagination: {
+                        total: 0,
+                        page,
+                        size
+                    }
+                };
+            }else{
+                let totalCount: { count: number }[] = [];
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) as count FROM airline
+                `;
+                const total = Number(totalCount[0]?.count || 0);
+                return {
+                    status: true,
+                    data: sanitizeBigInt(airlines),
+                    pagination: {
+                        total,
+                        page,
+                        size
+                    }
+                };
+            }
+        }else{
+            const wildcard = `%${searchQuery}%`;
+            const airlines:AirlineAPIType[] = await prisma.$queryRaw`
+                SELECT 
+                    airlineCode,
+                    airlineName,
+                    (SELECT COUNT(*) FROM flight WHERE flight.airlineCode = airlineCode) AS numAssociateFlight,
+                    (SELECT COUNT(*) FROM aircraft WHERE aircraft.ownerAirlineCode = airlineCode) AS numAssociateAircraft,
+                    (SELECT COUNT(*) FROM flightOperate WHERE flightOperate.airlineCode = airlineCode) AS numAssociateSchedule
+                FROM airline
+                WHERE airlineCode LIKE ${wildcard} OR 
+                      \`name\` LIKE ${wildcard}
+                LIMIT ${size} OFFSET ${offset}
+            `;
+            if (!airlines || airlines.length === 0) {
+                return {
+                    status: true,
+                    data: [],
+                    pagination: {
+                        total: 0,
+                        page,
+                        size
+                    }
+                };
+            }else{
+                let totalCount: { count: number }[] = [];
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) as count FROM airline
+                    WHERE airlineCode LIKE ${wildcard} OR 
+                      \`name\` LIKE ${wildcard}
+                `;
+                const total = Number(totalCount[0]?.count || 0);
+                return {
+                    status: true,
+                    data: sanitizeBigInt(airlines),
+                    pagination: {
+                        total,
+                        page,
+                        size
+                    }
+                };
+            }
+        }
+    } catch (err) {
+        console.error("Error fetching airlines:", err);
+        return error(500, {
+            status: false,
+            error: err instanceof Error ? err.message : "Unknown error occurred"
+        });
+    }
 })

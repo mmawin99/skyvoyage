@@ -76,7 +76,7 @@ const data = {
   airlineLevel: [
     {
       title: "Aircraft",
-      url: "/admin/aircraft",
+      url: "/admin/aircrafts",
       icon: PlaneIcon,
     },
     {

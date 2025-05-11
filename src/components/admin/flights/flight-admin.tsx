@@ -45,6 +45,7 @@ export default function FlightAdmin() {
         const fetchFlights = async () => {
             setIsLoading(true)
             if(!backendURL || backendURL == "") return
+            if(!selectedCarrier) return
             try {
                 const response = await fetch(`${backendURL}/flight/flightlist/${selectedCarrier?.code}/${pageSize}/${page}`, {
                     method: "POST",

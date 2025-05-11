@@ -535,3 +535,24 @@ export interface AdminDetailAPIType {
     fullname: string | null,
     permission: adminPermission,
 }
+
+export interface AirportAPIType{
+    airportCode: string,
+    name: string,
+    country: string,
+    city: string,
+    timezone: string,
+    latitude: number,
+    longitude: number,
+    altitude: number,
+    numAssociateFlight: number,
+    numAssociateAirline: number,
+}
+
+export interface AirlineAPIType{
+    airlineCode: string,
+    airlineName: string,
+    numAssociateFlight: number,
+    numAssociateAircraft: number,
+    numAssociateSchedule: number,
+}

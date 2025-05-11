@@ -82,11 +82,14 @@ const UserTableAdmin = <T extends TableDataType>({
                         columns.length > 0 ? (
                             columns.map((column, colIndex) => (
                                 <TableCell key={`${index}-${colIndex}-${column as string}`}>
-                                    <Skeleton className="h-6 w-full" />
+                                    <Skeleton className="h-6 w-30" />
                                 </TableCell>
                             ))
                         ) : null
                     }
+                    <TableCell>
+                        <Skeleton className="h-6 w-32" />
+                    </TableCell>
                 </TableRow>
               ))
             ) : null}

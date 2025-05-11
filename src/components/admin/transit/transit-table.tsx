@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search } from "lucide-react"
+import { Edit, Search, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { adminTransitListType } from "@/types/type"
 
@@ -15,7 +15,7 @@ interface FlightScheduleTableProps {
   setSearchQuery: (query: string) => void
 }
 
-export default function FlightTable({ transits, isLoading,
+export default function TransitTable({ transits, isLoading,
   searchQuery,
   setSearchQuery
 }: FlightScheduleTableProps) {
@@ -130,7 +130,7 @@ export default function FlightTable({ transits, isLoading,
                 </TableRow>
               ))
             ) : transits.length != 0 ? transits.map((transit, index)=>( 
-                <TableRow key={index+ "_" + transit.flightNumFrom + "_" + transit.flightNumTo + "_fligh-table-entries"} className="cursor-pointer hover:bg-muted/50">
+                <TableRow key={index+ "_" + transit.flightNumFrom + "_" + transit.flightNumTo + "_transit-table-entries"} className="cursor-pointer hover:bg-muted/50">
                     <TableCell>
                       {transit.flightNumFrom}
                     </TableCell>
@@ -153,13 +153,19 @@ export default function FlightTable({ transits, isLoading,
                       {transit.arrivalAirportCode}
                     </TableCell>
                     <TableCell className="flex gap-2">
-                      <Button variant="default" className="w-24 cursor-pointer" onClick={() => {}}>Edit</Button>
-                      <Button variant="destructive" className="w-24 cursor-pointer" onClick={() => {}}>Delete</Button>
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
                     </TableCell>
                 </TableRow>
             )) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   No Transit found.
                 </TableCell>
               </TableRow>

@@ -88,13 +88,13 @@ const AircraftTableWithEditor = ({
                             <TableCell>{aircraft.model}</TableCell>
                             <TableCell>{aircraft.totalFlight}</TableCell>
                             <TableCell className='flex flex-row gap-2'>
-                                <Button variant="outline" onClick={() => console.log("Edit", aircraft.registration)}>
-                                    <Edit className="h-4 w-4" />
-                                    <span>Edit</span>
+                                <Button variant="outline" size="sm">
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Edit
                                 </Button>
-                                <Button variant="destructive" onClick={() => console.log("Delete", aircraft.registration)}>
-                                    <Trash2 className="h-4 w-4" />
-                                    <span>Delete</span>
+                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Delete
                                 </Button>
                             </TableCell>
                         </TableRow>

@@ -136,7 +136,7 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
                         title="Airport or city"
                         selected={departureAirport}
                         onSelect={setDepartureAirport}
-                        requestMethod="POST"
+                        requestMethod="GET"
                         results={departureAirports}
                         setResults={setDepartureAirports}
                         loading={loadingDeparture}
@@ -163,7 +163,7 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
                             title="Airport or city"
                             selected={arrivalAirport}
                             onSelect={setArrivalAirport}
-                            requestMethod="POST"
+                            requestMethod="GET"
                             results={arrivalAirports}
                             setResults={setArrivalAirports}
                             loading={loadingArrival}

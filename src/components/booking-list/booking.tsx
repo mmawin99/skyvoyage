@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { Calendar, Clock, CreditCard, Edit, MoreHorizontal, Plane, Trash, Users, Wallet } from "lucide-react"
+import { Calendar, Clock, CreditCard, Edit, MoreHorizontal, Plane, Plus, Trash, User, Users, Wallet } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,15 +29,13 @@ interface BookingDetailsProps {
   isAdmin: boolean
   defaultOpen?: boolean
   // Admin actions
-  onDeleteTicket?: (ticketId: string, passengerId: string) => void
-  onModifyTicket?: (ticketId: string, passengerId: string) => void
-  onDeletePassenger?: (passengerId: string) => void
-  onModifyPassenger?: (passengerId: string) => void
-  onDeleteBooking?: () => void
-  onModifyBooking?: () => void
-  onModifyBookingStatus?: (status: BookingStatus) => void
-  onModifyPayment?: () => void
-  onDeletePayment?: () => void
+  onDeleteBooking?: (bookingId:string) => void
+  onModifyBookingDate?: (bookingId:string) => void
+  onModifyBookingStatus?: (bookingId:string, status: BookingStatus) => void
+  onDeleteTicket?: (bookingId:string, ticketId: string, passengerId: string) => void
+  onDeletePassenger?: (bookingId:string, passengerId: string) => void
+  onCreatePayment?: (bookingId:string) => void
+  onDeletePayment?: (bookingId:string) => void
   // User actions
   onRefund?: (bookingId: string) => void
   onCancel?: (bookingId: string) => void
@@ -108,26 +106,25 @@ export function BookingDetails({
   item,
   isAdmin,
   defaultOpen = false,
-  onDeleteTicket,
-  onModifyTicket,
-  onDeletePassenger,
-  onModifyPassenger,
-  onDeleteBooking,
-  onModifyBooking,
+  onModifyBookingDate,
   onModifyBookingStatus,
-  onModifyPayment,
+  onDeleteBooking,
+  onDeleteTicket,
+  onDeletePassenger,
+  onCreatePayment,
   onDeletePayment,
+  //User actions
   onRefund,
   onCancel,
 }: BookingDetailsProps) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeTab, setActiveTab] = useState("overview")
-
+  const [isCollapsed, setIsCollapsed] = useState(defaultOpen)
   // Format dates for display
   const formatDate = (dateStr: string) => {
     try {
       if(dateStr === "") return "N/A"
-      return format(new Date(dateStr), "MMM dd, yyyy")
+      return format(new Date(dateStr), "MMM dd, yyyy HH:mm")
     } catch (e) {
         console.error("formatDate Error: ", dateStr, e)
       return dateStr
@@ -145,9 +142,9 @@ export function BookingDetails({
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto !pt-2 !pb-0">
-      <Collapsible defaultOpen={defaultOpen} className="w-full">
-        <CollapsibleTrigger asChild>
+    <Card className="w-full mx-auto !pt-2 !pb-0">
+      <Collapsible open={isCollapsed} onOpenChange={setIsCollapsed} className="w-full">
+        <CollapsibleTrigger asChild className="cursor-pointer">
           <CardHeader className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 pb-4">
             <div className="w-full">
               <CardTitle className={`text-xl sm:text-2xl flex flex-row items-start gap-3 ${!isAdmin ? "w-full justify-between" : "justify-start"}`}>
@@ -190,19 +187,19 @@ export function BookingDetails({
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Booking Actions</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onModifyBooking}>
-                    <Edit className="mr-2 h-4 w-4" /> Modify Booking
+                  <DropdownMenuItem onClick={()=>{ onModifyBookingDate?.(item.ticket || "") }} className="cursor-pointer text-red-600">
+                    <Edit className="mr-2 h-4 w-4" /> Modify Booking Date
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onDeleteBooking} className="text-red-600">
+                  <DropdownMenuItem onClick={()=>{ onDeleteBooking?.(item.ticket || "") }} className="cursor-pointer text-red-600">
                     <Trash className="mr-2 h-4 w-4" /> Delete Booking
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel>Status Update</DropdownMenuLabel>
                   {/* <DropdownMenuItem onClick={() => onModifyBookingStatus?.("PENDING")}>Set as Pending</DropdownMenuItem> */}
-                  <DropdownMenuItem onClick={() => onModifyBookingStatus?.("PAID")}>Set as Confirmed (Paid)</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onModifyBookingStatus?.("CANCELLED")}>Set as Cancelled</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" disabled={!(item.status == "REFUNDED" || item.status == "CANCELLED")} onClick={() => onModifyBookingStatus?.(item.ticket || "", "PAID")}>Set as Confirmed (Paid)</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" disabled={!(item.status == "PAID")} onClick={() => onModifyBookingStatus?.(item.ticket || "", "CANCELLED")}>Set as Cancelled</DropdownMenuItem>
                   {/* <DropdownMenuItem onClick={() => onModifyBookingStatus?.("COMPLETED")}>Set as Completed</DropdownMenuItem> */}
-                  <DropdownMenuItem onClick={() => onModifyBookingStatus?.("REFUNDED")}>Set as Refunded</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" disabled={!(item.status == "PAID")} onClick={() => onModifyBookingStatus?.(item.ticket || "", "REFUNDED")}>Set as Refunded</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
@@ -221,6 +218,33 @@ export function BookingDetails({
               {/* Overview Tab */}
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid grid-cols-1 gap-4">
+                  {isAdmin && <Card className="pt-2 pb-2">
+                    <CardHeader className="">
+                      <CardTitle className="text-lg flex items-center">
+                        <User className="mr-2 h-4 w-4" /> User Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">User ID:</span>
+                            <span>{item.userId}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Email:</span>
+                            <span>{item.userDetails?.email}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Name:</span>
+                            <span>{item.userDetails?.firstname}{" "}{item.userDetails?.lastname}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>}
                   <Card className="pt-2 pb-2">
                     <CardHeader className="">
                       <CardTitle className="text-lg flex items-center">
@@ -278,11 +302,11 @@ export function BookingDetails({
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Status:</span>
-                            <span>{getStatusBadge(item.status)}</span>
+                            <span>{item.payment.paymentId ? getStatusBadge(item.status) : "N/A"}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Payment ID:</span>
-                            <span>{item.payment.paymentId?.substring(0, 10) + "..." || "N/A"}</span>
+                            <span className="text-muted-foreground">Payment Reference:</span>
+                            <span>{item.payment.paymentId ? (item.payment.paymentId?.substring(0, 10) + "...") : "N/A"}</span>
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -391,7 +415,7 @@ export function BookingDetails({
                                 </div>
                               </div>
                               <div className="mt-2 text-sm">
-                                <span className="text-muted-foreground">Aircraft:</span> {segment.aircraftModel}
+                                <span className="text-muted-foreground">Operate by</span> {segment.aircraftModel}
                               </div>
                             </div>
                           ))}
@@ -479,7 +503,7 @@ export function BookingDetails({
                                   </div>
                                 </div>
                                 <div className="mt-2 text-sm">
-                                  <span className="text-muted-foreground">Aircraft:</span> {segment.aircraftModel}
+                                  <span className="text-muted-foreground">Operate by</span> {segment.aircraftModel}
                                 </div>
                               </div>
                             ))}
@@ -494,7 +518,11 @@ export function BookingDetails({
               {/* Passengers Tab */}
               <TabsContent value="passengers" className="space-y-2">
                 {item.passenger && item.passenger.length > 0 ? (
-                  item.passenger.map((passenger) => (
+                  item.passenger.sort((a,b)=>{
+                    // return a.ageRange.localeCompare(b.ageRange)
+                    // sort with ageRange first, then by titleName
+                    return a.ageRange.localeCompare(b.ageRange) || a.titleName.localeCompare(b.titleName)
+                  }).map((passenger) => (
                     <Card key={passenger.pid} className="pt-2 pb-2">
                       <CardHeader className="flex flex-row items-start justify-between">
                         <div>
@@ -518,10 +546,7 @@ export function BookingDetails({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => onModifyPassenger?.(passenger.pid)}>
-                                <Edit className="mr-2 h-4 w-4" /> Modify Passenger
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => onDeletePassenger?.(passenger.pid)} className="text-red-600">
+                              <DropdownMenuItem onClick={() => onDeletePassenger?.(item.ticket|| "", passenger.pid)} className="text-red-600">
                                 <Trash className="mr-2 h-4 w-4" /> Delete Passenger
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -546,10 +571,10 @@ export function BookingDetails({
                                   <div className="text-sm text-muted-foreground">Passport Expiry</div>
                                   <div>{formatDate(passenger.passportExpiry)}</div>
                                 </div>
-                                <div>
+                                {/* <div>
                                   <div className="text-sm text-muted-foreground">Status</div>
                                   <div>{passenger.status}</div>
-                                </div>
+                                </div> */}
                               </div>
 
                               <div className="mt-4">
@@ -572,11 +597,8 @@ export function BookingDetails({
                                               </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                              <DropdownMenuItem onClick={() => onModifyTicket?.(ticket.tid, passenger.pid)}>
-                                                <Edit className="mr-2 h-4 w-4" /> Modify Ticket
-                                              </DropdownMenuItem>
                                               <DropdownMenuItem
-                                                onClick={() => onDeleteTicket?.(ticket.tid, passenger.pid)}
+                                                onClick={() => onDeleteTicket?.(item.ticket || "",ticket.tid, passenger.pid)}
                                                 className="text-red-600"
                                               >
                                                 <Trash className="mr-2 h-4 w-4" /> Delete Ticket
@@ -588,7 +610,7 @@ export function BookingDetails({
 
                                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-3">
                                         <div>
-                                          <div className="text-sm text-muted-foreground">Baggage</div>
+                                          <div className="text-sm text-muted-foreground">Additional Baggage</div>
                                           <div>
                                             {ticket.baggageAllowanceWeight} kg (${ticket.baggageAllowancePrice.toFixed(2)})
                                           </div>
@@ -632,8 +654,8 @@ export function BookingDetails({
                   <CardContent className="space-y-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <div className="text-sm text-muted-foreground">Payment ID</div>
-                        <div className="font-medium">{item.payment.paymentId?.substring(0, 10) || "Not Available"}</div>
+                        <div className="text-sm text-muted-foreground">Payment Reference</div>
+                        <div className="font-medium">{item.payment.paymentId ? item.payment.paymentId?.substring(0, 10) + "..." : "N/A"}</div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Payment Method</div>
@@ -648,12 +670,12 @@ export function BookingDetails({
                       <div>
                         <div className="text-sm text-muted-foreground">Payment Date</div>
                         <div className="font-medium">
-                          {item.payment.paymentDate ? formatDate(item.payment.paymentDate) : "Not Available"}
+                          {item.payment.paymentDate ? formatDate(item.payment.paymentDate) : "N/A"}
                         </div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Payment Status</div>
-                        <div className="font-medium">{getStatusBadge(item.status)}</div>
+                        <div className="font-medium">{item.payment.paymentId ? getStatusBadge(item.status) : "N/A"}</div>
                       </div>
                     </div>
 
@@ -676,14 +698,24 @@ export function BookingDetails({
                     </div>
 
                     {isAdmin && (
-                      <div className="flex justify-end gap-2 mt-4">
-                        <Button variant="outline" onClick={onModifyPayment}>
-                          <Edit className="mr-2 h-4 w-4" /> Modify Payment
-                        </Button>
-                        <Button variant="outline" className="text-red-600" onClick={onDeletePayment}>
-                          <Trash className="mr-2 h-4 w-4" /> Delete Payment
-                        </Button>
-                      </div>
+                      <CardFooter className="w-full px-0">
+                        
+                        <div className="flex justify-end gap-2 w-full">
+                          {
+                            !item.payment.paymentId && (
+                              <Button variant="outline" onClick={()=>{ onCreatePayment?.(item.ticket || "") }}>
+                                <Plus className="mr-2 h-4 w-4" /> Create Payment
+                              </Button>
+                            )
+                          }
+                          {
+                            item.payment.paymentId &&
+                            <Button variant="outline" className="text-red-600" onClick={()=>{ onDeletePayment?.(item.ticket || "")  }}>
+                              <Trash className="mr-2 h-4 w-4" /> Delete Payment
+                            </Button>
+                          }
+                        </div>
+                      </CardFooter>
                     )}
                   </CardContent>
                 </Card>
@@ -699,7 +731,7 @@ export function BookingDetails({
               </div>
               <div className="text-sm text-muted-foreground">
                 <Clock className="inline-block mr-1 h-4 w-4" />
-                Booked on {item.payment.paymentDate ? formatDate(item.payment.paymentDate) : "N/A"}
+                Booked on {item.bookingDate ? formatDate(item.bookingDate) : "N/A"}
               </div>
             </div>
             {

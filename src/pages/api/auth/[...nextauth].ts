@@ -59,7 +59,7 @@ export default NextAuth({
         if (!username || !password) return null
 
         // 🟡 Use raw SQL query to fetch admin
-        const admin:Admin[] = await prisma.$queryRaw`SELECT * FROM admin WHERE username = ${username}`
+        const admin:Admin[] = await prisma.$queryRaw`SELECT id,username,password,permission FROM admin WHERE username = ${username}`
 
         if (admin.length === 0) {
           console.log("Admin not found", username)
@@ -93,7 +93,7 @@ export default NextAuth({
       async authorize(credentials) {
         const password = credentials?.password || ""
         const email = credentials?.email || ""
-        const user:UserPrisma[] = await prisma.$queryRaw`SELECT * FROM user WHERE email = ${email}` 
+        const user:UserPrisma[] = await prisma.$queryRaw`SELECT uuid,\`password\`,firstname,lastname FROM user WHERE email = ${email}` 
         if(user.length === 0) {
             console.log('User not found')
             return null
@@ -106,7 +106,7 @@ export default NextAuth({
         return {
             role: "user",
             uuid: user[0].uuid,
-            email: user[0].email,
+            email: email,
             firstname: user[0].firstname,
             lastname: user[0].lastname,
         }

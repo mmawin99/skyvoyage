@@ -113,6 +113,24 @@ const PassengerFilling = ({
             setError("query_empty")
             return;
         }
+        //regex english, space, number
+        const regex = /^[a-zA-Z0-9 ]+$/
+        const passportRegex = /^[a-zA-Z0-9]{9}$/
+        if(!passportRegex.test(passportNum)){
+            setIsError(true)
+            setError("regex_passportNum")
+            return;
+        }
+        if(!regex.test(firstName) || firstName.length < 2){
+            setIsError(true)
+            setError("regex_firstName")
+            return;
+        }
+        if(!regex.test(lastName) || lastName.length < 2){
+            setIsError(true)
+            setError("regex_lastName")
+            return;
+        }
 
         if(diff2Date(selectedDateCheck, passportExpiry) < 60){
             setIsError(true)
@@ -260,6 +278,9 @@ const PassengerFilling = ({
                             <AlertDescription>
                                 {
                                     error && 
+                                    error == "regex_passportNum" ? "Passport number must be 9 characters and only contain letters number." :
+                                    error == "regex_firstName" ? "First name must be at least 2 characters and only contain letters number and space." :
+                                    error == "regex_lastName" ? "Last name must be at least 2 characters and only contain letters number and space." :
                                     error == "passenger_exist" ? "Passenger already exist in the booking." :
                                     error == "query_empty" ? "The system malfunctioned because the session was modified by a user without permission to modify it." :
                                     error == "information_empty" ? "Information can not be empty." :

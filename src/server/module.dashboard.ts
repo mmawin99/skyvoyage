@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { getDateRange, getTimeInterval, sanitizeBigInt } from "@/server/lib"; // Assuming these helper functions are defined
+import { getDateRange, getPreviousPeriod, getTimeInterval, sanitizeBigInt } from "@/server/lib"; // Assuming these helper functions are defined
 import { PrismaClient } from "../../prisma-client";
 import { AvgTicketPrice, BookingOverTime, BookingStats, PassengerDemographic, RecentFlight, RevenueByRoute, SeatUtilization, TopRoute, TotalRevenue } from '../types/dashboard'; // Assuming this is the correct path to your types
 const prisma = new PrismaClient();
@@ -9,6 +9,7 @@ export const dashboardAdminModule = new Elysia({
 }).get('/overview', async ({ query }) => {
     try {
         const { start, end } = getDateRange(query);
+        const { start: previousStart, end: previousEnd } = getPreviousPeriod(start, end);
         const interval = getTimeInterval(query);
         // 1. Total Bookings Over Time
         const bookingsOverTime:BookingOverTime[] = await prisma.$queryRaw`
@@ -41,6 +42,29 @@ export const dashboardAdminModule = new Elysia({
                     SUM(amount) AS totalRevenue
                 FROM payment JOIN booking b ON payment.bookingId = b.bookingId
                 WHERE b.status = 'PAID' AND (paymentDate BETWEEN STR_TO_DATE(${start}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${end}, '%Y-%m-%dT%H:%i:%s.%fZ'))
+                GROUP BY timeInterval
+                ORDER BY timeInterval
+            ) AS subquery;
+        `;
+        const previousPeriodTotalRevenue:TotalRevenue[] = await prisma.$queryRaw`
+            SELECT
+                timeInterval,
+                totalRevenue,
+                CASE
+                    WHEN LAG(totalRevenue) OVER (ORDER BY timeInterval) IS NULL 
+                        OR LAG(totalRevenue) OVER (ORDER BY timeInterval) = 0
+                        THEN 0
+                    ELSE ROUND(
+                        ((totalRevenue - LAG(totalRevenue) OVER (ORDER BY timeInterval))
+                        / LAG(totalRevenue) OVER (ORDER BY timeInterval)) * 100, 2
+                    )
+                END AS percentChange
+            FROM (
+                SELECT
+                    DATE_FORMAT(paymentDate, ${interval}) AS timeInterval,
+                    SUM(amount) AS totalRevenue
+                FROM payment JOIN booking b ON payment.bookingId = b.bookingId
+                WHERE b.status = 'PAID' AND (paymentDate BETWEEN STR_TO_DATE(${previousStart}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${previousEnd}, '%Y-%m-%dT%H:%i:%s.%fZ'))
                 GROUP BY timeInterval
                 ORDER BY timeInterval
             ) AS subquery;
@@ -221,11 +245,12 @@ export const dashboardAdminModule = new Elysia({
         `;
         
         return {
-            success: true,
+            status: true,
             data: {
                 recentFlights:sanitizeBigInt(recentFlights),
                 bookingsOverTime:sanitizeBigInt(bookingsOverTime),
                 totalRevenue:sanitizeBigInt(totalRevenue),
+                previousPeriodTotalRevenue:sanitizeBigInt(previousPeriodTotalRevenue),
                 revenueByRoute:sanitizeBigInt(revenueByRoute),
                 bookingStatus:sanitizeBigInt(bookingStatus),
                 seatUtilization:sanitizeBigInt(seatUtilization),
@@ -237,7 +262,7 @@ export const dashboardAdminModule = new Elysia({
     } catch (err) {
         console.error('Admin Overview stats error:', err);
         return {
-            success: false,
+            status: false,
             error: err instanceof Error ? err.message : 'Unknown error occurred'
         };
     }

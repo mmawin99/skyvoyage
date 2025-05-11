@@ -18,32 +18,44 @@ interface AircraftExtends extends Aircraft {
 export const autocompleteModule = new Elysia({
     prefix: '/autocomplete',
     })
-    .post("/airport/:search", async({body, params:{search}}:{body:{lat?:number,lon?:number},params:{search:string}})=>{
+    .get("/airport/:search", async({query, params:{search}}:{query:{lat?:number,lon?:number},params:{search:string}})=>{
         //html decode the search string
         try{
             const searchstring = decodeURIComponent(search)
             let airportList: Airport[];
             if(search == "nearby_airport"){
-                const lat = body?.lat;
-                const lon = body?.lon;
+                const lat = query?.lat;
+                const lon = query?.lon;
                 if(!lat || !lon){
                     return error(400, "geolocation_required")
                 }
-                airportList = await prisma.$queryRaw`SELECT
-                    \`airportCode\`,
-                    \`name\`,
+                airportList = await prisma.$queryRaw`
+                SELECT
+                    airportCode,
+                    name,
                     latitude,
                     longitude,
-                    (
-                        6371 * ACOS(
-                            COS(RADIANS(${lat})) * COS(RADIANS(latitude)) *
-                            COS(RADIANS(longitude) - RADIANS(${lon})) +
-                            SIN(RADIANS(${lat})) * SIN(RADIANS(latitude))
-                        )
-                    ) AS distance_km
-                FROM airport
-                HAVING distance_km < 100
-                ORDER BY distance_km ASC
+                    distance_km
+                FROM (
+                    SELECT
+                        airportCode,
+                        name,
+                        latitude,
+                        longitude,
+                        (
+                            6371 * ACOS(
+                                COS(RADIANS(${lat})) * COS(RADIANS(latitude)) *
+                                COS(RADIANS(longitude) - RADIANS(${lon})) +
+                                SIN(RADIANS(${lat})) * SIN(RADIANS(latitude))
+                            )
+                        ) AS distance_km
+                    FROM
+                        airport
+                ) AS subquery_airport
+                WHERE
+                    distance_km < 100
+                ORDER BY
+                    distance_km ASC
                 LIMIT 10;`
             }else if(search == "popular_airport"){
                 airportList = await prisma.$queryRaw`
@@ -159,7 +171,7 @@ export const autocompleteModule = new Elysia({
                     FROM flight
                     WHERE departAirportId = ${airportCode} OR arriveAirportId = ${airportCode}
                 )
-                LIMIT 40;
+                LIMIT 80;
             `
         }else{
             const searchstringArray = searchstring.trim().split(/\s+/);

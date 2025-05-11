@@ -41,14 +41,11 @@ export default function ScheduleAdmin() {
         setIsLoading(true)
         if(!backendURL || backendURL == "") return
         try {
-            const response = await fetch(`${backendURL}/flight/schedule/${pageSize}/${kind}/${page}`, {
-                method: "POST",
+            const response = await fetch(`${backendURL}/flight/schedule/${pageSize}/${kind}/${page}?query=${searchQuery}`, {
+                method: "GET",
                 headers: {
                     "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    query: searchQuery
-                })
+                }
             })
             if (response.ok) {
             const data: ScheduleFetchResponse = await response.json()
@@ -68,7 +65,8 @@ export default function ScheduleAdmin() {
 
         fetchFlights()
 
-    }, [searchQuery, page, pageSize, backendURL, kind])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery, page, pageSize, kind])
     const handleAddFlight = async (newFlight: SubmitSchedule, onSuccess: ()=> void, onError: ()=> void) => {
         setIsLoading(true)
         // Simulate API call

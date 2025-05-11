@@ -493,10 +493,12 @@ export interface searchSelectedBookingRoutes extends searchSelectedRoutes{
         }
     }
     userId: string,
+    bookingDate: string | null,
     userDetails?: BookingUserDetails
 }
 
 export interface BookingUserDetails {
+    uuid: string,
     firstname: string,
     lastname: string,
     email: string,

@@ -2,7 +2,7 @@
 "use-client"
 import { useSearchParams } from "next/navigation"
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -24,6 +24,7 @@ import { useSessionStorage } from "@uidotdev/usehooks"
 import LoadingApp from "@/components/loading"
 import { BookingDetails } from "@/components/booking-list/booking"
 import { toast } from "sonner"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
 
 export default function SearchResults() {
@@ -32,6 +33,13 @@ export default function SearchResults() {
     const isBookingLoaded = useRef<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(true)
     const [bookingList, setBookingList] = useState<searchSelectedBookingRoutes[]>([])
+    
+    const [refunding, setRefunding] = useState<boolean>(false)
+    const [refundingBookingId, setRefundingBookingId] = useState<string>("")
+    
+    const [cancelling, setCancelling] = useState<boolean>(false)
+    const [cancellingBookingId, setCancellingBookingId] = useState<string>("")
+
     const fetchBooking = useCallback(
     async () => {
         if(isBookingLoaded.current) return
@@ -66,6 +74,10 @@ export default function SearchResults() {
 
       // User action handlers
     const handleRefund = async (bookingId: string) => {
+        setRefunding(true)
+        setRefundingBookingId(bookingId)
+    }
+    const handleRefundConfirm = async () => {
         if(!sessionData) {
             toast.error("Session data not found, cannot process refund request.");
             return
@@ -82,9 +94,9 @@ export default function SearchResults() {
             toast.error("Session data not found, cannot process refund request.");
             return
         }
-        if(bookingId === "") toast.error("Booking ID is empty")
+        if(refundingBookingId === "") toast.error("Booking ID is empty")
         try{
-            const result = await fetch(`/api/booking/refund/${sessionData?.user.uuid}/${bookingId}`, {
+            const result = await fetch(`/api/booking/refund/${sessionData?.user.uuid}/${refundingBookingId}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -103,7 +115,15 @@ export default function SearchResults() {
             toast.error("Error processing refund request: " + error)
         }
     }
+    const handleRefundCancel = async () => {
+        setRefunding(false)
+        setRefundingBookingId("")
+    }
     const handleCancel = async (bookingId: string) => {
+        setCancelling(true)
+        setCancellingBookingId(bookingId)
+    }
+    const handleCancelConfirm = async () => {
         if(!sessionData) {
             toast.error("Session data not found, cannot process refund request.");
             return
@@ -120,9 +140,9 @@ export default function SearchResults() {
             toast.error("Session data not found, cannot process refund request.");
             return
         }
-        if(bookingId === "") toast.error("Booking ID is empty")
+        if(cancellingBookingId === "") toast.error("Booking ID is empty")
         try{
-            const result = await fetch(`/api/booking/cancel/${sessionData?.user.uuid}/${bookingId}`, {
+            const result = await fetch(`/api/booking/cancel/${sessionData?.user.uuid}/${cancellingBookingId}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -139,6 +159,10 @@ export default function SearchResults() {
         }catch(error){
             toast.error("Error processing cancel request: " + error)
         }
+    }
+    const handleCancelCancel = async () => {
+        setCancelling(false)
+        setCancellingBookingId("")
     }
 
     if(sessionStatus === "loading") return <LoadingApp />
@@ -157,6 +181,59 @@ export default function SearchResults() {
 
     return (
         <main className="min-h-screen bg-gray-50">
+            <AlertDialog open={refunding} onOpenChange={handleRefundCancel}>
+                <AlertDialogContent>
+                    <AlertDialogHeader className="items-center">
+                        <AlertDialogTitle>
+                            <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+                            <TriangleAlert className="h-7 w-7 text-destructive" />
+                            </div>
+                            Are you sure to request a refund?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-[15px] text-center">
+                            This action can not be undone. This will request a refund for your booking.
+                            (Only 75% of the total will be refunded)
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-2 sm:justify-center">
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleRefundConfirm}
+                            className={buttonVariants({ variant: "destructive" })}
+                        >
+                            Continue
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={cancelling} onOpenChange={handleCancelCancel}>
+                <AlertDialogContent>
+                    <AlertDialogHeader className="items-center">
+                        <AlertDialogTitle>
+                            <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+                            <TriangleAlert className="h-7 w-7 text-destructive" />
+                            </div>
+                            Are you sure to request a refund?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-[15px] text-center">
+                            This action can not be undone. This will cancel your booking. 
+                            <br />
+                            (Refund will be not process through this action)
+                            <br />
+                            If you looking for a refund, please request a refund instead.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-2 sm:justify-center">
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleCancelConfirm}
+                            className={buttonVariants({ variant: "destructive" })}
+                        >
+                            Continue
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <Navbar />
             <div className="container mx-auto py-8 px-4">
                 <h1 className="text-2xl font-bold mb-6">
@@ -165,9 +242,9 @@ export default function SearchResults() {
                 <div className="py-8 flex flex-col gap-4">
                     {
                         isLoading ?
-                        <div className="flex flex-row items-center justify-center gap-2 mb-4">
-                            <Loader2 className="animate-spin h-5 w-5 text-gray-500" />
-                            <span className="text-gray-500">Loading...</span>
+                        <div className="flex flex-row items-center justify-center gap-2 mb-4 h-60">
+                            <Loader2 className="animate-spin h-14 w-14 text-gray-500" />
+                            <span className="text-gray-500 text-xl">Loading...</span>
                         </div> : null
                     }
                     {

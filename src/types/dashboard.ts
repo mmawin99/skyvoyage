@@ -2,6 +2,7 @@ export interface DashboardData {
     recentFlights: RecentFlight[]
     bookingsOverTime: BookingOverTime[]
     totalRevenue: TotalRevenue[]
+    previousPeriodTotalRevenue: TotalRevenue[]
     revenueByRoute: RevenueByRoute[]
     bookingStatus: BookingStats[]
     seatUtilization: SeatUtilization[]
@@ -74,4 +75,4 @@ export interface PassengerDemographic {
     count: string
 }
 
-export type TimeRangeType = "1d" | "30d" | "2w" | "3m" | "6m" | "1y" | "2y" | "custom"
+export type TimeRangeType = "1d" | "30d" | "1w" | "3m" | "6m" | "1y" | "2y" | "custom"

@@ -5,6 +5,7 @@ import { passenger as Passenger, PrismaClient } from "../../prisma-client";
 import { createUniversalFlightSchedule, sanitizeBigInt, stripePayment as stripe } from "@/server/lib";
 import { BookingStatus, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes } from "@/types/type";
 import {BookingRow, FlightOperationRow, PassengerRow, TicketRow} from "@/types/booking"
+import { customRoundPricingDown } from "@/lib/price";
 
 
 // Initialize Stripe with your secret key
@@ -25,7 +26,7 @@ export const bookingModule = new Elysia({
         // ตรวจสอบข้อมูลเบื้องต้น
         if (!seats || !seats.length || !userId) {
             return {
-            success: false,
+            status: false,
             error: 'Invalid data'
             }
         }
@@ -96,14 +97,14 @@ export const bookingModule = new Elysia({
         })
   
         return {
-            success: true,
+            status: true,
             clientSecret: paymentIntent.client_secret,
             paymentIntentId: paymentIntent.id
         }
     } catch (err) {
         console.error('Error creating PaymentIntent:', err)
         return error(500, {
-            success: false,
+            status: false,
             error: err instanceof Error ? err.message : 'Unknown error'
         })
     }
@@ -315,17 +316,17 @@ export const bookingModule = new Elysia({
         )
       `;
       
-      return { success: true, bookingId };
+      return { status: true, bookingId };
     });
     
     return {
-      success: true,
+      status: true,
       data: result
     };
   } catch (err) {
     console.error("Booking error:", err);
     return error(500, {
-      success: false,
+      status: false,
       error: err instanceof Error ? err.message : "Unknown error occurred"
     });
   }
@@ -351,14 +352,14 @@ export const bookingModule = new Elysia({
       passportExpiry > DATE_ADD(STR_TO_DATE(${seldate}, '%Y-%m-%dT%H:%i:%s.%fZ'), INTERVAL 60 DAY)
     `;
     return {
-      success: true,
+      status: true,
       // query: params,
       passengers: sanitizeBigInt(passengers)
     }
   } catch (err) {
     console.error("Error fetching passengers:", err);
     return error(500, {
-      success: false,
+      status: false,
       error: err instanceof Error ? err.message : "Unknown error occurred"
     });
   }
@@ -388,7 +389,7 @@ export const bookingModule = new Elysia({
 
     if (!bookings || bookings.length === 0) {
       return {
-        success: true,
+        status: true,
         data: []
       };
     }
@@ -565,6 +566,7 @@ export const bookingModule = new Elysia({
           }
         },
         userId: booking.userId,
+        bookingDate: booking.bookingDate ? new Date(booking.bookingDate).toISOString() : null,
       };
       
       // Add return route if exists
@@ -583,53 +585,191 @@ export const bookingModule = new Elysia({
     }
 
     return {
-      success: true,
+      status: true,
       booking: transformedBookings
     };
   } catch (err) {
     console.error("Error fetching bookings:", err);
     return error(500, {
-      success: false,
+      status: false,
       error: err instanceof Error ? err.message : "Unknown error occurred"
     });
   }
 })
 .patch("/cancel/:userId/:bookingId", async ({ params }:{ params:{bookingId:string, userId:string}}) => {
     try{
-      const { bookingId, userId } = params;
-      const booking:{ bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
-        SELECT b.bookingId, b.status, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
-      `;
-      if(booking.length == 0){
-        return error(404, {
-          status: false,
-          message: "Booking not found",
-        })
-      }else if(booking[0].status != "PAID"){
-        return error(400, {
-          status: false,
-          message: "Booking is not eligible for refund",
-        })
-      }else if(booking.length != 1){
-        return error(400,{
-          status: false,
-          message: "How did you get here!",
-        })
-      }else{
-        // Update the booking status to CANCELLED
-        await prisma.$executeRaw`
-          UPDATE booking SET status = 'CANCELLED' WHERE bookingId = ${bookingId}
-        `
-        await prisma.$executeRaw`
-          UPDATE payment SET refundedId = NULL, refundedDate = NOW(), refundAmount = 0 WHERE bookingId = ${bookingId}
-        `
-        return {
-          status: true,
-          message: "Booking cancelled successfully",
-          bookingId: booking[0].bookingId,
-          amount: booking[0].amount,
+        const { bookingId, userId } = params;
+        const booking:{ bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
+            SELECT b.bookingId, b.status, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
+        `;
+        
+        if(booking.length == 0){
+            return error(404, {
+                status: false,
+                message: "Booking not found",
+            })
+        }else if(booking[0].status != "PAID"){
+            return error(400, {
+                status: false,
+                message: "Booking is not eligible for refund",
+            })
+        }else if(booking.length != 1){
+            return error(400,{
+                status: false,
+                message: "How did you get here!",
+            })
+        }else{
+            const flightAssociation:{ flightId:string, departureTime: Date }[] = await prisma.$queryRaw`
+                SELECT 
+                  booking_flight.flightId,
+                  fo.departureTime
+                FROM booking_flight 
+                JOIN flightOperate fo ON booking_flight.flightId = fo.flightId
+                WHERE bookingId = ${bookingId}
+            `
+            if(flightAssociation.length == 0){
+                return error(404, {
+                status: false,
+                message: "flight association not found",
+                })
+            }
+            // check some flight is departed, return error
+            const now = new Date();
+            const isFlightDeparted = flightAssociation.some(flight => {
+                const flightDepartureTime = new Date(flight.departureTime);
+                return flightDepartureTime < now;
+            });
+
+            if (isFlightDeparted) {
+                return error(400, {
+                status: false,
+                message: "Booking cannot be cancelled as some flights have already departed",
+                });
+            }
+            // Update the booking status to CANCELLED
+            await prisma.$executeRaw`
+                UPDATE booking SET status = 'CANCELLED' WHERE bookingId = ${bookingId}
+            `
+            await prisma.$executeRaw`
+                UPDATE payment SET refundedId = NULL, refundedDate = NOW(), refundAmount = 0 WHERE bookingId = ${bookingId}
+            `
+            return {
+                status: true,
+                message: "Booking cancelled successfully",
+                bookingId: booking[0].bookingId,
+                amount: booking[0].amount,
+            }
         }
-      }
+    }catch(err){
+        console.error("Error fetching booking:", err);
+        return error(500, {
+            status: false,
+            error: err instanceof Error ? err.message : "Unknown error occurred"
+        });
+    }
+})
+.patch("/refund/:userId/:bookingId", async ({ params }:{ params:{bookingId:string, userId:string}}) => {
+    try{
+        const { bookingId, userId } = params;
+        const booking:{ bookingDate:Date,bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
+            SELECT b.bookingId, b.status, b.bookingDate, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
+        `;
+        if(booking.length == 0){
+            return error(404, {
+                status: false,
+                message: "Booking not found",
+            })
+        }else if(booking[0].status != "PAID"){
+            return error(400, {
+                status: false,
+                message: "Booking is not eligible for refund",
+            })
+        }else if(booking.length != 1){
+            return error(400,{
+                status: false,
+                message: "How did you get here!",
+            })
+            //IF bookingDate is not after May 8th, 2025, then refund is not eligible at ()
+        }else if(new Date(booking[0].bookingDate) < new Date("2025-05-08T06:00:00Z")){
+            return error(400, {
+                status: false,
+                message: "Booking is not eligible for refund.",
+            })
+        }else{
+            const flightAssociation:{ flightId:string, departureTime: Date }[] = await prisma.$queryRaw`
+                SELECT 
+                    booking_flight.flightId,
+                    fo.departureTime
+                FROM booking_flight 
+                JOIN flightOperate fo ON booking_flight.flightId = fo.flightId
+                WHERE bookingId = ${bookingId}
+            `
+            if(flightAssociation.length == 0){
+            return error(404, {
+                status: false,
+                message: "flight association not found",
+            })
+            }
+            // check some flight is departed, return error
+            const now = new Date();
+            const isFlightDeparted = flightAssociation.some(flight => {
+                const flightDepartureTime = new Date(flight.departureTime);
+                return flightDepartureTime < now;
+            });
+            if (isFlightDeparted) {
+                return error(400, {
+                    status: false,
+                    message: "Booking cannot be refunded as some flights have already departed.",
+                });
+            }
+            // find nearly departflight
+            const nearlyDepartFlight = flightAssociation.find(flight => {
+                const flightDepartureTime = new Date(flight.departureTime);
+                const timeDiff = flightDepartureTime.getTime() - now.getTime();
+                const hoursDiff = timeDiff / (1000 * 60 * 60); // keep as float
+                return hoursDiff > 0 && hoursDiff <= 2;
+            });
+            if (nearlyDepartFlight) {
+                return error(400, {
+                    status: false,
+                    message: "Booking cannot be refunded as some flights are departing soon.",
+                });
+            }
+            const nearlyDepartFlightIn12Hr = flightAssociation.find(flight => {
+                const flightDepartureTime = new Date(flight.departureTime);
+                const timeDiff = flightDepartureTime.getTime() - now.getTime();
+                const hoursDiff = timeDiff / (1000 * 60 * 60); // keep as float
+                return hoursDiff > 0 && hoursDiff <= 2;
+            });
+            let refund:Stripe.Refund | null = null;
+            if(nearlyDepartFlightIn12Hr){
+                refund = await stripe.refunds.create({
+                    payment_intent: booking[0].paymentId,
+                    amount: customRoundPricingDown(booking[0].amount * 100 * 0.45), // Convert to THB stang
+                    reason: "requested_by_customer",
+                })
+            }else{
+                refund = await stripe.refunds.create({
+                    payment_intent: booking[0].paymentId,
+                    amount: customRoundPricingDown(booking[0].amount * 100 * 0.75), // Convert to THB stang
+                    reason: "requested_by_customer",
+                })
+            }
+            // Update the booking status to REFUNDED
+            await prisma.$executeRaw`
+                UPDATE booking SET status = 'REFUNDED' WHERE bookingId = ${bookingId}
+            `
+            await prisma.$executeRaw`
+                UPDATE payment SET refundedId = ${refund.id}, refundedDate = NOW(), refundAmount = ${booking[0].amount} WHERE bookingId = ${bookingId}
+            `
+            return {
+                status: true,
+                message: "Refund successful",
+                refundId: refund.id,
+                bookingId: booking[0].bookingId,
+                amount: booking[0].amount,
+            }
+        }
     }catch(err){
       console.error("Error fetching booking:", err);
       return error(500, {
@@ -638,18 +778,18 @@ export const bookingModule = new Elysia({
       });
     }
 })
-.patch("/refund/:userId/:bookingId", async ({ params }:{ params:{bookingId:string, userId:string}}) => {
+.patch("/restore-status/:userId/:bookingId", async ({ params }:{ params:{bookingId:string, userId:string}}) => {
     try{
       const { bookingId, userId } = params;
-      const booking:{ bookingDate:Date,bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
-        SELECT b.bookingId, b.status, b.bookingDate, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
+      const booking:{ bookingDate:Date,bookingId:string, status:BookingStatus, paymentId: string, amount:number, refundedId:string }[] = await prisma.$queryRaw`
+        SELECT b.bookingId, b.status, b.bookingDate, p.paymentId, p.amount, p.refundedId FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
       `;
       if(booking.length == 0){
         return error(404, {
           status: false,
           message: "Booking not found",
         })
-      }else if(booking[0].status != "PAID"){
+      }else if(booking[0].status != "REFUNDED"){
         return error(400, {
           status: false,
           message: "Booking is not eligible for refund",
@@ -666,25 +806,23 @@ export const bookingModule = new Elysia({
           message: "Booking is not eligible for refund.",
         })
       }else{
-        // Refund the payment here
-        const refund:Stripe.Refund = await stripe.refunds.create({
-          payment_intent: booking[0].paymentId,
-          amount: booking[0].amount,
-          reason: "requested_by_customer",
-        })
-        // Update the booking status to REFUNDED
+        // cancel refunded the payment here
+        let refundedCancel:Stripe.Refund | null = null;
+        if(booking[0].refundedId){
+          refundedCancel = await stripe.refunds.cancel(booking[0].refundedId);
+        }
+        // Update the booking status to PAID
         await prisma.$executeRaw`
-          UPDATE booking SET status = 'REFUNDED' WHERE bookingId = ${bookingId}
+          UPDATE booking SET status = 'PAID' WHERE bookingId = ${bookingId}
         `
+        // Delete the refund record
         await prisma.$executeRaw`
-          UPDATE payment SET refundedId = ${refund.id}, refundedDate = NOW(), refundAmount = ${booking[0].amount} WHERE bookingId = ${bookingId}
+          UPDATE payment SET refundedId = NULL, refundedDate = NULL, refundAmount = 0 WHERE bookingId = ${bookingId}
         `
         return {
           status: true,
-          message: "Refund successful",
-          refundId: refund.id,
-          bookingId: booking[0].bookingId,
-          amount: booking[0].amount,
+          message: "Refund cancelled successfully",
+          refundedCancel:refundedCancel
         }
       }
     }catch(err){
@@ -694,4 +832,154 @@ export const bookingModule = new Elysia({
         error: err instanceof Error ? err.message : "Unknown error occurred"
       });
     }
+})
+.put("/change-booking-date/:userId/:bookingId", async ({ params, body }:{ params:{bookingId:string, userId:string}, body:{ bookingDate: string }}) => {
+    try{
+      const { bookingId, userId } = params;
+      const { bookingDate } = body;
+      if(!bookingDate){
+        return error(400, {
+          status: false,
+          message: "Missing required parameters",
+        })
+      }
+      const booking:{ bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
+        SELECT b.bookingId, b.status, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${bookingId} AND b.userId = ${userId} AND b.bookingId = p.bookingId
+      `;
+      if(booking.length == 0){
+        return error(404, {
+          status: false,
+          message: "Booking not found",
+        })
+      }else if(booking.length != 1){
+        return error(400,{
+          status: false,
+          message: "How did you get here!",
+        })
+      }else{
+        // Update the booking record
+        await prisma.$executeRaw`
+          UPDATE booking SET bookingDate = STR_TO_DATE(${bookingDate}, '%Y-%m-%dT%H:%i:%s.%fZ') WHERE bookingId = ${bookingId}
+        `
+        return {
+          status: true,
+          message: "Booking date updated successfully",
+          bookingId: booking[0].bookingId,
+        }
+      }
+    }catch(err){
+      console.error("Error fetching booking:", err);
+      return error(500, {
+        status: false,
+        error: err instanceof Error ? err.message : "Unknown error occurred"
+      });
+    }
+})
+.delete("/delete/:userId/:bookingId", async ({ params }:{ params:{bookingId:string, userId:string}}) => {
+    const { bookingId, userId } = params;
+    if(!bookingId || !userId){
+        return error(400, {
+            status: false,
+            message: "Missing required parameters",
+        })
+    }
+
+    try {
+        return await prisma.$transaction(async (tx) => {
+            const booking: { bookingId: string, status: BookingStatus, paymentId: string, amount: number }[] = await tx.$queryRaw`
+                SELECT b.bookingId, b.status, p.paymentId, p.amount 
+                FROM booking b, payment p 
+                WHERE b.bookingId = ${bookingId} 
+                AND b.userId = ${userId} 
+                AND b.bookingId = p.bookingId
+            `;
+            
+            if(booking.length == 0) {
+                return error(404, {
+                    status: false,
+                    message: "Booking not found",
+                });
+            } else if(booking.length != 1) {
+                return error(400, {
+                    status: false,
+                    message: "How did you get here!",
+                });
+            }
+            
+            // Delete records in the correct order (respecting foreign key constraints)
+            await tx.$executeRaw`DELETE FROM booking_flight WHERE bookingId = ${bookingId}`;
+            await tx.$executeRaw`DELETE FROM passenger_booking WHERE bookingId = ${bookingId}`;
+            await tx.$executeRaw`DELETE FROM payment WHERE bookingId = ${bookingId}`;
+            await tx.$executeRaw`DELETE FROM ticket WHERE bookingId = ${bookingId}`;
+            await tx.$executeRaw`DELETE FROM booking WHERE bookingId = ${bookingId}`;
+            
+            return {
+                status: true,
+                message: "Booking deleted successfully",
+                bookingId: booking[0].bookingId,
+            };
+        });
+    } catch(err) {
+      console.error("Error deleting booking:", err);
+      return error(500, {
+        status: false,
+        error: err instanceof Error ? err.message : "Unknown error occurred"
+      });
+    }
+})
+.delete("/delete-passenger/:userId/:passportNum/:bookingId", async ({ params }:{ params:{passportNum:string, userId:string,bookingId: string}}) => {
+  try{
+    if(!params.passportNum || !params.userId || !params.bookingId){
+      return error(400, {
+        status: false,
+        message: "Missing required parameters",
+      })
+    }
+    // Check if the booking exists
+    const booking:{ bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
+      SELECT b.bookingId, b.status, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${params.bookingId} AND b.userId = ${params.userId} AND b.bookingId = p.bookingId
+    `;
+    if(booking.length == 0){
+      return error(404, {
+        status: false,
+        message: "Booking not found",
+      })
+    }else if(booking.length != 1){
+      return error(400,{
+        status: false,
+        message: "How did you get here!",
+      })
+    }else{
+      //Check if the passenger exists
+      const passenger:{ passportNum:string }[] = await prisma.$queryRaw`
+        SELECT passportNum FROM passenger WHERE passportNum = ${params.passportNum} AND userId = ${params.userId}
+      `;
+      if(passenger.length == 0){
+        return error(404, {
+          status: false,
+          message: "Passenger not found",
+        })
+      }
+      // Delete the passenger_booking record
+      await prisma.$executeRaw`
+        DELETE FROM passenger_booking WHERE bookingId = ${params.bookingId} AND passportNum = ${params.passportNum}
+      `
+      // Delete the ticket record
+      await prisma.$executeRaw`
+        DELETE FROM ticket WHERE bookingId = ${params.bookingId} AND passportNum = ${params.passportNum} AND userId = ${params.userId}
+      `
+      return {
+        status: true,
+        message: "Passenger deleted successfully",
+        bookingId: params.bookingId,
+        passportNum: params.passportNum,
+      }
+    }
+  }catch(err){
+    console.error("Error deleting booking:", err);
+    return error(500, {
+      status: false,
+      error: err instanceof Error ? err.message : "Unknown error occurred"
+    });
+  }
 })

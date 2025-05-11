@@ -29,6 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import MetricsCard from "./metrics"
 import { shortenNumber } from './../../../lib/price';
+import { toast } from "sonner"
 
 const refreshInterval = 60 // 1 minute in seconds
 
@@ -56,8 +57,8 @@ export default function AdminDashboard() {
             return { from: subDays(now, 1), to: now }
           case "30d":
             return { from: subDays(now, 30), to: now }
-          case "2w":
-            return { from: subWeeks(now, 2), to: now }
+          case "1w":
+            return { from: subWeeks(now, 1), to: now }
           case "3m":
             return { from: subMonths(now, 3), to: now }
           case "6m":
@@ -71,10 +72,9 @@ export default function AdminDashboard() {
             return dateRange
         }
     }, [dateRange])
-  
     // Function to fetch dashboard data
     const fetchDashboardData = useCallback(async () => {
-        if(isCalendarOpen) return // Prevent updating data on selecting date
+        if (isCalendarOpen) return // Prevent updating data on selecting date
         console.log("[Fetch Data] Currently fetch overview stats.")
         setIsError(false)
         setIsRefreshing(true)
@@ -83,33 +83,40 @@ export default function AdminDashboard() {
             const range = timeRange === "custom" ? dateRange : calculateDateRange(timeRange)
             const fromDate = format(range.from, "yyyy-MM-dd")
             const toDate = format(range.to, "yyyy-MM-dd")
-    
-            // Try to fetch from API
-            try {
-                const response = await fetch(`/api/admin/overview?range=${fromDate},${toDate}&interval=${timeInterval}`)
-                const result = await response.json()
-        
-                if (result.success) {
-                    setData(result.data)
-                    setIsRefreshing(false)
-                    setLoading(false)
-                    return
+
+            // Apply toast.promise here
+            toast.promise(
+                (async () => {
+                    const response = await fetch(`/api/admin/overview?range=${fromDate},${toDate}&interval=${timeInterval}`)
+                    const result = await response.json()
+
+                    if (result.status) {
+                        setData(result.data)
+                        return "Dashboard data fetched successfully!"; // Resolve message for success
+                    } else {
+                        throw new Error(result.message || "Failed to fetch dashboard data."); // Reject with an error message
+                    }
+                })(),
+                {
+                    loading: "Fetching Dashboard data",
+                    success: (message) => message, // Use the message returned from the promise
+                    error: (error) => {
+                        setIsError(true); // Set error state on failure
+                        console.error("API Error:", error);
+                        return error.message || "Failed to load dashboard data."; // Error message for toast
+                    },
                 }
-            } catch (apiError) {
-                setLoading(false)
-                setIsError(true)
-                console.error(apiError)
-                console.log("API not available, using mock data")
-            }
-            
+            );
+
         } catch (error) {
-                console.error("Error in dashboard:", error)
+            console.error("Error in dashboard:", error)
+            setIsError(true); // Ensure error state is set for any outer catch
         } finally {
-                setLoading(false)
-                setIsRefreshing(false)
-                setNextRefresh(refreshInterval) // Reset the countdown
+            setLoading(false)
+            setIsRefreshing(false)
+            setNextRefresh(refreshInterval) // Reset the countdown
         }
-    }, [timeRange, dateRange, timeInterval, calculateDateRange, isCalendarOpen])
+    }, [timeRange, dateRange, timeInterval, calculateDateRange, isCalendarOpen]);
   
     // Handle time range change
     const handleTimeRangeChange = (newRange: TimeRangeType) => {
@@ -199,10 +206,10 @@ export default function AdminDashboard() {
                     1D
                   </Button>
                   <Button
-                    variant={timeRange === "2w" ? "default" : "outline"}
+                    variant={timeRange === "1w" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => handleTimeRangeChange("2w")}>
-                    2W
+                    onClick={() => handleTimeRangeChange("1w")}>
+                    1W
                   </Button>
                   <Button
                     variant={timeRange === "30d" ? "default" : "outline"}
@@ -348,7 +355,16 @@ export default function AdminDashboard() {
                 title="Total Revenue (THB)"
                 color="revenue"
                 isError={isError}
-                desc={((data?.totalRevenue[0]?.percentChange ?? 0) > 0 ? "+" : "") + (data?.totalRevenue[0]?.percentChange || 0) + "% from previous period"}
+                desc={(
+                  (data?.previousPeriodTotalRevenue ?? []).length > 0 ?
+                  (
+                    (
+                      (data?.totalRevenue?.reduce((sum, item) => sum + (item.totalRevenue || 0), 0) ?? 0) * 100
+                    )
+                    / (data?.previousPeriodTotalRevenue?.reduce((sum, item) => sum + (item.totalRevenue || 0), 0) || 1)
+                  ) - 100
+                  : 0
+                ).toFixed(2) + "% from previous period"}
                 value={shortenNumber(data?.totalRevenue.reduce((sum, item) => sum + (item.totalRevenue || 0), 0) || 0)}
                 loading={loading}
             />

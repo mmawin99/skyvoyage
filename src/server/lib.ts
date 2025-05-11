@@ -53,6 +53,29 @@ export function sanitizeBigInt(obj: any): any {
   return obj;
 }
 
+export function getPreviousPeriod(startDate:string, endDate:string): { start: string; end: string } {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Calculate the difference in milliseconds
+  const diff = end.getTime() - start.getTime();
+
+  // Subtract the difference from both dates
+  const newEnd = new Date(start.getTime());
+  const newStart = new Date(start.getTime() - diff);
+
+  // Format as YYYY-MM-DD
+  const format = (d:Date) => d.toISOString();
+  console.log("Start", startDate)
+  console.log("New Start", format(newStart))
+  console.log("End", endDate)
+  console.log("New End", format(newEnd))
+  return {
+    start: format(newStart),
+    end: format(newEnd),
+  };
+}
+
 
 /**
  * Helper for parsing date ranges from query parameters
@@ -62,7 +85,7 @@ export function sanitizeBigInt(obj: any): any {
  */
 export function getDateRange(query: { range?: string }, defaultRange: string = '30d'): { start: string; end: string } {
   const range = query.range || defaultRange;
-  console.log("Range", range)
+  // console.log("Range", range)
   let end = new Date();
   let start = new Date();
 
@@ -87,11 +110,10 @@ export function getDateRange(query: { range?: string }, defaultRange: string = '
       end = new Date(dates[1]);
     }
   }
-
   // Set end time to the end of the day
-  end.setHours(23, 59, 59, 999);
-  console.log("Start", start.toISOString())
-  console.log("End", end.toISOString())
+  end.setUTCHours(0,0,0,0);
+  // console.log("Start", start.toISOString())
+  // console.log("End", end.toISOString())
   return { start:start.toISOString(), end:end.toISOString() };
 }
 

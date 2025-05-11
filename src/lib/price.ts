@@ -94,7 +94,13 @@ export function customRoundPricing(num:number):number {
     // Default return to handle all cases
     return num;
 }
+export function customRoundPricingDown(num: number): number {
+    // Return 0 if the number is negative
+    if (num < 0) return 0;
 
+    // Round down to the nearest 100
+    return Math.floor(num / 100) * 100;
+}
 export function extractVAT(totalFare:number, vatRate = 0.07) {
     const vat = (totalFare * vatRate) / (1 + vatRate);
     const base = totalFare - vat;

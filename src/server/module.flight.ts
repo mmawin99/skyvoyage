@@ -55,10 +55,10 @@ export interface FlightScheduleTransit1 {
 
 function calculatePrice(flightClass: string, basePrice: number): number {
     const classMultiplier: Record<string, number> = {
-        Y: 1.1333,
-        W: 1.3333,
-        C: 1.5533,
-        F: 2.1333,
+        Y: 0.8333,
+        W: 1.1333,
+        C: 1.7333,
+        F: 2.5333,
     };
     const multiplier = classMultiplier[flightClass] || 1;
     return Math.round(basePrice * multiplier);
@@ -477,10 +477,10 @@ export const flightModule = new Elysia({
             })
         }
     })
-    .post("/schedule/:size/:kind/:page", async ({params,body}:{params:{ query: string, size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, body:{query:string}})=>{
+    .get("/schedule/:size/:kind/:page", async ({params,query}:{params:{ query: string, size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, query:{query:string}})=>{
         const timeStart = Date.now()
         const { size, page, kind} = params
-        const { query } = body
+        const { query:searchString } = query
         if(!size || !page){
             return error(400, {
                 status: false,
@@ -493,7 +493,7 @@ export const flightModule = new Elysia({
         let totalCount: { count: number }[] = []
         try {
             
-            if(!query){
+            if(!searchString || searchString === "" || searchString === undefined || searchString === null){
                 // Initialize the base query parts
                 let queryString = `
                     SELECT 
@@ -548,7 +548,7 @@ export const flightModule = new Elysia({
                 totalCount = await prisma.$queryRawUnsafe(countQueryString);
             } else {
                 // Build search query with wildcard
-                const wildcardValue = `%${query}%`; // Assuming 'wildcard' was derived from 'query'
+                const wildcardValue = `%${searchString}%`; // Assuming 'wildcard' was derived from 'query'
                 
                 let queryString = `
                     SELECT 
@@ -717,8 +717,8 @@ export const flightModule = new Elysia({
                                 cos(radians(aa.longitude) - radians(da.longitude)) +
                                 sin(radians(da.latitude)) * sin(radians(aa.latitude))
                                 ) * 0.621371
-                            ) * (acs.costPerMile / 71) * 
-                            CASE 
+                            ) * (acs.costPerMile / 71) *
+                            CASE
                                 WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 1 THEN 2
                                 WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 3 THEN 1.8
                                 WHEN DATEDIFF(fo.departureTime, CURDATE()) <= 5 THEN 1.6
@@ -736,18 +736,18 @@ export const flightModule = new Elysia({
                     JOIN airport da ON f.departAirportId = da.airportCode
                     JOIN airport aa ON f.arriveAirportId = aa.airportCode
                     JOIN seatmap_info sm ON ac.seatMapId = sm.seatMapId
-                    JOIN seat s ON s.seatMapId = sm.seatMapId AND s.class = ${flightClass}
-                    LEFT JOIN ticket t ON t.seatId = s.seatId AND t.flightId = fo.flightId
-                    LEFT JOIN booking b ON t.bookingId = b.bookingId
                     WHERE
                         f.departAirportId = ${depAirport}
                         AND f.arriveAirportId = ${arrAirport}
                         AND DATE(CONVERT_TZ(fo.departureTime, 'UTC', da.timezone)) = ${depDate}
                         AND fo.departureTime > UTC_TIMESTAMP() + INTERVAL 90 MINUTE
-                        
-                    GROUP BY fo.flightId
-                    HAVING COUNT(s.seatId) > COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID') THEN 1 ELSE NULL END) 
-                    AND COUNT(s.seatId) - COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID') THEN 1 ELSE NULL END) > ${passengerCount};
+                        AND (
+                            SELECT COUNT(s.seatId) - COUNT(CASE WHEN t.ticketId IS NOT NULL AND (b.status = 'PAID') THEN 1 ELSE NULL END)
+                            FROM seat s
+                            LEFT JOIN ticket t ON t.seatId = s.seatId AND t.flightId = fo.flightId
+                            LEFT JOIN booking b ON t.bookingId = b.bookingId
+                            WHERE s.seatMapId = sm.seatMapId AND s.class = ${flightClass}
+                        ) > ${passengerCount};
                 `
                 if(transitCount == 0){
                     return {

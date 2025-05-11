@@ -21,7 +21,7 @@ export const adminAuthModule = new Elysia({
         // }
         const {username, password, permission} = body
         const hashedPassword = await hashDataWithSHA256AndSalt(password)
-        const admin:Admin[] = await prisma.$queryRaw`SELECT * FROM admin WHERE username = ${username}`
+        const admin:Admin[] = await prisma.$queryRaw`SELECT username FROM admin WHERE username = ${username}`
         if(admin.length != 0){
             return error(400, {
                 message: "Username already exists",

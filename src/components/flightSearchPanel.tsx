@@ -325,7 +325,7 @@ export function FlightSearchPanel() {
                 title="Airport or city"
                 selected={origin}
                 onSelect={setOrigin}
-                requestMethod="POST"
+                requestMethod="GET"
                 results={originAirports}
                 setResults={setOriginAirports}
                 loading={loadingOrigin}
@@ -351,7 +351,7 @@ export function FlightSearchPanel() {
                 title="Airport or city"
                 selected={destination}
                 onSelect={setDestination}
-                requestMethod="POST"
+                requestMethod="GET"
                 results={destinationAirports}
                 setResults={setDestinationAirports}
                 loading={loadingDestination}

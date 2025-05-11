@@ -189,3 +189,15 @@ export function createUniversalFlightSchedule(flights: FlightOperationRow[]): Un
 export const stripePayment = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2025-03-31.basil', // Use the latest API version
 })
+
+
+export function sanitizeStringForSql(input:string | number | null | undefined): string {
+  if (input === null || input === undefined) {
+    return '';
+  }
+  
+  const str = String(input);
+  
+  // Only allow alphanumeric characters, spaces, and safe symbols
+  return str.replace(/[^a-zA-Z0-9 _\-.,?!@#$%^&*()+=]/g, '');
+}

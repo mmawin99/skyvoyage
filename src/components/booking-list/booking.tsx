@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { format } from "date-fns"
 import { Calendar, Clock, CreditCard, Edit, MoreHorizontal, Plane, Plus, Trash, User, Users, Wallet } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -22,6 +21,7 @@ import { BookingStatus, CabinClassType, searchSelectedBookingRoutes } from "@/ty
 import { extractVAT } from "@/lib/price"
 import { formatFareType } from "@/lib/farePackage"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible"
+import { formatInTimeZone } from "@/lib/utils"
 
 // Props for the BookingDetails component
 interface BookingDetailsProps {
@@ -121,10 +121,12 @@ export function BookingDetails({
   const [activeTab, setActiveTab] = useState("overview")
   const [isCollapsed, setIsCollapsed] = useState(defaultOpen)
   // Format dates for display
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string, timezone:string) => {
     try {
+      const useTimezone = timezone === "USER_CURRENT_TIMEZONE" ? Intl.DateTimeFormat().resolvedOptions().timeZone : timezone
       if(dateStr === "") return "N/A"
-      return format(new Date(dateStr), "MMM dd, yyyy HH:mm")
+
+      return formatInTimeZone(new Date(dateStr),useTimezone, "MMM dd, yyyy HH:mm")
     } catch (e) {
         console.error("formatDate Error: ", dateStr, e)
       return dateStr
@@ -132,9 +134,11 @@ export function BookingDetails({
   }
 
   // Format times for display
-  const formatTime = (timeStr: string) => {
+  const formatTime = (timeStr: string, timezone:string) => {
     try {
-      return format(new Date(timeStr), "hh:mm a")
+      const useTimezone = timezone === "USER_CURRENT_TIMEZONE" ? Intl.DateTimeFormat().resolvedOptions().timeZone : timezone
+      if(timeStr === "") return "N/A"
+      return formatInTimeZone(new Date(timeStr),useTimezone, "hh:mm a")
     } catch (e) {
         console.error("formatTime Error: ", e)
       return timeStr
@@ -268,14 +272,14 @@ export function BookingDetails({
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Depart Date:</span>
-                            <span>{formatDate(item.selectedDepartRoute.flight.segments[0].departureTime)}</span>
+                            <span>{formatDate(item.selectedDepartRoute.flight.segments[0].departureTime, item.selectedDepartRoute.flight.segments[0].departTimezone)}</span>
                           </div>
                         </div>
                         <div className="space-y-2">
                           {item.queryString.tripType === "roundtrip" && (
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Return Date:</span>
-                              <span>{formatDate(item?.selectedReturnRoute?.flight.segments[0].departureTime ?? "")}</span>
+                              <span>{formatDate(item?.selectedReturnRoute?.flight.segments[0].departureTime ?? "", item?.selectedReturnRoute?.flight.segments[0].departTimezone ?? "")}</span>
                             </div>
                           )}
                           <div className="flex justify-between">
@@ -312,7 +316,7 @@ export function BookingDetails({
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Payment Date:</span>
-                            <span>{item.payment.paymentDate ? formatDate(item.payment.paymentDate) : "N/A"}</span>
+                            <span>{item.payment.paymentDate ? formatDate(item.payment.paymentDate, "USER_CURRENT_TIMEZONE") : "N/A"}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Payment Method:</span>
@@ -345,7 +349,7 @@ export function BookingDetails({
                       <Plane className="mr-2 h-4 w-4" /> Departure Flight
                     </CardTitle>
                     <CardDescription>
-                      {formatDate(item.selectedDepartRoute.flight.segments[0].departureTime)} • {formatFareType(item.selectedDepartRoute.selectedFare)} Fare
+                      {formatDate(item.selectedDepartRoute.flight.segments[0].departureTime,item.selectedDepartRoute.flight.segments[0].departTimezone)} • {formatFareType(item.selectedDepartRoute.selectedFare)} Fare
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -354,7 +358,7 @@ export function BookingDetails({
                         <div className="text-xl text-left font-bold">{item.selectedDepartRoute.flight.departureAirport}</div>
                         <div className="text-sm text-left text-muted-foreground">
                           {item.selectedDepartRoute.flight.segments[0].departureTime
-                            ? formatTime(item.selectedDepartRoute.flight.segments[0].departureTime)
+                            ? formatTime(item.selectedDepartRoute.flight.segments[0].departureTime,item.selectedDepartRoute.flight.segments[0].departTimezone)
                             : "N/A"}
                         </div>
                       </div>
@@ -383,6 +387,9 @@ export function BookingDetails({
                                 item.selectedDepartRoute.flight.segments[
                                   item.selectedDepartRoute.flight.segments.length - 1
                                 ].arrivalTime,
+                                item.selectedDepartRoute.flight.segments[
+                                  item.selectedDepartRoute.flight.segments.length - 1
+                                ].arriveTimezone,
                               )
                             : "N/A"}
                         </div>
@@ -406,12 +413,12 @@ export function BookingDetails({
                                 <div>
                                   <div className="text-sm text-muted-foreground">Departure</div>
                                   <div className="font-medium">{segment.departureAirport}</div>
-                                  <div className="text-sm">{formatTime(segment.departureTime)}</div>
+                                  <div className="text-sm">{formatTime(segment.departureTime, segment.departTimezone)}</div>
                                 </div>
                                 <div className="text-right">
                                   <div className="text-sm text-muted-foreground">Arrival</div>
                                   <div className="font-medium">{segment.arrivalAirport}</div>
-                                  <div className="text-sm">{formatTime(segment.arrivalTime)}</div>
+                                  <div className="text-sm">{formatTime(segment.arrivalTime, segment.arriveTimezone)}</div>
                                 </div>
                               </div>
                               <div className="mt-2 text-sm">
@@ -433,7 +440,7 @@ export function BookingDetails({
                         <Plane className="mr-2 h-4 w-4 transform rotate-180" /> Return Flight
                       </CardTitle>
                       <CardDescription>
-                        {formatDate(item?.selectedReturnRoute?.flight.segments[0].departureTime ?? "")} • {formatFareType(item.selectedReturnRoute.selectedFare)} Fare
+                        {formatDate(item?.selectedReturnRoute?.flight.segments[0].departureTime ?? "", item?.selectedReturnRoute?.flight.segments[0].departTimezone ?? "")} • {formatFareType(item.selectedReturnRoute.selectedFare)} Fare
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -442,7 +449,7 @@ export function BookingDetails({
                           <div className="text-xl text-left font-bold">{item.selectedReturnRoute.flight.departureAirport}</div>
                           <div className="text-sm text-left text-muted-foreground">
                             {item.selectedReturnRoute.flight.segments[0].departureTime
-                              ? formatTime(item.selectedReturnRoute.flight.segments[0].departureTime)
+                              ? formatTime(item.selectedReturnRoute.flight.segments[0].departureTime, item.selectedReturnRoute.flight.segments[0].departTimezone)
                               : "N/A"}
                           </div>
                         </div>
@@ -471,6 +478,9 @@ export function BookingDetails({
                                   item.selectedReturnRoute.flight.segments[
                                     item.selectedReturnRoute.flight.segments.length - 1
                                   ].arrivalTime,
+                                  item.selectedReturnRoute.flight.segments[
+                                    item.selectedReturnRoute.flight.segments.length - 1
+                                  ].arriveTimezone,
                                 )
                               : "N/A"}
                           </div>
@@ -494,12 +504,12 @@ export function BookingDetails({
                                   <div>
                                     <div className="text-sm text-muted-foreground">Departure</div>
                                     <div className="font-medium">{segment.departureAirport}</div>
-                                    <div className="text-sm">{formatTime(segment.departureTime)}</div>
+                                    <div className="text-sm">{formatTime(segment.departureTime, segment.departTimezone)}</div>
                                   </div>
                                   <div className="text-right">
                                     <div className="text-sm text-muted-foreground">Arrival</div>
                                     <div className="font-medium">{segment.arrivalAirport}</div>
-                                    <div className="text-sm">{formatTime(segment.arrivalTime)}</div>
+                                    <div className="text-sm">{formatTime(segment.arrivalTime, segment.arriveTimezone)}</div>
                                   </div>
                                 </div>
                                 <div className="mt-2 text-sm">
@@ -561,7 +571,7 @@ export function BookingDetails({
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 <div>
                                   <div className="text-sm text-muted-foreground">Date of Birth</div>
-                                  <div>{formatDate(passenger.dateOfBirth)}</div>
+                                  <div>{formatDate(passenger.dateOfBirth, "USER_CURRENT_TIMEZONE")}</div>
                                 </div>
                                 <div>
                                   <div className="text-sm text-muted-foreground">Nationality</div>
@@ -569,7 +579,7 @@ export function BookingDetails({
                                 </div>
                                 <div>
                                   <div className="text-sm text-muted-foreground">Passport Expiry</div>
-                                  <div>{formatDate(passenger.passportExpiry)}</div>
+                                  <div>{formatDate(passenger.passportExpiry,"USER_CURRENT_TIMEZONE")}</div>
                                 </div>
                                 {/* <div>
                                   <div className="text-sm text-muted-foreground">Status</div>
@@ -670,7 +680,7 @@ export function BookingDetails({
                       <div>
                         <div className="text-sm text-muted-foreground">Payment Date</div>
                         <div className="font-medium">
-                          {item.payment.paymentDate ? formatDate(item.payment.paymentDate) : "N/A"}
+                          {item.payment.paymentDate ? formatDate(item.payment.paymentDate,"USER_CURRENT_TIMEZONE") : "N/A"}
                         </div>
                       </div>
                       <div>
@@ -731,7 +741,7 @@ export function BookingDetails({
               </div>
               <div className="text-sm text-muted-foreground">
                 <Clock className="inline-block mr-1 h-4 w-4" />
-                Booked on {item.bookingDate ? formatDate(item.bookingDate) : "N/A"}
+                Booked on {item.bookingDate ? formatDate(item.bookingDate,"USER_CURRENT_TIMEZONE") : "N/A"}
               </div>
             </div>
             {

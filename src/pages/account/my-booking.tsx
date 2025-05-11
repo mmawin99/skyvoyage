@@ -192,7 +192,7 @@ export default function SearchResults() {
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-[15px] text-center">
                             This action can not be undone. This will request a refund for your booking.
-                            (Only 75% of the total will be refunded)
+                            <span className="text-destructive">(Only 75% of the total will be refunded, 45% if some flight will depart in less than 12 hours)</span>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-2 sm:justify-center">

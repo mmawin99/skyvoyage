@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
-import { format } from "date-fns"
 import { ScheduleListAdmin } from "@/types/type"
+import { formatInTimeZone } from "@/lib/utils"
 
 interface FlightScheduleTableProps {
   flights: ScheduleListAdmin[]
@@ -21,38 +21,38 @@ export default function FlightScheduleTable({ flights, isLoading,
   searchQuery,
   setSearchQuery
  }: FlightScheduleTableProps) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [sortColumn, setSortColumn] = useState<keyof ScheduleListAdmin>("flightNum")
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  console.log(flights)
-  const handleSort = (column: keyof ScheduleListAdmin) => {
-    if (sortColumn === column) {
-      // setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-    } else {
-      // setSortColumn(column)
-      // setSortDirection("asc")
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [sortColumn, setSortColumn] = useState<keyof ScheduleListAdmin>("flightNum")
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+    console.log(flights)
+    const handleSort = (column: keyof ScheduleListAdmin) => {
+        if (sortColumn === column) {
+        // setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+        } else {
+        // setSortColumn(column)
+        // setSortDirection("asc")
+        }
     }
-  }
 
-  const sortedFlights = [...flights].sort((a, b) => {
-    if (sortDirection === "asc") {
-      return a[sortColumn] > b[sortColumn] ? 1 : -1
-    } else {
-      return a[sortColumn] < b[sortColumn] ? 1 : -1
+    const sortedFlights = [...flights].sort((a, b) => {
+        if (sortDirection === "asc") {
+        return a[sortColumn] > b[sortColumn] ? 1 : -1
+        } else {
+        return a[sortColumn] < b[sortColumn] ? 1 : -1
+        }
+    })
+
+    const filteredFlights = sortedFlights
+    
+    const formatDateTime = (dateTimeStr: string, timezone:string) => {
+        try {
+        return formatInTimeZone(new Date(dateTimeStr), timezone, "MMM dd, yyyy HH:mm")
+        } catch (e) {
+            console.error("Error parsing date:", e)
+            return dateTimeStr
+        }
     }
-  })
-
-  const filteredFlights = sortedFlights
-
-  const formatDateTime = (dateTimeStr: string) => {
-    try {
-      return format(new Date(dateTimeStr), "MMM dd, yyyy HH:mm")
-    } catch (e) {
-        console.error("Error parsing date:", e)
-        return dateTimeStr
-    }
-  }
 
   const getFlightStatus = (flight: ScheduleListAdmin) => {
     const now = new Date()
@@ -189,8 +189,8 @@ export default function FlightScheduleTable({ flights, isLoading,
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell>{formatDateTime(flight.departureTime)}</TableCell>
-                  <TableCell>{formatDateTime(flight.arrivalTime)}</TableCell>
+                  <TableCell>{formatDateTime(flight.departureTime, flight.departureTimezone)}</TableCell>
+                  <TableCell>{formatDateTime(flight.arrivalTime, flight.arrivalTimezone)}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="text-sm">{flight.aircraftModel}</span>

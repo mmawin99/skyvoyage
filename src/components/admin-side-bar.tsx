@@ -47,12 +47,12 @@ const data = {
     },
     {
       title: "Admin account",
-      url: "/admin/user?type=admin",
+      url: "/admin/users-admin",
       icon: Users,
     },
     {
       title: "User Account",
-      url: "/admin/user?type=user",
+      url: "/admin/users",
       icon: Users,
     },
     {

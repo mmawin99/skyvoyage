@@ -380,12 +380,10 @@ export const adminQueryModule = new Elysia({
         }else if(kind === "admin"){
             users = await prisma.$queryRaw`
                 SELECT
-                    uuid,
-                    firstname,
-                    lastname,
-                    email,
-                    phone,
-                    registerDate
+                    id,
+                    username,
+                    fullname,
+                    permission
                 FROM admin
                 LIMIT ${size} OFFSET ${offset}`;
         }else{
@@ -405,9 +403,16 @@ export const adminQueryModule = new Elysia({
                 }
             };
         }else{
-            const totalCount:{count:number}[] = await prisma.$queryRaw`
-                SELECT COUNT(*) as count FROM ${kind}
-            `;
+            let totalCount: { count: number }[] = [];
+            if(kind === "user"){
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) as count FROM user
+                `;
+            }else if(kind === "admin"){
+                totalCount = await prisma.$queryRaw`
+                    SELECT COUNT(*) as count FROM admin
+                `;
+            }
             const total = Number(totalCount[0]?.count || 0);
             return {
                 status: true,

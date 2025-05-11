@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
 import Elysia, { error } from "elysia";
 // import modelAircraft from "../../data/model_name.json"
-import { sanitizeBigInt } from "@/server/lib";
+import { sanitizeBigInt, sanitizeStringForSql } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
 import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitAircraft, SubmitSchedule, SubmitTransit, UniversalFlightSchedule } from '@/types/type';
 import { SubmitFlight } from '@/types/type';
@@ -480,6 +480,12 @@ export const flightModule = new Elysia({
     .get("/schedule/:size/:kind/:page", async ({params,query}:{params:{ query: string, size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, query:{query:string}})=>{
         const timeStart = Date.now()
         const { size, page, kind} = params
+        if(isNaN(parseInt(String(size))) || isNaN(parseInt(String(page)))){
+            return error(400, {
+                status: false,
+                message: 'Invalid size or page',
+            })
+        }
         const { query:searchString } = query
         if(!size || !page){
             return error(400, {
@@ -502,7 +508,9 @@ export const flightModule = new Elysia({
                         fo.airlineCode,
                         a.airlineName,
                         fo.departureTime,
+                        da.timezone AS departTimezone,
                         fo.arrivalTime,
+                        aa.timezone AS arriveTimezone,
                         fo.aircraftId,
                         f.departAirportId,
                         da.name AS departureAirport,
@@ -558,7 +566,7 @@ export const flightModule = new Elysia({
                 totalCount = await prisma.$queryRawUnsafe(countQueryString);
             } else {
                 // Build search query with wildcard
-                const wildcardValue = `%${searchString}%`; // Assuming 'wildcard' was derived from 'query'
+                const wildcardValue = `%${sanitizeStringForSql(searchString)}%`; // Assuming 'wildcard' was derived from 'query'
                 
                 let queryString = `
                     SELECT 
@@ -567,7 +575,9 @@ export const flightModule = new Elysia({
                         fo.airlineCode,
                         a.airlineName,
                         fo.departureTime,
+                        da.timezone AS departTimezone,
                         fo.arrivalTime,
+                        aa.timezone AS arriveTimezone,
                         fo.aircraftId,
                         f.departAirportId,
                         da.name AS departureAirport,
@@ -601,6 +611,11 @@ export const flightModule = new Elysia({
                     queryString += ` AND fo.departureTime <= NOW() AND fo.arrivalTime >= NOW()`;
                 } else if (kind === "completed") {
                     queryString += ` AND fo.arrivalTime < NOW()`;
+                } else if (kind === "all") {
+                    queryString += ` WHERE fo.departureTime > CASE
+                            WHEN UTC_TIME() < '12:00:00' THEN UTC_DATE()
+                            ELSE CONCAT(UTC_DATE(), ' 12:00:00')
+                        END`;
                 }
                 
                 // Add ordering and pagination
@@ -639,6 +654,11 @@ export const flightModule = new Elysia({
                     countQueryString += ` AND fo.departureTime <= NOW() AND fo.arrivalTime >= NOW()`;
                 } else if (kind === "completed") {
                     countQueryString += ` AND fo.arrivalTime < NOW()`;
+                } else if (kind === "all") {
+                    countQueryString += ` WHERE fo.departureTime > CASE
+                            WHEN UTC_TIME() < '12:00:00' THEN UTC_DATE()
+                            ELSE CONCAT(UTC_DATE(), ' 12:00:00')
+                        END`;
                 }
                 
                 totalCount = await prisma.$queryRawUnsafe(countQueryString);

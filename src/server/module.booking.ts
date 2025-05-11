@@ -739,7 +739,7 @@ export const bookingModule = new Elysia({
                 const flightDepartureTime = new Date(flight.departureTime);
                 const timeDiff = flightDepartureTime.getTime() - now.getTime();
                 const hoursDiff = timeDiff / (1000 * 60 * 60); // keep as float
-                return hoursDiff > 0 && hoursDiff <= 2;
+                return hoursDiff > 0 && hoursDiff <= 12;
             });
             let refund:Stripe.Refund | null = null;
             if(nearlyDepartFlightIn12Hr){
@@ -803,9 +803,38 @@ export const bookingModule = new Elysia({
       }else if(new Date(booking[0].bookingDate) < new Date("2025-05-08T06:00:00Z")){
         return error(400, {
           status: false,
-          message: "Booking is not eligible for refund.",
+          message: "Booking is not eligible cancel refund.",
         })
       }else{
+        //Before resture refund, check if some flight departed or not
+        const flight:{dtime:Date}[] = await prisma.$queryRaw`
+          SELECT
+              fo.departureTime as dtime
+          FROM (
+              SELECT flightId
+              FROM booking_flight
+              WHERE bookingId = ${bookingId}
+          ) bf
+          JOIN flightOperate fo ON bf.flightId = fo.flightId
+        `
+        if(flight.length == 0){
+          return error(404, {
+            status: false,
+            message: "flight association not found",
+          })
+        }
+        // check some flight is departed, return error
+        const now = new Date();
+        const isFlightDeparted = flight.some(flight => {
+          const flightDepartureTime = new Date(flight.dtime);
+          return flightDepartureTime < now;
+        });
+        if (isFlightDeparted) {
+          return error(400, {
+            status: false,
+            message: "This booking cannot be restored as some flights have already departed.",
+          });
+        }
         // cancel refunded the payment here
         let refundedCancel:Stripe.Refund | null = null;
         if(booking[0].refundedId){

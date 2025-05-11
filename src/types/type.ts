@@ -311,7 +311,9 @@ export interface ScheduleListAdmin{
     airlineCode: string
     airlineName: string
     departureTime: string
+    departureTimezone: string
     arrivalTime: string
+    arrivalTimezone: string
     aircraftId: string
     departAirportId: string
     departureAirport: string

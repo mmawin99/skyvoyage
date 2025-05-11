@@ -47,12 +47,12 @@ const data = {
     },
     {
       title: "Admin account",
-      url: "/admin/admin",
+      url: "/admin/user?type=admin",
       icon: Users,
     },
     {
       title: "User Account",
-      url: "/admin/user",
+      url: "/admin/user?type=user",
       icon: Users,
     },
     {
@@ -243,49 +243,49 @@ function NavMain({
   }
 
 export function AdminSideBar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  return (
-    <Sidebar collapsible="offcanvas" variant='inset' {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-              <Link href="/admin" className="flex flex-row gap-2">
-                <PlaneIcon className="h-8 w-8" />
-                <span className="text-base font-semibold">SkyVoyage</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavairlineLevel items={data.airlineLevel} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser />
-      </SidebarFooter>
-    </Sidebar>
-  )
+    return (
+        <Sidebar collapsible="offcanvas" variant='inset' {...props}>
+            <SidebarHeader>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+                            <Link href="/admin" className="flex flex-row gap-2">
+                                <PlaneIcon className="h-8 w-8" />
+                                <span className="text-base font-semibold">SkyVoyage</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarHeader>
+            <SidebarContent>
+                <NavMain items={data.navMain} />
+                <NavairlineLevel items={data.airlineLevel} />
+                <NavSecondary items={data.navSecondary} className="mt-auto" />
+            </SidebarContent>
+            <SidebarFooter>
+                <NavUser />
+            </SidebarFooter>
+        </Sidebar>
+    )
 }
 
 export const AdminHeader = ({title, link}:{title:string, link:string})=>{
-  return (
-    <header className="sticky top-0 bg-white rounded-t-xl group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
-      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 sticky">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
-          />
-            <BreadcrumbGenerator items={[{
-              "name": "Admin System",
-              "link": "/admin"
-            },{
-              "name": title,
-              "link": link
-            }]} />
-      </div>
-    </header>
-  )
+    return (
+        <header className="sticky top-0 bg-white rounded-t-xl group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
+        <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 sticky">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+            orientation="vertical"
+            className="mx-2 data-[orientation=vertical]:h-4"
+            />
+                <BreadcrumbGenerator items={[{
+                    "name": "SkyVoyage Admin",
+                    "link": "/admin"
+                },{
+                    "name": title,
+                    "link": link
+                }]} />
+        </div>
+        </header>
+    )
 }

@@ -90,7 +90,7 @@ const PassengerInfo = () => {
                 },
             })
             const data = await response.json()
-            if(data.success){
+            if(data.status){
                 setExistPassenger(data.passengers)
             }else{
                 setExistPassenger([])

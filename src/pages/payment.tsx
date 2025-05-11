@@ -97,7 +97,7 @@ const BookingPayment = () => {
       })
 
       const data = await res.json()
-      if (data.success) setClientSecret(data.clientSecret)
+      if (data.status) setClientSecret(data.clientSecret)
     }
 
     if (sessionData?.user.uuid) 

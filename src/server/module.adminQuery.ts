@@ -1,7 +1,7 @@
 import Elysia, { error } from "elysia";
 
 import { PrismaClient } from "../../prisma-client";
-import { BookingStatus, BookingUserDetails, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes } from "@/types/type";
+import { BookingStatus, UserDetailType, FareType, PassengerFillOut, PassengerTicket, searchSelectedBookingRoutes, UserDetailAPIType, AdminDetailAPIType } from "@/types/type";
 import { createUniversalFlightSchedule, stripePayment as stripe } from "@/server/lib";
 import {BookingRow, FlightOperationRow, PassengerRow, TicketRow} from "@/types/booking"
 import Stripe from "stripe";
@@ -233,7 +233,7 @@ export const adminQueryModule = new Elysia({
 
                 // console.error("Error retrieving payment method:", error);
             }
-            const user:BookingUserDetails[] = await prisma.$queryRaw`
+            const user:UserDetailType[] = await prisma.$queryRaw`
             SELECT 
             uuid,
             firstname,
@@ -277,7 +277,7 @@ export const adminQueryModule = new Elysia({
             },
             bookingDate: booking.bookingDate ? new Date(booking.bookingDate).toISOString() : null,
             userId: booking.userId,
-            userDetails: user.length > 0 ? {
+            userDetail: user.length > 0 ? {
                 uuid: user[0].uuid,
                 firstname: user[0].firstname,
                 lastname: user[0].lastname,
@@ -318,9 +318,9 @@ export const adminQueryModule = new Elysia({
       });
     }
 })
-.get("/userList", async () => {
+.get("/bookingUserList", async () => {
     try {
-        const users:BookingUserDetails[] = await prisma.$queryRaw`
+        const users:UserDetailType[] = await prisma.$queryRaw`
             SELECT 
                 uuid,
                 firstname,
@@ -356,4 +356,76 @@ export const adminQueryModule = new Elysia({
             error: err instanceof Error ? err.message : "Unknown error occurred"
         });
     }
+})
+.get("/userList/:kind/:size/:page", async({params}:{params:{
+    kind: "admin" | "user",
+    size: number,
+    page: number
+}})=>{
+    try{
+        const {kind, size, page} = params;
+        const offset = (page - 1) * size;
+        let users: UserDetailAPIType[] | AdminDetailAPIType[] | null = null;
+        if(kind === "user"){
+            users = await prisma.$queryRaw`
+                SELECT
+                    uuid,
+                    firstname,
+                    lastname,
+                    email,
+                    phone,
+                    registerDate
+                FROM user
+                LIMIT ${size} OFFSET ${offset}`;
+        }else if(kind === "admin"){
+            users = await prisma.$queryRaw`
+                SELECT
+                    uuid,
+                    firstname,
+                    lastname,
+                    email,
+                    phone,
+                    registerDate
+                FROM admin
+                LIMIT ${size} OFFSET ${offset}`;
+        }else{
+            return error(400, {
+                status: false,
+                error: "Invalid kind"
+            });
+        }
+        if (!users || users.length === 0) {
+            return {
+                status: true,
+                data: [],
+                pagination: {
+                    total: 0,
+                    page,
+                    size
+                }
+            };
+        }else{
+            const totalCount:{count:number}[] = await prisma.$queryRaw`
+                SELECT COUNT(*) as count FROM ${kind}
+            `;
+            const total = Number(totalCount[0]?.count || 0);
+            return {
+                status: true,
+                kind: kind,
+                data: users,
+                pagination: {
+                    total,
+                    page,
+                    size
+                }
+            };
+        }
+    }catch(err){
+        console.error("Error fetching users:", err);
+        return error(500, {
+            status: false,
+            error: err instanceof Error ? err.message : "Unknown error occurred"
+        });
+    }
+
 })

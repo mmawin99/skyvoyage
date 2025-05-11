@@ -5,7 +5,6 @@
 // };
 
 import Stripe from "stripe"
-
   
 // export interface Aircraft {
 //     aircraftId: string,
@@ -494,16 +493,15 @@ export interface searchSelectedBookingRoutes extends searchSelectedRoutes{
     }
     userId: string,
     bookingDate: string | null,
-    userDetails?: BookingUserDetails
+    userDetail?: UserDetailType
 }
 
-export interface BookingUserDetails {
+export interface UserDetailType {
     uuid: string,
     firstname: string,
     lastname: string,
     email: string,
 }
-
 export interface BookingRefundAndCancelType{
     status: boolean
     message: string
@@ -519,3 +517,19 @@ export interface SeatMapVersionType{
 }
 
 export type adminPermission = "SUPER" | "DATA_ENTRY" | "USER"
+
+export interface UserDetailAPIType{
+    uuid: string,
+    firstname: string,
+    lastname: string,
+    email: string,
+    phone: string,
+    registerDate: string,
+}
+
+export interface AdminDetailAPIType {
+    id: string,
+    username: string,
+    fullname: string | null,
+    permission: adminPermission,
+}

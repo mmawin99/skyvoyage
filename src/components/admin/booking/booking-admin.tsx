@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle,
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookingStatus, BookingUserDetails, searchSelectedBookingRoutes } from '@/types/type';
+import { BookingStatus, UserDetailType, searchSelectedBookingRoutes } from '@/types/type';
 import { CalendarIcon, Loader2, TriangleAlert } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react'
 import { toast } from 'sonner';
@@ -29,7 +29,7 @@ export default function BookingAdmin() {
     const isFetchRef                                    = useRef<boolean>(false)
     const [currentUserSelector, setCurrentUserSelector] = useState<string | null>(null)
     const [iNeedUpdate, setINeedUpdate]                 = useState<boolean>(false)
-    const [userList, setUserList]                       = useState<BookingUserDetails[]>([])
+    const [userList, setUserList]                       = useState<UserDetailType[]>([])
     const isUserFetchRef                                = useRef<boolean>(false)
    
     //State for modifying booking status
@@ -57,14 +57,14 @@ export default function BookingAdmin() {
         const fetchPassenger = async () => {
             if(!backendURL || backendURL == "") return
             try {
-                const response = await fetch(`${backendURL}/query/admin/userList`, {
+                const response = await fetch(`${backendURL}/query/admin/bookingUserList`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
                     }
                 })
                 if (response.ok) {
-                    const data:{data: BookingUserDetails[], status:boolean} = await response.json()
+                    const data:{data: UserDetailType[], status:boolean} = await response.json()
                     setUserList(data?.data)
                 } else {
                     console.error("Error fetching flights:", await response.json())

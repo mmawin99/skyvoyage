@@ -7,7 +7,8 @@ const prisma = new PrismaClient()
 
 export const seatmapModule = new Elysia({
         prefix: '/seatmap',
-    }).get('/flight/:flightId/:cabinClass', async ({params} : {params: { flightId: string; cabinClass: string }}) => {
+    })
+.get('/flight/:flightId/:cabinClass', async ({params} : {params: { flightId: string; cabinClass: string }}) => {
         // Mocked seatmap data
         const {flightId, cabinClass} = params;
         try{

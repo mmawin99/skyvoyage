@@ -233,13 +233,13 @@ export function BookingDetails({
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Email:</span>
-                            <span>{item.userDetails?.email}</span>
+                            <span>{item.userDetail?.email}</span>
                           </div>
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Name:</span>
-                            <span>{item.userDetails?.firstname}{" "}{item.userDetails?.lastname}</span>
+                            <span>{item.userDetail?.firstname}{" "}{item.userDetail?.lastname}</span>
                           </div>
                         </div>
                       </div>

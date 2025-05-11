@@ -70,12 +70,4 @@ export const app = new Elysia({
       .use(dashboardAdminModule)  //See module.dashboard.ts
       .use(adminQueryModule)      //See module.adminQuery.ts
       ;
-      // app.listen(4000, ()=>{
-      //   console.log(`| CPE241 Term Project - SkyVoyage API`);
-      //   console.log(`| -----------------------------------`);
-      //   console.log(`| 🦊 Serving Elysia at http://${app.server?.hostname}:${app.server?.port}`);
-      //   console.log(`| 😺 Serving Elysia Swagger at http://${app.server?.hostname}:${app.server?.port}/v1/docs`);
-      //   console.log(`| -----------------------------------`);
-      // });
-      
       

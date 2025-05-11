@@ -523,6 +523,11 @@ export const flightModule = new Elysia({
                     queryString += ` WHERE fo.departureTime <= NOW() AND fo.arrivalTime >= NOW()`;
                 } else if (kind === "completed") {
                     queryString += ` WHERE fo.arrivalTime < NOW()`;
+                }else if (kind === "all") {
+                    queryString += ` WHERE fo.departureTime > CASE
+                            WHEN UTC_TIME() < '12:00:00' THEN UTC_DATE()
+                            ELSE CONCAT(UTC_DATE(), ' 12:00:00')
+                        END`;
                 }
                 
                 // Add ordering and pagination
@@ -543,6 +548,11 @@ export const flightModule = new Elysia({
                     countQueryString += ` WHERE fo.departureTime <= NOW() AND fo.arrivalTime >= NOW()`;
                 } else if (kind === "completed") {
                     countQueryString += ` WHERE fo.arrivalTime < NOW()`;
+                } else if (kind === "all") {
+                    countQueryString += ` WHERE fo.departureTime > CASE
+                            WHEN UTC_TIME() < '12:00:00' THEN UTC_DATE()
+                            ELSE CONCAT(UTC_DATE(), ' 12:00:00')
+                        END`;
                 }
                 
                 totalCount = await prisma.$queryRawUnsafe(countQueryString);

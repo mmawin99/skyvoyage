@@ -155,6 +155,46 @@ export default function ScheduleAdmin() {
         setDefaultFlightId(flight.flightId)
         setIsAddScheduleOpen(true)
     }
+    const confirmDeleteSchedule = async (index: number) => {
+        const flight = flights[index]
+        setIsLoading(true)
+        try {
+            const response = await fetch(`${backendURL}/flight/deleteSchedule/${flight.flightId}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            })
+            if (response.ok) {
+                const data = await response.json()
+                console.log(data)
+                toast.success("Schedule deleted successfully")
+                setPage(1)
+                setTimeout(() => {
+                    setIneedUpdate(true)
+                }, 600)
+            } else {
+                console.error("Error deleting schedule:", await response.json())
+                toast.error("Failed to delete schedule, Check console for more details.")
+            }
+        } catch (error) {
+            toast.error("Failed to delete schedule, Check console for more details.")
+            console.error("Error deleting schedule:", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+    const handleDeleteSchedule = async (index: number) => {
+        toast.warning("Are you sure you want to delete this schedule?", {
+            description: "This action cannot be undone.",
+            action:{
+                label: "Delete",
+                onClick: ()=>{
+                    confirmDeleteSchedule(index)
+                }
+            }
+        })
+    }
 
     const SelectSizeInput = ()=>{
         return (
@@ -215,7 +255,7 @@ export default function ScheduleAdmin() {
                     />
                     <SelectSizeInput />
                 </div>
-                <FlightScheduleTable handleEditSchedule={promptEditSchedule} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
+                <FlightScheduleTable handleDeleteSchedule={handleDeleteSchedule} handleEditSchedule={promptEditSchedule} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
                 <div className="flex flex-row justify-between mt-4">
                     <CustomPagination className="w-full flex flex-row justify-start" 
                         currentPage={parseInt(String(page))} 
@@ -251,7 +291,7 @@ export default function ScheduleAdmin() {
                     />
                     <SelectSizeInput />
                 </div>
-                <FlightScheduleTable handleEditSchedule={promptEditSchedule} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
+                <FlightScheduleTable handleDeleteSchedule={handleDeleteSchedule} handleEditSchedule={promptEditSchedule} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
                 <div className="flex flex-row justify-between mt-4">
                     <CustomPagination className="w-full flex flex-row justify-start" 
                     currentPage={parseInt(String(page))} 
@@ -287,7 +327,7 @@ export default function ScheduleAdmin() {
                     />
                     <SelectSizeInput />
                 </div>
-                <FlightScheduleTable handleEditSchedule={promptEditSchedule} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
+                <FlightScheduleTable handleDeleteSchedule={handleDeleteSchedule} handleEditSchedule={promptEditSchedule} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
                 <div className="flex flex-row justify-between mt-4">
                     <CustomPagination className="w-full flex flex-row justify-start" 
                     currentPage={parseInt(String(page))} 
@@ -323,7 +363,7 @@ export default function ScheduleAdmin() {
                     />
                     <SelectSizeInput />
                 </div>
-                <FlightScheduleTable handleEditSchedule={promptEditSchedule} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
+                <FlightScheduleTable handleDeleteSchedule={handleDeleteSchedule} handleEditSchedule={promptEditSchedule} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
                 <div className="flex flex-row justify-between mt-4">
                     <CustomPagination className="w-full flex flex-row justify-start" 
                     currentPage={parseInt(String(page))} 

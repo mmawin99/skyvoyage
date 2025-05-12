@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatInTimeZone } from "@/lib/utils"
 import { ScheduleListAdmin } from "@/types/type"
-import { Edit, Search } from "lucide-react"
+import { Edit, Search, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -17,11 +17,13 @@ interface FlightScheduleTableProps {
   searchQuery: string
   setSearchQuery: (query: string) => void
   handleEditSchedule: (index: number) => void
+  handleDeleteSchedule: (index: number) => void
 }
 
 export default function FlightScheduleTable({ flights, isLoading,
   searchQuery,
   setSearchQuery,
+  handleDeleteSchedule,
   handleEditSchedule
  }: FlightScheduleTableProps) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -213,10 +215,12 @@ export default function FlightScheduleTable({ flights, isLoading,
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
-                    {/* <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <Button onClick={()=>{
+                      handleDeleteSchedule(fIndex)
+                    }} variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
-                    </Button> */}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

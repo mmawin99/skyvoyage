@@ -422,6 +422,90 @@ export const flightModule = new Elysia({
             })
         }
     })
+    .delete("/deleteSchedule/:scheduleId", async ({params}:{params:{scheduleId:string}})=>{
+        const { scheduleId } = params
+        
+        if (!scheduleId) {
+            return error(400, {
+                status: false,
+                message: 'Missing required fields',
+            })
+        }
+        
+        try {
+            // Start a transaction to ensure all operations succeed or fail together
+            return await prisma.$transaction(async (tx) => {
+                // 1. Find all affected bookings
+                const affectedBookingFlights = await tx.$queryRaw<{ bookingId: string; flightId: string }[]>`
+                    SELECT bookingId, flightId 
+                    FROM booking_flight
+                    WHERE flightId = ${scheduleId}
+                `;
+                
+                const bookingIds = [...new Set(affectedBookingFlights.map(bf => bf.bookingId))];
+                
+                // 2. Delete tickets first
+                await tx.$executeRaw`
+                    DELETE FROM ticket
+                    WHERE flightId = ${scheduleId}
+                `;
+                
+                // 3. Delete booking_flight entries
+                await tx.$executeRaw`
+                    DELETE FROM booking_flight
+                    WHERE flightId = ${scheduleId}
+                `;
+                
+                // 4. For each affected booking, check if it has any remaining flights
+                for (const bookingId of bookingIds) {
+                    const remainingFlights = await tx.$queryRaw<[{count: bigint}]>`
+                        SELECT COUNT(*) as count
+                        FROM booking_flight
+                        WHERE bookingId = ${bookingId}
+                    `;
+                    
+                    // If no flights left in this booking, delete the entire booking chain
+                    if (remainingFlights[0].count === BigInt(0)) {
+                        // Delete passenger_booking records
+                        await tx.$executeRaw`
+                            DELETE FROM passenger_booking
+                            WHERE bookingId = ${bookingId}
+                        `;
+                        
+                        // Delete payment if exists
+                        await tx.$executeRaw`
+                            DELETE FROM payment
+                            WHERE bookingId = ${bookingId}
+                        `;
+                        
+                        // Finally delete the booking itself
+                        await tx.$executeRaw`
+                            DELETE FROM booking
+                            WHERE bookingId = ${bookingId}
+                        `;
+                    }
+                }
+                
+                // 5. Finally delete the flightOperate record
+                await tx.$executeRaw`
+                    DELETE FROM flightOperate 
+                    WHERE flightId = ${scheduleId}
+                `;
+                
+                return {
+                    status: true,
+                    message: 'Schedule and all related data deleted successfully',
+                };
+            });
+        } catch (err) {
+            console.error(err);
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            });
+        }
+    })
     .post("/addFlight", async({body}:{body:SubmitFlight})=>{
         try{
 

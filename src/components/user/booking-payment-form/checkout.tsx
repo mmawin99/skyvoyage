@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js'
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { format } from 'date-fns'
-import { useRouter } from 'next/router'
-import { toast } from 'sonner'
-import { useSession } from 'next-auth/react'
-import { searchSelectedRoutes } from '@/types/type'
-import { CheckCircleIcon, EqualApproximately, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { searchSelectedRoutes } from '@/types/type'
+import { PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
+import { CheckCircleIcon, EqualApproximately, Loader2 } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/router'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 export const CheckoutForm = ({ selectedRoute, totalFare, thbFare, onComplete }: {
   selectedRoute: searchSelectedRoutes

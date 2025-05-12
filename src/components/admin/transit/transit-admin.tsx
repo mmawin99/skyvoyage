@@ -1,18 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 "use client"
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { DebouncedSearch } from "@/components/reusable/search"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { adminTransitListType, Airline, SubmitTransit } from "@/types/type"
 import { PlaneIcon, PlusCircle } from "lucide-react"
-import { adminTransitListType, Airline, Schedule, ScheduleListAdmin, SubmitSchedule, SubmitTransit } from "@/types/type"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 import { CustomPagination } from "../../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
-import TransitTable from "./transit-table"
-import { DebouncedSearch } from "@/components/reusable/search"
 import AddTransitSheet from "./add-transit-sheet"
-import { toast } from "sonner"
+import TransitTable from "./transit-table"
 
 interface TransitAdminResponseType {
     message: string

@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { Calendar, Clock, CreditCard, Edit, MoreHorizontal, Plane, Plus, Trash, User, Users, Wallet } from "lucide-react"
+import { useState } from "react"
 
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,13 +15,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookingStatus, CabinClassType, searchSelectedBookingRoutes } from "@/types/type"
-import { extractVAT } from "@/lib/price"
 import { formatFareType } from "@/lib/farePackage"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible"
+import { extractVAT } from "@/lib/price"
 import { formatInTimeZone } from "@/lib/utils"
+import { BookingStatus, CabinClassType, searchSelectedBookingRoutes } from "@/types/type"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible"
 
 // Props for the BookingDetails component
 interface BookingDetailsProps {

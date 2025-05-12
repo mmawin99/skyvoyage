@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardImage, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { PassengerFillOut, PassengerTicket, searchSelectedFlight, searchSelectedRoutes, SeatmapAPI, SeatmapFetch } from '@/types/type'
+import { PassengerFillOut, PassengerTicket, searchSelectedRoutes, SeatmapAPI, SeatmapFetch } from '@/types/type'
 import { ArrowRight } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 

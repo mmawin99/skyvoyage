@@ -1,9 +1,9 @@
+import { Button } from "@/components/ui/button"
+import { adminPermission } from "@/types/type"
+import { Loader2, LockKeyhole } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { Loader2, LockKeyhole } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import React from "react"
-import { adminPermission } from "@/types/type"
 // import { BackendURLType, useBackendURL } from "./backend-url-provider"
 
 interface AdminWrapperProps {

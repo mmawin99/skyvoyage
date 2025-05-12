@@ -1,9 +1,8 @@
 "use client"
 import { LucidePlane } from 'lucide-react';
-import Link from 'next/link';
-import * as React from 'react';
-import { Button } from './ui/button';
 import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from './ui/button';
 export const AppFooter = () => {
     return (
         <div className="bg-accent-foreground text-white pt-10 pb-6">

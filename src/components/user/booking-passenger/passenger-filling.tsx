@@ -1,19 +1,19 @@
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
+import { CountryList } from '@/lib/country'
+import { cn } from '@/lib/utils'
 import { loadExistPassengerType, PassengerFillOut, searchSelectedRoutes } from '@/types/type'
+import { format } from 'date-fns'
 import { CalendarIcon, Check, ChevronsUpDown, SearchX, TriangleAlert } from 'lucide-react'
 import { NextRouter, useRouter } from 'next/router'
 import React, { useState } from 'react'
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils'
-import { Calendar } from '@/components/ui/calendar'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
-import { CountryList } from '@/lib/country'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 
 const calculateAge = (dateOfBirthISO: string): number => {
     

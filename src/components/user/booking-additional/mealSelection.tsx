@@ -207,6 +207,5 @@ const MealAdditionForm = ({
 }
 
 export {
-    MealSelectionCard,
-    MealAdditionForm
+    MealAdditionForm, MealSelectionCard
 }

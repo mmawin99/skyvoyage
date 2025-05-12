@@ -1,26 +1,21 @@
 import { v4 as uuidv4 } from 'uuid'
 import Elysia, { error } from "elysia";
-import { user as User } from "../../prisma-client";
+import { admin as Admin, user as User } from "../../prisma-client";
 import * as jose from 'jose'
 import { hashDataWithSHA256AndSalt, JWT_SECRET } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
+import { SubmitEditAdminProps, SubmitEditUserProps, SubmitUser } from '@/types/type';
 
 const prisma = new PrismaClient()
 
 export const userModule = new Elysia({
     prefix: '/user',
     })
-    .post('/signup', async (context: {
-        body: {
-            email: string,
-            password: string,
-            firstname: string,
-            lastname: string,
-            phone: string
-        }
+    .post('/signup', async ({body}: {
+        body: SubmitUser
     })=>{
         try{
-            const { email, password, firstname, lastname, phone } = context.body
+            const { email, password, firstname, lastname, phone } = body
             const user:User[] = await prisma.$queryRaw`SELECT email FROM user WHERE email = ${email}`
             if(user.length > 0) return error(401, {
                 message: 'User already exists',
@@ -351,5 +346,164 @@ export const userModule = new Elysia({
                     }
                 }
             }
+        }
+    })
+    .delete('/delete/:kind/:userId', async ({ params }) => {
+        
+        try {
+            const { kind, userId } = params
+            // Use a transaction to ensure all deletions happen atomically
+            if(kind == "user") return await prisma.$transaction(async (tx) => {
+                // Step 1: Delete all ticket records related to user
+                await tx.$queryRaw`
+                    DELETE FROM ticket 
+                    WHERE userId = ${userId}
+                `
+                
+                // Step 2: Delete all passenger_booking records related to user's passengers
+                await tx.$queryRaw`
+                    DELETE pb 
+                    FROM passenger_booking pb
+                    JOIN passenger p ON pb.passportNum = p.passportNum AND pb.userId = p.userId
+                    WHERE p.userId = ${userId}
+                `
+                
+                // Step 3: Delete all payments related to user's bookings
+                await tx.$queryRaw`
+                    DELETE p 
+                    FROM payment p
+                    JOIN booking b ON p.bookingId = b.bookingId
+                    WHERE b.userId = ${userId}
+                `
+                
+                // Step 4: Delete all booking_flight records for user's bookings
+                await tx.$queryRaw`
+                    DELETE bf 
+                    FROM booking_flight bf
+                    JOIN booking b ON bf.bookingId = b.bookingId
+                    WHERE b.userId = ${userId}
+                `
+                
+                // Step 5: Delete all passenger records for this user
+                await tx.$queryRaw`
+                    DELETE FROM passenger 
+                    WHERE userId = ${userId}
+                `
+                
+                // Step 6: Delete all booking records for this user
+                await tx.$queryRaw`
+                    DELETE FROM booking 
+                    WHERE userId = ${userId}
+                `
+                
+                // Step 7: Finally delete the user
+                await tx.$queryRaw`
+                    DELETE FROM user 
+                    WHERE uuid = ${userId}
+                `
+                
+                return {
+                    success: true,
+                    message: `User ${userId} and all associated data successfully deleted`,
+                    deletedUserId: userId
+                }
+            })
+            if(kind == "admin") return await prisma.$transaction(async (tx) => {
+                // Step 1: Delete admin records
+                await tx.$queryRaw`
+                    DELETE FROM admin 
+                    WHERE id = ${userId}
+                `
+                
+                return {
+                    success: true,
+                    message: `Admin ${userId} and all associated data successfully deleted`,
+                    deletedUserId: userId
+                }
+            })
+            return error(400, {
+                message: 'Invalid parameter.',
+                status: false,
+            })
+        } catch (error) {
+            console.error('Error deleting user:', error)
+            return {
+                success: false, 
+                message: `Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                error
+            }
+        }
+    })
+    .put("/edit/:kind", async ({ params, body }:{
+        params: {
+            kind: "user" | "admin"
+        },
+        body: SubmitEditAdminProps | SubmitEditUserProps
+    }) => {
+        const { kind } = params
+        try{
+            if(kind == "user"){
+                const { uuid, email, firstname, lastname, phone, registerDate, password } = body as SubmitEditUserProps
+                const user:User[] = await prisma.$queryRaw`SELECT uuid,email FROM user WHERE uuid = ${uuid}`
+                if(user.length === 0) return error(404, {
+                    message: 'User not found',
+                    status: false,
+                })
+                let hashedPassword;
+                if(password.startsWith("$")){
+                    hashedPassword = password
+                }else{
+                    hashedPassword = await hashDataWithSHA256AndSalt(password)
+                }
+                const updatedUser = await prisma.$executeRaw<User>`
+                    UPDATE user 
+                    SET email = ${email}, firstname = ${firstname}, 
+                        lastname = ${lastname}, phone = ${phone}, \`password\` = ${hashedPassword}, registerDate = ${registerDate}
+                    WHERE uuid = ${uuid}
+                `
+                if(!updatedUser) return error(500, {
+                    message: 'Failed to update user',
+                    status: false,
+                })
+                return {
+                    status: true,
+                    message: 'User updated successfully'
+                }
+            }else if(kind == "admin"){
+                const { id, username, password, permission } = body as SubmitEditAdminProps
+                const admin:Admin[] = await prisma.$queryRaw`SELECT id,username FROM admin WHERE id = ${id}`
+                if(admin.length === 0) return error(404, {
+                    message: 'Admin not found',
+                    status: false,
+                })
+
+                let hashedPassword;
+                if(password.startsWith("$")){
+                    hashedPassword = password
+                }else{
+                    hashedPassword = await hashDataWithSHA256AndSalt(password)
+                }
+
+                const updatedAdmin = await prisma.$executeRaw<Admin>`
+                    UPDATE admin 
+                    SET username = ${username}, \`password\` = ${hashedPassword}, permission = ${permission}
+                    WHERE id = ${id}
+                `
+                if(!updatedAdmin) return error(500, {
+                    message: 'Failed to update admin',
+                    status: false,
+                })
+
+                return {
+                    status: true,
+                    message: 'Admin updated successfully'
+                }
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                message: 'Failed to update user',
+                status: false
+            })
         }
     })

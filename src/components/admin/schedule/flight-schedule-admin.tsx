@@ -1,18 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 "use client"
 
-import { useEffect, useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { PlusCircle } from "lucide-react"
 import FlightScheduleTable from "@/components/admin/schedule/flight-schedule-table"
-import AddScheduleSheet from "./add-schedule-sheet"
-import { Schedule, ScheduleListAdmin, SubmitSchedule } from "@/types/type"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScheduleListAdmin, SubmitSchedule } from "@/types/type"
+import { PlusCircle } from "lucide-react"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 import { CustomPagination } from "../../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
-import { toast } from "sonner"
+import AddScheduleSheet from "./add-schedule-sheet"
 
 interface ScheduleFetchResponse {
   message: string

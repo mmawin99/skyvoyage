@@ -1,5 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { ReactNode } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 export interface BackendURLType {
   backend: string;

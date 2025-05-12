@@ -1,18 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlaneIcon, PlusCircle } from "lucide-react"
-import { Airport, Schedule, ScheduleListAdmin, SubmitSchedule, AirportAPIType } from "@/types/type"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Airport, AirportAPIType } from "@/types/type"
+import { PlusCircle } from "lucide-react"
+import { useEffect, useState } from "react"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 import { CustomPagination } from "../../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
 import AirportTable from "./airport-table"
-import { DebouncedSearch } from "@/components/reusable/search"
 // import AddAirportSheet from "./add-airport-sheet"
-import { toast } from "sonner"
 
 interface AirportAdminResponseType {
     message: string

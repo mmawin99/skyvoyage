@@ -1,23 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 "use client"
 
 
 import { BackendURLType, useBackendURL } from '@/components/backend-url-provider';
 import { BookingDetails } from '@/components/booking-list/booking';
 import { CustomPagination } from '@/components/custom-pagination';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, 
-         DialogDescription, DialogFooter, 
-         DialogClose} from '@/components/ui/dialog';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription, DialogFooter,
+    DialogHeader, DialogTitle
+} from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookingStatus, UserDetailType, searchSelectedBookingRoutes } from '@/types/type';
-import { CalendarIcon, Loader2, TriangleAlert } from 'lucide-react';
-import React, { useEffect, useState, useRef } from 'react'
-import { toast } from 'sonner';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
+import { CalendarIcon, Loader2, TriangleAlert } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function BookingAdmin() {
     const { backend:backendURL }: BackendURLType        = useBackendURL();

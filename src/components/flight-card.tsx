@@ -1,14 +1,14 @@
 "use client"
 
+import { Check, ChevronDown, ChevronUp, Plane, X } from "lucide-react"
 import { useState } from "react"
-import { ChevronDown, ChevronUp, Plane, Check, X } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { FarePackage, FareType, UniversalFlightSchedule } from "@/types/type"
-import { FarePackageList, formatFareType } from './../lib/farePackage';
 import { formatInTimeZone } from "@/lib/utils"
+import { FarePackage, FareType, UniversalFlightSchedule } from "@/types/type"
+import { FarePackageList, formatFareType } from './../lib/farePackage'
 
 
 interface FlightCardProps {

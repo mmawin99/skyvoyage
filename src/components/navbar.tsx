@@ -1,7 +1,7 @@
 "use client"
-import { useState } from "react"
+import { Calendar, Globe, LogIn, LogOut, Menu, Plane, PlaneIcon, User, X } from "lucide-react"
 import Link from "next/link"
-import { Plane, Calendar, User, Menu, X, LogIn, Globe, LogOut, PlaneIcon } from "lucide-react"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"

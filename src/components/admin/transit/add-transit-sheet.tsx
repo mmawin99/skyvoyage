@@ -1,25 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
-import { useState, useEffect, useCallback } from "react"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { format, addDays, set } from "date-fns"
-import { CalendarIcon, Loader2, Terminal, TriangleAlert } from "lucide-react"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Loader2, TriangleAlert } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 // import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Badge } from "@/components/ui/badge"
-import { AircraftModel, AircraftRegistration, Airline, Airport, Flight, SubmitFlight, SubmitSchedule, SubmitTransit } from "@/types/type"
-import { DebouncedSearch } from "../../reusable/search"
+import { Airline, Flight, SubmitTransit } from "@/types/type"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
+import { DebouncedSearch } from "../../reusable/search"
 // import { Card, CardContent, CardHeader } from "../ui/card"
-import { Alert, AlertDescription, AlertTitle } from "../../ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import { Alert, AlertDescription, AlertTitle } from "../../ui/alert"
 
 interface AddFlightSheetProps {
     open: boolean
@@ -57,7 +50,7 @@ export default function AddFlightSheet({ open, onOpenChange, onAddTransit, isLoa
 
     const handleSubmit = useCallback(async ()=>{
         if(!selectedCarrier1 || !selectedFlight1 || !selectedCarrier2 || !selectedFlight2){
-            toast.error("Please fill  all fields")
+            toast.error("Please fill out all fields")
             return
         }
         setLoadingSubmit(true)
@@ -105,7 +98,7 @@ export default function AddFlightSheet({ open, onOpenChange, onAddTransit, isLoa
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-md md:max-w-lg px-4">
                 <SheetHeader className="mt-7">
-                    <SheetTitle>Add New Flight</SheetTitle>
+                    <SheetTitle>Add New Transit</SheetTitle>
                     <SheetDescription>Create a new transit. <br /> Fill in the details below.</SheetDescription>
                 </SheetHeader>
                 {isError ? (

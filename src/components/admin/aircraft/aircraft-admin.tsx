@@ -1,17 +1,17 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Loader2, PlaneIcon, PlaneTakeoff, PlusCircle } from "lucide-react"
 import { AircraftRegistration, Airline, SubmitAircraft } from "@/types/type"
+import { Loader2, PlaneIcon, PlaneTakeoff, PlusCircle } from "lucide-react"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 import { CustomPagination } from "../../custom-pagination"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
-import { useEffect, useState } from "react"
 import { DebouncedSearch } from "../../reusable/search"
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card"
-import AircraftTableWithEditor from "./aircraft-table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
 import AddAircraftSheet from "./add-aircraft-sheet"
-import { toast } from "sonner"
+import AircraftTable from "./aircraft-table"
 
 
 export default function AircraftAdmin() {
@@ -160,7 +160,7 @@ export default function AircraftAdmin() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex flex-col">
-                                        {aircraft.length > 0 ? <AircraftTableWithEditor aircraft={aircraft} isLoading={isLoadingAircraft} /> : (
+                                        {aircraft.length > 0 ? <AircraftTable aircraft={aircraft} isLoading={isLoadingAircraft} /> : (
                                             <div className="flex flex-col items-center justify-center gap-6 py-6 w-full">
                                                 <PlaneTakeoff className="h-24 w-24 text-blue-600" />
                                                 <div className="text-xl font-semibold">No aircraft found</div>

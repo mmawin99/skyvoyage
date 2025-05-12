@@ -30,8 +30,8 @@ export function CustomPagination({
   siblingCount = 1,
 }: CustomPaginationProps) {
   // Calculate total pages
-  console.log("totalCount", totalCount)
-  console.log("pageSize", pageSize)
+  // console.log("totalCount", totalCount)
+  // console.log("pageSize", pageSize)
   const totalPages = Math.ceil(totalCount / pageSize)
 
   // Generate page numbers to display

@@ -1,19 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { BackendURLType, useBackendURL } from "@/components/backend-url-provider";
 import { FlightSearchPanel } from "@/components/flightSearchPanel";
+import { AppFooter } from "@/components/footer";
+import { Navbar } from "@/components/navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { ArrowRight, ChevronLeftIcon, ChevronRightIcon, Clock, FacebookIcon, Globe, LinkedinIcon, LucidePlane, Shield, Star, TrendingUp } from "lucide-react";
-import { NextSeo } from "next-seo";
+import Autoplay from "embla-carousel-autoplay";
+import { ArrowRight, ChevronLeftIcon, ChevronRightIcon, Clock, Globe, Shield, Star, TrendingUp } from "lucide-react";
 import Image from "next/image";
-import Autoplay from "embla-carousel-autoplay"
-import Link from "next/link";
-import { BackendURLType, useBackendURL } from "@/components/backend-url-provider";
-import { useEffect } from "react";
-import { AppFooter } from "@/components/footer";
-import TawkWidget from "@/components/tawk-widget";
-import { Navbar } from "@/components/navbar";
 export default function Home() {
   const { backend, setBackend, status }: BackendURLType = useBackendURL();
   if(status === 'loading') return <div className="flex justify-center items-center h-screen">Loading...</div>;

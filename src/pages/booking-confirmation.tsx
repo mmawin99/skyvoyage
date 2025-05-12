@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { AppFooter } from '@/components/footer'
 import { Navbar } from '@/components/navbar'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { CabinClassType, PassengerFillOut, PassengerTicket, searchSelectedRoutes, SeatmapAPI, SeatmapFetch, ticketBaggageUpdatorType, ticketMealUpdatorType, UniversalFlightSchedule } from '@/types/type'
+import { BaggageAdditionCard, BaggageAdditionForm } from '@/components/user/booking-additional/BaggageSelection'
+import { MealAdditionForm, MealSelectionCard } from '@/components/user/booking-additional/mealSelection'
+import { SeatSelectionCard, SeatSelectionForm } from '@/components/user/booking-additional/seatSelection'
+import PolicyDialogs from '@/components/user/booking-passenger/policy'
+import BookingSummary from '@/components/user/booking/booking-summary'
+import { CabinClassType, PassengerFillOut, PassengerTicket, searchSelectedRoutes, SeatmapFetch, ticketBaggageUpdatorType, ticketMealUpdatorType, UniversalFlightSchedule } from '@/types/type'
 import { useSessionStorage } from '@uidotdev/usehooks'
 import { ArrowLeft, Link, SearchX, TriangleAlert } from 'lucide-react'
-import { NextRouter, useRouter } from 'next/router'
-import React, { useEffect, useRef, useState } from 'react'
-import BookingSummary from '@/components/user/booking/booking-summary'
 import { useSession } from 'next-auth/react'
-import PolicyDialogs from '@/components/user/booking-passenger/policy'
-import {MealAdditionForm, MealSelectionCard} from '@/components/user/booking-additional/mealSelection'
-import { BaggageAdditionCard, BaggageAdditionForm } from '@/components/user/booking-additional/BaggageSelection'
-import { SeatSelectionCard, SeatSelectionForm } from '@/components/user/booking-additional/seatSelection';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { NextRouter, useRouter } from 'next/router'
+import { useEffect, useRef, useState } from 'react'
 type PolicyDialogsType = "foreign" | "purchase" | "refund" | null;
 type InteractCardType = "seat" | "meal" | "baggage" | null;
 const PassengerInfo = () => {

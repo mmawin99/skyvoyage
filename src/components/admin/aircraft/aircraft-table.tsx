@@ -4,9 +4,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AircraftRegistration } from '@/types/type'
 import { Edit, Trash2 } from 'lucide-react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 
-const AircraftTableWithEditor = ({
+const AircraftTable = ({
     aircraft,
     isLoading
 }:{
@@ -112,4 +112,4 @@ const AircraftTableWithEditor = ({
     )
 }
 
-export default AircraftTableWithEditor
+export default AircraftTable

@@ -1,4 +1,4 @@
-import Elysia from "elysia";
+import Elysia, { error } from "elysia";
 import { sanitizeBigInt } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
 import { SeatmapAPI } from "@/types/type";
@@ -51,13 +51,13 @@ export const seatmapModule = new Elysia({
                     }
                 })
             }
-        }catch(error){
-            console.error("Error fetching seatmap:", error);
-            return { 
+        }catch(err){
+            console.error("Error fetching seatmap:", err);
+            return error(500, { 
                 status: false,
                 msg: "Failed to fetch seatmap",
-                error: (error instanceof Error ? error.toString() : String(error))
-            };
+                error: (err instanceof Error ? err.toString() : String(err))
+            })
         }
     },{
         detail:{

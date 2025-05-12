@@ -2,6 +2,7 @@ import Elysia, { error } from "elysia";
 import { admin as Admin } from "../../prisma-client";
 import { hashDataWithSHA256AndSalt } from "@/server/lib";
 import { PrismaClient } from "../../prisma-client";
+import { SubmitAdmin } from "@/types/type";
 
 const prisma = new PrismaClient()
 
@@ -9,11 +10,7 @@ export const adminAuthModule = new Elysia({
     prefix: '/admin',
     })
     .post("/adduser", async ({body}:{
-        body:{
-            username:string, 
-            password:string,
-            permission:string
-        }
+        body: SubmitAdmin
     })=>{
         // Example success response:{
         //   "success": true,
@@ -109,14 +106,3 @@ export const adminAuthModule = new Elysia({
             }
         }
     })
-    .post("/deleteuser", async ({body}:{
-        body:{
-            id: number
-        }
-    })=>{
-        return error(500, {
-            body,
-            message: "Internal server error"
-        })
-    })
-  

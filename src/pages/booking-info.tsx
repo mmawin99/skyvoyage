@@ -1,21 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 import { AppFooter } from '@/components/footer'
 import { Navbar } from '@/components/navbar'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { CabinClassType, FarePackage, FareType, loadExistPassengerType, PassengerFillOut, searchSelectedFlight, searchSelectedRoutes, UniversalFlightSchedule } from '@/types/type'
-import { useSessionStorage } from '@uidotdev/usehooks'
-import { ArrowRight, Calendar, Clock, Plane, SearchX } from 'lucide-react'
-import { NextRouter, useRouter } from 'next/router'
-import React, { useEffect, useState } from 'react'
-import { format } from "date-fns"
-import { FarePackageList } from '@/lib/farePackage'
-import BookingSummary from '@/components/user/booking/booking-summary'
 import PassengerFilling from '@/components/user/booking-passenger/passenger-filling'
 import PassengerSummary from '@/components/user/booking-passenger/passenger-summary'
+import BookingSummary from '@/components/user/booking/booking-summary'
+import { CabinClassType, loadExistPassengerType, PassengerFillOut, searchSelectedRoutes, UniversalFlightSchedule } from '@/types/type'
+import { useSessionStorage } from '@uidotdev/usehooks'
+import { SearchX } from 'lucide-react'
 import { useSession } from 'next-auth/react'
+import { NextRouter, useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
 
 const PassengerInfo = () => {
     const router:NextRouter = useRouter()

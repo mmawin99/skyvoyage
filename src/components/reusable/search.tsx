@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from "react"
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from "@/components/ui/command"
 import { Button } from "@/components/ui/button"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ChevronDown, Loader2, LucideIcon, MapPin, X } from "lucide-react"
+import React, { useEffect, useRef, useState } from "react"
 
 interface DebouncedSearchProps<T> {
   title: string

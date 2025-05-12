@@ -1,13 +1,12 @@
+import CollapsibleFilter from '@/components/ui-blocks/collapsibleFilter'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { FarePackageList } from '@/lib/farePackage'
 import { CabinClassType, FarePackage, FareType, searchSelectedFlight, searchSelectedRoutes } from '@/types/type'
-import React from 'react'
 import { format } from "date-fns"
 import { ArrowRight, Boxes, Calendar, Clock, Plane } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import CollapsibleFilter from '@/components/ui-blocks/collapsibleFilter'
 
 // Format flight time
 const formatFlightTime = (duration: number) => {

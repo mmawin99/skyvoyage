@@ -372,6 +372,7 @@ export const adminQueryModule = new Elysia({
                     uuid,
                     firstname,
                     lastname,
+                    password,
                     email,
                     phone,
                     registerDate
@@ -382,6 +383,7 @@ export const adminQueryModule = new Elysia({
                 SELECT
                     id,
                     username,
+                    password,
                     fullname,
                     permission
                 FROM admin

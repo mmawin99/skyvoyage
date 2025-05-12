@@ -186,48 +186,6 @@ export interface AircraftRegistration {
     totalFlight: number
 }
 
-export interface SubmitSchedule {
-    type: "recurring" | "single",
-    flightNum: string,
-    airlineCode: string,
-    model: string,
-    //For single flights
-    registration?: string,
-    departureDate?: string,
-    arrivalDate?: string,
-    //End for single flights
-    //For recurring flights
-    daysofweek?: string,
-    startDate?: string,
-    endDate?: string,
-    depTime?: string,
-    arrTime?: string,
-    //End for recurring flights
-}
-
-export interface SubmitFlight{
-    flightNum: string,
-    airlineCode: string,
-    departAirportId: string,
-    arriveAirportId: string,
-    departureTime: string,
-    arrivalTime: string
-}
-
-export interface SubmitTransit{
-    flightNumFrom: string,
-    flightNumTo: string,
-    airlineCodeFrom: string,
-    airlineCodeTo: string
-}
-
-export interface SubmitAircraft{
-    aircraftId: string,
-    ownerAirlineCode: string,
-    model: string,
-    seatMapId: string,
-}
-
 export interface AuthUser {
     role: string,
     id?: string, // Optional, only for admin
@@ -524,6 +482,7 @@ export interface UserDetailAPIType{
     uuid: string,
     firstname: string,
     lastname: string,
+    password: string,
     email: string,
     phone: string,
     registerDate: string,
@@ -555,4 +514,89 @@ export interface AirlineAPIType{
     numAssociateFlight: number,
     numAssociateAircraft: number,
     numAssociateSchedule: number,
+}
+
+
+//Admin API
+
+export interface SubmitAirline{
+    airlineCode: string,
+    airlineName: string,
+}
+
+export interface SubmitAirport{
+    airportCode: string,
+    name: string,
+    country: string,
+    city: string,
+    timezone: string,
+    latitude: number,
+    longitude: number,
+    altitude: number
+}
+
+export interface SubmitUser{
+    firstname: string,
+    lastname: string,
+    email: string,
+    phone: string,
+    password: string
+}
+
+export interface SubmitAdmin{
+    username: string,
+    password: string,
+    permission: adminPermission
+}
+
+export interface SubmitEditUserProps extends SubmitUser{
+    uuid: string
+    registerDate: string
+    password: string
+}
+
+export interface SubmitEditAdminProps extends SubmitAdmin{
+    id: string
+}
+
+export interface SubmitSchedule {
+    type: "recurring" | "single",
+    flightNum: string,
+    airlineCode: string,
+    model: string,
+    //For single flights
+    registration?: string,
+    departureDate?: string,
+    arrivalDate?: string,
+    //End for single flights
+    //For recurring flights
+    daysofweek?: string,
+    startDate?: string,
+    endDate?: string,
+    depTime?: string,
+    arrTime?: string,
+    //End for recurring flights
+}
+
+export interface SubmitFlight{
+    flightNum: string,
+    airlineCode: string,
+    departAirportId: string,
+    arriveAirportId: string,
+    departureTime: string,
+    arrivalTime: string
+}
+
+export interface SubmitTransit{
+    flightNumFrom: string,
+    flightNumTo: string,
+    airlineCodeFrom: string,
+    airlineCodeTo: string
+}
+
+export interface SubmitAircraft{
+    aircraftId: string,
+    ownerAirlineCode: string,
+    model: string,
+    seatMapId: string,
 }

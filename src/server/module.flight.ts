@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid'
 import Elysia, { error } from "elysia";
 // import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt, sanitizeStringForSql } from "@/server/lib";
-import { airline, PrismaClient } from "../../prisma-client";
-import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitAircraft, SubmitAirline, SubmitSchedule, SubmitTransit, UniversalFlightSchedule } from '@/types/type';
+import { airline, flight as Flight, PrismaClient } from "../../prisma-client";
+import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitAircraft, SubmitAirline, SubmitAirport, SubmitSchedule, SubmitTransit, UniversalFlightSchedule } from '@/types/type';
 import { SubmitFlight } from '@/types/type';
 
 const prisma = new PrismaClient()
@@ -393,6 +393,35 @@ export const flightModule = new Elysia({
             }
         }
     })
+    .put("/editSchedule/:scheduleId", async ({params, body}:{params:{scheduleId:string}, body:SubmitSchedule})=>{
+        const { scheduleId } = params
+        const { arrivalDate , departureDate } = body
+        if (!arrivalDate || !departureDate) {
+            return error(400, {
+                status: false,
+                message: 'Missing required fields',
+            })
+        }
+        try{
+            await prisma.$executeRaw`
+                UPDATE flightOperate 
+                SET  
+                departureTime = ${formatterSQLTIME(departureDate)}, arrivalTime = ${formatterSQLTIME(arrivalDate)}
+                WHERE flightId = ${scheduleId}
+            `
+            return {
+                status: true,
+                message: 'Schedule updated successfully',
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
+    })
     .post("/addFlight", async({body}:{body:SubmitFlight})=>{
         try{
 
@@ -422,6 +451,47 @@ export const flightModule = new Elysia({
             })
         }
 
+    })
+    .put("/editFlight", async({body}:{body:SubmitFlight})=>{
+        try{
+            const { flightNum, airlineCode, departAirportId, arriveAirportId, departureTime, arrivalTime } = body
+            
+            if (!flightNum || !airlineCode || !departAirportId || !arriveAirportId || !departureTime || !arrivalTime) {
+                return error(400, {
+                    status: false,
+                    message: 'Missing required fields',
+                })
+            }
+            //Check flight exists
+            const flightExists:Flight[] = await prisma.$queryRaw`
+                SELECT * FROM flight 
+                WHERE flightNum = ${flightNum} AND airlineCode = ${airlineCode}
+            `
+
+            if (flightExists.length === 0) {
+                return error(404, {
+                    status: false,
+                    message: 'Flight not found',
+                })
+            }
+
+            await prisma.$executeRaw`
+                UPDATE flight 
+                SET departureTime = ${departureTime}, arrivalTime = ${arrivalTime} 
+                WHERE flightNum = ${flightNum} AND airlineCode = ${airlineCode}
+            `
+            return {
+                status: true,
+                message: 'Flight updated successfully',
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
     })
     .post("/addAircraft", async({body}:{body:SubmitAircraft})=>{
         try{
@@ -467,6 +537,83 @@ export const flightModule = new Elysia({
             return {
                 status: true,
                 message: 'Transit added successfully',
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
+    })
+    .put("/editTransit", async({body:{old, new:newTransit}}:{body:{old:SubmitTransit,new:SubmitTransit}})=>{
+        try{
+            const { flightNumFrom, flightNumTo, airlineCodeFrom, airlineCodeTo } = old
+            if (!flightNumFrom || !flightNumTo || !airlineCodeFrom || !airlineCodeTo) {
+                return error(400, {
+                    status: false,
+                    message: 'Missing required fields',
+                })
+            }
+            //Check transit exists
+            const transitExists:adminTransitListType[] = await prisma.$queryRaw`
+                SELECT * FROM transit 
+                WHERE flightNumFrom = ${flightNumFrom} AND flightNumTo = ${flightNumTo} AND airlineCodeFrom = ${airlineCodeFrom} AND airlineCodeTo = ${airlineCodeTo}
+            `
+
+            if (transitExists.length === 0) {
+                return error(404, {
+                    status: false,
+                    message: 'Transit not found',
+                })
+            }
+
+            await prisma.$executeRaw`
+                UPDATE transit 
+                SET flightNumFrom = ${newTransit.flightNumFrom}, flightNumTo = ${newTransit.flightNumTo}, airlineCodeFrom = ${newTransit.airlineCodeFrom}, airlineCodeTo = ${newTransit.airlineCodeTo} 
+                WHERE flightNumFrom = ${flightNumFrom} AND flightNumTo = ${flightNumTo} AND airlineCodeFrom = ${airlineCodeFrom} AND airlineCodeTo = ${airlineCodeTo}
+            `
+            return {
+                status: true,
+                message: 'Transit updated successfully',
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
+    })
+    .delete("/deleteTransit", async({body}:{body:SubmitTransit})=>{
+         try{
+            const { flightNumFrom, flightNumTo, airlineCodeFrom, airlineCodeTo } = body
+            if (!flightNumFrom || !flightNumTo || !airlineCodeFrom || !airlineCodeTo) {
+                return error(400, {
+                    status: false,
+                    message: 'Missing required fields',
+                })
+            }
+            //Check transit exists
+            const transitExists:adminTransitListType[] = await prisma.$queryRaw`
+                SELECT * FROM transit 
+                WHERE flightNumFrom = ${flightNumFrom} AND flightNumTo = ${flightNumTo} AND airlineCodeFrom = ${airlineCodeFrom} AND airlineCodeTo = ${airlineCodeTo}
+            `
+            if (transitExists.length === 0) {
+                return error(404, {
+                    status: false,
+                    message: 'Transit not found',
+                })
+            }
+            await prisma.$executeRaw`
+                DELETE FROM transit 
+                WHERE flightNumFrom = ${flightNumFrom} AND flightNumTo = ${flightNumTo} AND airlineCodeFrom = ${airlineCodeFrom} AND airlineCodeTo = ${airlineCodeTo}
+            `
+            return {
+                status: true,
+                message: 'Transit deleted successfully',
             }
         }catch(err){
             console.error(err)
@@ -553,6 +700,83 @@ export const flightModule = new Elysia({
                 message: 'Internal server error',
                 error: err,
             })
+        }
+    })
+    .post("/addAirport", async({body}:{body:SubmitAirport})=>{
+        const{airportCode, name, country, city, timezone, latitude, longitude, altitude} = body
+        if (!airportCode || !name || !country || !city || !timezone || !latitude || !longitude) {
+            return error(400, {
+                status: false,
+                message: 'Missing required fields',
+            })
+        }else{
+            try{
+                //check if airport code already exists
+                const airportExists:{airportCode: string}[] = await prisma.$queryRaw`
+                    SELECT airportCode FROM airport 
+                    WHERE airportCode = ${airportCode}
+                `
+                if (airportExists.length > 0) {
+                    return error(400, {
+                        status: false,
+                        message: 'Airport already exists',
+                    })
+                }
+                await prisma.$executeRaw`
+                    INSERT INTO airport (airportCode, name, country, city, timezone, latitude, longitude, altitude) 
+                    VALUES (${airportCode}, ${name}, ${country}, ${city}, ${timezone}, ${latitude}, ${longitude}, ${altitude})
+                `
+                return {
+                    status: true,
+                    message: 'Airport added successfully',
+                }
+            }catch(err){
+                console.error(err)
+                return error(500, {
+                    status: false,
+                    message: 'Internal server error',
+                    error: err,
+                })
+            }
+        }    
+    })
+    .put("/editAirport", async({body}:{body:SubmitAirport})=>{
+        const{airportCode, name, country, city, timezone, latitude, longitude, altitude} = body
+        if (!airportCode || !name || !country || !city || !timezone || !latitude || !longitude) {
+            return error(400, {
+                status: false,
+                message: 'Missing required fields',
+            })
+        }else{
+            try{
+                //check if airport code already exists
+                const airportExists:{airportCode: string}[] = await prisma.$queryRaw`
+                    SELECT airportCode FROM airport 
+                    WHERE airportCode = ${airportCode}
+                `
+                if (airportExists.length === 0) {
+                    return error(400, {
+                        status: false,
+                        message: 'Airport does not exist',
+                    })
+                }
+                await prisma.$executeRaw`
+                    UPDATE airport 
+                    SET name = ${name}, country = ${country}, city = ${city}, timezone = ${timezone}, latitude = ${latitude}, longitude = ${longitude}, altitude = ${altitude}
+                    WHERE airportCode = ${airportCode}
+                `
+                return {
+                    status: true,
+                    message: 'Airport updated successfully',
+                }
+            }catch(err){
+                console.error(err)
+                return error(500, {
+                    status: false,
+                    message: 'Internal server error',
+                    error: err,
+                })
+            }
         }
     })
     .get("/schedule/:size/:kind/:page", async ({params,query}:{params:{ size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, query:{query:string}})=>{

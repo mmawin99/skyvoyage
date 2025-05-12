@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeftIcon, Edit, Loader2, Trash2, PlusCircle } from "lucide-react"
+import { ArrowLeftIcon, Loader2, Eye } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { CustomPagination } from "@/components/custom-pagination"
@@ -100,32 +100,26 @@ export const SeatmapAdmin = () => {
             <SeatMapEditor seatMapId={effectiveSeatmapId} />
         </div>
     )
-    if(mode == "add") return (
-        <div className="w-full">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Add Seatmap</h1>
-                <Button onClick={() => { 
-                    setMode("list")
-                    setEffectiveSeatmapId("")
-                }} className="gap-1">
-                <ArrowLeftIcon className="h-4 w-4" />
-                    Go back
-                </Button>
-            </div>
-            <SeatMapEditor isNewSeatMap={true} />
-        </div>
-    )
+    // if(mode == "add") return (
+    //     <div className="w-full">
+    //         <div className="flex items-center justify-between">
+    //             <h1 className="text-3xl font-bold tracking-tight">Add Seatmap</h1>
+    //             <Button onClick={() => { 
+    //                 setMode("list")
+    //                 setEffectiveSeatmapId("")
+    //             }} className="gap-1">
+    //             <ArrowLeftIcon className="h-4 w-4" />
+    //                 Go back
+    //             </Button>
+    //         </div>
+    //         <SeatMapEditor isNewSeatMap={true} />
+    //     </div>
+    // )
 
     if (mode == "list") return (
         <div className="w-full">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-start">
                 <h1 className="text-3xl font-bold tracking-tight">Seatmap Management</h1>
-                <Button onClick={() => { 
-                    setMode("add")
-                }} className="gap-1">
-                <PlusCircle className="h-4 w-4" />
-                    Add Seatmap
-                </Button>
             </div>
             <div className="flex flex-row justify-between py-4">
                 <Input
@@ -194,13 +188,13 @@ export const SeatmapAdmin = () => {
                                             setMode("edit")
                                             setEffectiveSeatmapId(seatmap.seatMapId)
                                         }}>
-                                            <Edit className="h-4 w-4 mr-1" />
-                                            Edit
+                                            <Eye className="h-4 w-4 mr-1" />
+                                            View
                                         </Button>
-                                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                        {/* <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                             <Trash2 className="h-4 w-4 mr-1" />
                                             Delete
-                                        </Button>
+                                        </Button> */}
                                     </TableCell>
                                 </TableRow>
                             ))

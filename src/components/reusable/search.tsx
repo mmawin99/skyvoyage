@@ -15,6 +15,7 @@ interface DebouncedSearchProps<T> {
   requestMethod: "POST" | "GET"
   setResults: (items: T[]) => void
   loading: boolean
+  disabled?: boolean
   enableSearch?: boolean
   setLoading: (loading: boolean) => void
   fetchUrl: (query: string) => string
@@ -25,6 +26,7 @@ interface DebouncedSearchProps<T> {
 
 export function DebouncedSearch<T>({
   title,
+  disabled = false,
   placeholder = "Type to search...",
   selected,
   onSelect,
@@ -94,7 +96,7 @@ export function DebouncedSearch<T>({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between" onClick={() => setOpen(true)}>
+        <Button disabled={disabled} variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between" onClick={() => setOpen(true)}>
           <div className="flex items-center">
             
               

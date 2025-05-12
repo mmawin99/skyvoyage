@@ -7,19 +7,22 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatInTimeZone } from "@/lib/utils"
 import { ScheduleListAdmin } from "@/types/type"
-import { Edit, Search, Trash2 } from "lucide-react"
+import { Edit, Search } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 
 interface FlightScheduleTableProps {
   flights: ScheduleListAdmin[]
   isLoading: boolean
   searchQuery: string
   setSearchQuery: (query: string) => void
+  handleEditSchedule: (index: number) => void
 }
 
 export default function FlightScheduleTable({ flights, isLoading,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  handleEditSchedule
  }: FlightScheduleTableProps) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [sortColumn, setSortColumn] = useState<keyof ScheduleListAdmin>("flightNum")
@@ -35,15 +38,8 @@ export default function FlightScheduleTable({ flights, isLoading,
         }
     }
 
-    const sortedFlights = [...flights].sort((a, b) => {
-        if (sortDirection === "asc") {
-        return a[sortColumn] > b[sortColumn] ? 1 : -1
-        } else {
-        return a[sortColumn] < b[sortColumn] ? 1 : -1
-        }
-    })
 
-    const filteredFlights = sortedFlights
+    const filteredFlights = flights
     
     const formatDateTime = (dateTimeStr: string, timezone:string) => {
         try {
@@ -178,7 +174,7 @@ export default function FlightScheduleTable({ flights, isLoading,
                 </TableRow>
               ))
             ) : filteredFlights.length > 0 ? (
-              filteredFlights.map((flight) => (
+              filteredFlights.map((flight, fIndex) => (
                 <TableRow key={flight.flightId} className="cursor-pointer hover:bg-muted/50">
                   <TableCell className="font-medium">{flight.flightNum}</TableCell>
                   <TableCell>{flight.airlineName} ({flight.airlineCode})</TableCell>
@@ -199,15 +195,28 @@ export default function FlightScheduleTable({ flights, isLoading,
                     </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(getFlightStatus(flight))}</TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm">
+                  <TableCell className="flex gap-2">
+                    <Button onClick={()=>{
+                      const flightStatus = getFlightStatus(flight)
+                      if(flightStatus === "completed"){
+                        toast.error("Completed flight cannot be edited.", {
+                          description: "This flight has already completed, only scheduled flights can be edited."
+                        })
+                      }else if(flightStatus === "in-flight"){
+                        toast.error("in-flight flight cannot be edited.",{
+                          description: "This flight is currently in-flight, only scheduled flights can be edited."
+                        })
+                      }else if(flightStatus === "scheduled"){
+                        handleEditSchedule(fIndex)
+                      } 
+                    }} variant="outline" size="sm">
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    {/* <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
-                    </Button>
+                    </Button> */}
                   </TableCell>
                 </TableRow>
               ))

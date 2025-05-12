@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { adminFlightListType } from "@/types/type"
-import { Edit, Search, Trash2 } from "lucide-react"
+import { Edit, Search } from "lucide-react"
 import { useState } from "react"
 
 interface FlightScheduleTableProps {
@@ -13,11 +13,13 @@ interface FlightScheduleTableProps {
   isLoading: boolean
   searchQuery: string
   setSearchQuery: (query: string) => void
+  handleEditFlight: (index: number) => void
 }
 
 export default function FlightTable({ flights, isLoading,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  handleEditFlight
 }: FlightScheduleTableProps) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [sortColumn, setSortColumn] = useState<keyof adminFlightListType>("flightNum")
@@ -126,14 +128,16 @@ export default function FlightTable({ flights, isLoading,
                     <TableCell>{flight.utcArrivalTime}</TableCell>
                     <TableCell>{flight.flightCount}</TableCell>
                     <TableCell className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button onClick={()=>{
+                        handleEditFlight(index)
+                      }} variant="outline" size="sm">
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                      {/* <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
-                      </Button>
+                      </Button> */}
                     </TableCell>
                 </TableRow>
             )) : (

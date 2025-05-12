@@ -41,6 +41,9 @@ export default function TransitAdmin() {
     
     //Refresh for new transit added
     const [newTransitAdded, setNewTransitAdded] = useState<boolean>(false)
+
+    const [defaultValue, setDefaultValue] = useState<SubmitTransit | null>(null)
+    const [helperDefaultValue, setHelperDefaultValue] = useState<adminTransitListType | null>(null)
     useEffect(()=>{
         const fetchTransits = async () => {
             setIsLoading(true)
@@ -75,30 +78,153 @@ export default function TransitAdmin() {
 
     }, [searchQuery, page, pageSize, backendURL, selectedCarrier, newTransitAdded])
     const handleAddTransit = async (newTransit: SubmitTransit, onSuccess: ()=> void, onError: ()=> void) => {
-        setIsLoading(true)
-        const response = await fetch(`${backendURL}/flight/addTransit`,{
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newTransit),
-        })
-        
-        if(response.ok) {
-            const data = await response.json()
-            console.log(data)
-            onSuccess()
-            toast.success("Transit added successfully")
-            const currStatus = newTransitAdded
-            setNewTransitAdded(!currStatus)
-        }else{
-            toast.error("Failed to add transit, Check console for more details.")
-            console.error("Error adding transit:", await response.json())
-            onError()
-        }
-        setIsLoading(false)
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const response = await fetch(`${backendURL}/flight/addTransit`,{
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(newTransit),
+                })
+                
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    onSuccess()
+                    const currStatus = newTransitAdded
+                    setNewTransitAdded(!currStatus)
+                }else{
+                    toast.error("Failed to add transit, Check console for more details.")
+                    console.error("Error adding transit:", await response.json())
+                    onError()
+                }
+            },
+            {
+                loading: "Adding transit...",
+                success: () => {
+                    setIsLoading(false)
+                    return "Transit added successfully";
+                },
+                error: (error) => {
+                    setIsLoading(false)
+                    console.error("Error adding transit:", error)
+                    return "Failed to add transit, Check console for more details."
+                }
+            }
+        )
     }
-
+    const handleEditTransit = async (newTransit: SubmitTransit, onSuccess: ()=> void, onError: ()=> void) => {
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const response = await fetch(`${backendURL}/flight/editTransit`,{
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        old: {
+                            flightNumFrom: helperDefaultValue?.flightNumFrom,
+                            flightNumTo: helperDefaultValue?.flightNumTo,
+                            airlineCodeFrom: helperDefaultValue?.airlineCodeFrom,
+                            airlineCodeTo: helperDefaultValue?.airlineCodeTo,
+                        },
+                        new: newTransit
+                    }),
+                })
+                
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    onSuccess()
+                    const currStatus = newTransitAdded
+                    setNewTransitAdded(!currStatus)
+                }else{
+                    toast.error("Failed to edit transit, Check console for more details.")
+                    console.error("Error adding transit:", await response.json())
+                    onError()
+                }
+            },
+            {
+                loading: "Editing transit...",
+                success: () => {
+                    setIsLoading(false)
+                    return "Transit edited successfully";
+                },
+                error: (error) => {
+                    setIsLoading(false)
+                    console.error("Error editing transit:", error)
+                    return "Failed to edit transit, Check console for more details."
+                }
+            }
+        )
+    }
+    const promptEditTransit = (index: number)=>{
+        console.log("editing...................")
+        const transit = transits[index]
+        setDefaultValue({
+            flightNumFrom: transit.flightNumFrom,
+            flightNumTo: transit.flightNumTo,
+            airlineCodeFrom: transit.airlineCodeFrom,
+            airlineCodeTo: transit.airlineCodeTo,
+        })
+        setHelperDefaultValue(transit)
+        setIsAddTransitOpen(true)
+    }
+    const confirmDeleteTransit = (index: number) => {
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const transit = transits[index]
+                const response = await fetch(`${backendURL}/flight/deleteTransit`,{
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        flightNumFrom: transit.flightNumFrom,
+                        flightNumTo: transit.flightNumTo,
+                        airlineCodeFrom: transit.airlineCodeFrom,
+                        airlineCodeTo: transit.airlineCodeTo,
+                    }),
+                })
+                
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    const currStatus = newTransitAdded
+                    setNewTransitAdded(!currStatus)
+                }else{
+                    toast.error("Failed to delete transit, Check console for more details.")
+                    console.error("Error adding transit:", await response.json())
+                }
+            },
+            {
+                loading: "Deleting transit...",
+                success: () => {
+                    setIsLoading(false)
+                    return "Transit deleted successfully";
+                },
+                error: (error) => {
+                    setIsLoading(false)
+                    console.error("Error deleting transit:", error)
+                    return "Failed to delete transit, Check console for more details."
+                }
+            }
+        )
+    }
+    const handleDeleteTransit = async (index: number) => {
+        toast.warning("Are you sure you want to delete this transit?", {
+            action: {
+                label: "Sure",
+                onClick: () => {
+                    confirmDeleteTransit(index)
+                }
+            },
+        })
+    }
     const SelectSizeInput = ()=>{
         return (
         <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
@@ -180,7 +306,10 @@ export default function TransitAdmin() {
                         />
                         <SelectSizeInput />
                     </div>
-                    <TransitTable searchQuery={searchQuery} setSearchQuery={setSearchQuery} transits={transits} isLoading={isLoading} />
+                    <TransitTable
+                        handleEditTransit={promptEditTransit}
+                        handleDeleteTransit={handleDeleteTransit}
+                        searchQuery={searchQuery} setSearchQuery={setSearchQuery} transits={transits} isLoading={isLoading} />
                     <div className="flex flex-row justify-between mt-4">
                     <CustomPagination className="w-full flex flex-row justify-start" 
                         currentPage={parseInt(String(page))} 
@@ -201,8 +330,15 @@ export default function TransitAdmin() {
 
             <AddTransitSheet
                 open={isAddTransitOpen}
-                onOpenChange={setIsAddTransitOpen}
+                onOpenChange={()=>{
+                    setIsAddTransitOpen(false)
+                    setDefaultValue(null)
+                    setHelperDefaultValue(null)
+                }}
+                defaultValue={defaultValue}
+                helperDefaultValue={helperDefaultValue}
                 onAddTransit={handleAddTransit}
+                onEditTransit={handleEditTransit}
                 isLoading={isLoading}
             />
         </div>

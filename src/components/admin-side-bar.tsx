@@ -271,8 +271,8 @@ export function AdminSideBar({ ...props }: React.ComponentProps<typeof Sidebar>)
 
 export const AdminHeader = ({title, link}:{title:string, link:string})=>{
     return (
-        <header className="sticky top-0 bg-white rounded-t-xl group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
-        <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 sticky">
+        <header className="z-50 sticky top-0 bg-white rounded-t-xl group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
+        <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 sticky bg-white">
             <SidebarTrigger className="-ml-1" />
             <Separator
             orientation="vertical"

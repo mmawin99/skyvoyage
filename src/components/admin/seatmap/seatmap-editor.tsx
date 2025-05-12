@@ -319,11 +319,11 @@ export function SeatMapEditor({ seatMapId, isNewSeatMap = false }: SeatMapEditor
   return (
     <div className="space-y-4 mt-4">
       <Tabs defaultValue="visual" className="w-full" value={tabPage} onValueChange={setTabPage}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="visual">Visual Editor</TabsTrigger>
-          <TabsTrigger value="config">Configuration</TabsTrigger>
+          {/* <TabsTrigger value="config">Configuration</TabsTrigger>
           <TabsTrigger value="class_seat">Class Details</TabsTrigger>
-          <TabsTrigger value="seat">Seat Details</TabsTrigger>
+          <TabsTrigger value="seat">Seat Details</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="visual" className="space-y-4">

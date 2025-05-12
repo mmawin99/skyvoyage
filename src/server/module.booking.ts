@@ -915,12 +915,11 @@ export const bookingModule = new Elysia({
 
     try {
         return await prisma.$transaction(async (tx) => {
-            const booking: { bookingId: string, status: BookingStatus, paymentId: string, amount: number }[] = await tx.$queryRaw`
-                SELECT b.bookingId, b.status, p.paymentId, p.amount 
-                FROM booking b, payment p 
+            const booking: { bookingId: string }[] = await tx.$queryRaw`
+                SELECT b.bookingId
+                FROM booking b 
                 WHERE b.bookingId = ${bookingId} 
                 AND b.userId = ${userId} 
-                AND b.bookingId = p.bookingId
             `;
             
             if(booking.length == 0) {
@@ -965,8 +964,8 @@ export const bookingModule = new Elysia({
       })
     }
     // Check if the booking exists
-    const booking:{ bookingId:string, status:BookingStatus, paymentId: string, amount:number }[] = await prisma.$queryRaw`
-      SELECT b.bookingId, b.status, p.paymentId, p.amount FROM booking b, payment p WHERE b.bookingId = ${params.bookingId} AND b.userId = ${params.userId} AND b.bookingId = p.bookingId
+    const booking:{ bookingId:string }[] = await prisma.$queryRaw`
+      SELECT b.bookingId FROM booking b WHERE b.bookingId = ${params.bookingId} AND b.userId = ${params.userId} 
     `;
     if(booking.length == 0){
       return error(404, {
@@ -1006,6 +1005,76 @@ export const bookingModule = new Elysia({
     }
   }catch(err){
     console.error("Error deleting booking:", err);
+    return error(500, {
+      status: false,
+      error: err instanceof Error ? err.message : "Unknown error occurred"
+    });
+  }
+})
+.delete("/delete-ticket/:userId/:ticketId", async ({ params }:{ params:{ticketId:string, userId:string}}) => {
+  try{
+    if(!params.ticketId || !params.userId){
+      return error(400, {
+        status: false,
+        message: "Missing required parameters",
+      })
+    }
+    // Check if the ticket exists
+    const ticket:{ ticketId:string }[] = await prisma.$queryRaw`
+      SELECT ticketId FROM ticket WHERE ticketId = ${params.ticketId} AND userId = ${params.userId}
+    `;
+    if(ticket.length == 0){
+      return error(404, {
+        status: false,
+        message: "Ticket not found",
+      })
+    }
+    // Delete the ticket record
+    await prisma.$executeRaw`
+      DELETE FROM ticket WHERE ticketId = ${params.ticketId} AND userId = ${params.userId}
+    `
+    return {
+      status: true,
+      message: "Ticket deleted successfully",
+      ticketId: params.ticketId,
+    }
+  }catch(err){
+    console.error("Error deleting ticket:", err);
+    return error(500, {
+      status: false,
+      error: err instanceof Error ? err.message : "Unknown error occurred"
+    });
+  }
+})
+.delete("/delete-payment/:bookingId/:paymentId", async ({ params }:{ params:{paymentId:string, bookingId:string}}) => {
+  try{
+    if(!params.paymentId || !params.bookingId){
+      return error(400, {
+        status: false,
+        message: "Missing required parameters",
+      })
+    }
+    // Check if the payment exists
+    const payment:{ paymentId:string }[] = await prisma.$queryRaw`
+      SELECT paymentId FROM payment WHERE paymentId = ${params.paymentId} AND bookingId = ${params.bookingId}
+    `;
+    if(payment.length == 0){
+      return error(404, {
+        status: false,
+        message: "Payment not found",
+      })
+    }
+    // Delete the payment record
+    await prisma.$executeRaw`
+      DELETE FROM payment WHERE paymentId = ${params.paymentId} AND bookingId = ${params.bookingId}
+    `
+    return {
+      status: true,
+      message: "Payment deleted successfully",
+      paymentId: params.paymentId,
+    }
+  }catch(err){
+    console.error("Error deleting payment:", err);
     return error(500, {
       status: false,
       error: err instanceof Error ? err.message : "Unknown error occurred"

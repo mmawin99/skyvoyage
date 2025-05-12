@@ -13,6 +13,7 @@ import { CustomPagination } from "../../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
 import AddFlightSheet from "./add-flight-sheet"
 import FlightTable from "./flight-table"
+import { useDebounce } from "@uidotdev/usehooks"
 
 interface FlightAdminFetchResponse {
     message: string
@@ -41,6 +42,8 @@ export default function FlightAdmin() {
     
     //Refresh for new flight added
     const [newFlightAdded, setNewFlightAdded] = useState<boolean>(false)
+    const [defaultValue, setDefaultValue] = useState<SubmitFlight|null>(null)
+    const debounceSearchQuery = useDebounce(searchQuery, 200)
     useEffect(()=>{
         const fetchFlights = async () => {
             setIsLoading(true)
@@ -53,7 +56,7 @@ export default function FlightAdmin() {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        searchQuery: searchQuery
+                        searchQuery: debounceSearchQuery
                     })
                 })
                 if (response.ok) {
@@ -74,32 +77,111 @@ export default function FlightAdmin() {
 
         fetchFlights()
 
-    }, [searchQuery, page, pageSize, backendURL, selectedCarrier, newFlightAdded])
+    }, [debounceSearchQuery, page, pageSize, backendURL, selectedCarrier, newFlightAdded])
     const handleAddFlight = async (newFlight: SubmitFlight, onSuccess: ()=> void, onError: ()=> void) => {
-        setIsLoading(true)
-        const response = await fetch(`${backendURL}/flight/addFlight`,{
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newFlight),
-        })
+        // setIsLoading(true)
+        // const response = await fetch(`${backendURL}/flight/addFlight`,{
+        // method: "POST",
+        // headers: {
+        //     "Content-Type": "application/json",
+        // },
+        // body: JSON.stringify(newFlight),
+        // })
         
-        if(response.ok) {
-            const data = await response.json()
-            console.log(data)
-            onSuccess()
-            toast.success("Flight added successfully")
-            const currStatus = newFlightAdded
-            setNewFlightAdded(!currStatus)
-        }else{
-        toast.error("Failed to add flight, Check console for more details.")
-        console.error("Error adding flight:", await response.json())
-        onError()
-        }
-        setIsLoading(false)
+        // if(response.ok) {
+        //     const data = await response.json()
+        //     console.log(data)
+        //     onSuccess()
+        //     toast.success("Flight added successfully")
+        //     const currStatus = newFlightAdded
+        //     setNewFlightAdded(!currStatus)
+        // }else{
+        //     toast.error("Failed to add flight, Check console for more details.")
+        //     console.error("Error adding flight:", await response.json())
+        //     onError()
+        // }
+        // setIsLoading(false)
+        toast.promise(
+            async () => {
+                if(!backendURL || backendURL == "") return
+                const response = await fetch(`${backendURL}/flight/addFlight`,{
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(newFlight),
+                })
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    onSuccess()
+                    setNewFlightAdded(!newFlightAdded)
+                    return data
+                }else{
+                    onError()
+                    console.error("Failed to add flight")
+                }
+            }
+            , {
+                loading: "Adding flight...",
+                success: (data) => {
+                    console.log(data)
+                    return "Flight added successfully"
+                },
+                error: (error) => {
+                    console.error("Error adding flight:", error)
+                    return "Failed to add flight, Check console for more details."
+                },
+            }
+        )
     }
-
+    const handleEditFlight = async (newFlight: SubmitFlight, onSuccess: ()=> void, onError: ()=> void) => {
+        toast.promise(
+            async () => {
+                if(!backendURL || backendURL == "") return
+                const response = await fetch(`${backendURL}/flight/editFlight`,{
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(newFlight),
+                })
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    onSuccess()
+                    setNewFlightAdded(!newFlightAdded)
+                    return data
+                }else{
+                    onError()
+                    console.error("Failed to edit flight")
+                }
+            }
+            , {
+                loading: "Editing flight...",
+                success: (data) => {
+                    console.log(data)
+                    return "Flight edited successfully"
+                },
+                error: (error) => {
+                    console.error("Error editing flight:", error)
+                    return "Failed to edit flight, Check console for more details."
+                },
+            }
+        )
+    }
+    const promptEditFlight = (index: number) => {
+        const flight = flights[index]
+        setDefaultValue({
+            flightNum: flight.flightNum,
+            airlineCode: flight.airlineCode,
+            departAirportId: flight.departAirportId,
+            arriveAirportId: flight.arriveAirportId,
+            departureTime: flight.utcDepartureTime,
+            arrivalTime: flight.utcArrivalTime,
+        })
+        setIsAddFlightOpen(true)
+    }
     const SelectSizeInput = ()=>{
         return (
         <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
@@ -181,7 +263,7 @@ export default function FlightAdmin() {
                         />
                         <SelectSizeInput />
                     </div>
-                    <FlightTable searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
+                    <FlightTable handleEditFlight={promptEditFlight} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
                     <div className="flex flex-row justify-between mt-4">
                     <CustomPagination className="w-full flex flex-row justify-start" 
                         currentPage={parseInt(String(page))} 
@@ -202,12 +284,17 @@ export default function FlightAdmin() {
 
             <AddFlightSheet
                 open={isAddFlightOpen}
-                onOpenChange={setIsAddFlightOpen}
+                onOpenChange={()=>{
+                    setIsAddFlightOpen(false)
+                    setDefaultValue(null)
+                }}
                 onAddFlight={handleAddFlight}
+                onEditFlight={handleEditFlight}
                 isLoading={isLoading}
+                defaultValue={defaultValue}
                 carrier={{
-                name: selectedCarrier?.name ?? "",
-                code: selectedCarrier?.code ?? "",
+                    name: selectedCarrier?.name ?? "",
+                    code: selectedCarrier?.code ?? "",
                 }}
             />
         </div>

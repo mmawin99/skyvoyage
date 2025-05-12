@@ -3,13 +3,16 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Airport, AirportAPIType } from "@/types/type"
+import { Airport, AirportAPIType, SubmitAirport } from "@/types/type"
 import { PlusCircle } from "lucide-react"
 import { useEffect, useState } from "react"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 import { CustomPagination } from "../../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
 import AirportTable from "./airport-table"
+import AddAirportSheet from "./add-airport-sheet"
+import { toast } from "sonner"
+import { useDebounce } from "@uidotdev/usehooks"
 // import AddAirportSheet from "./add-airport-sheet"
 
 interface AirportAdminResponseType {
@@ -41,12 +44,15 @@ export default function AirportAdmin() {
     
     //Refresh for new airport added
     const [newAirportAdded, setNewAirportAdded] = useState<boolean>(false)
+
+    const [defaultValue, setDefaultValue] = useState<SubmitAirport | null>(null)
+    const debounceSearchQuery = useDebounce(searchQuery, 300)
     useEffect(()=>{
         const fetchAirports = async () => {
             setIsLoading(true)
             if(!backendURL || backendURL == "") return
             try {
-                const response = await fetch(`/api/query/admin/airport/${pageSize}/${page}?query=${searchQuery}`, {
+                const response = await fetch(`/api/query/admin/airport/${pageSize}/${page}?query=${debounceSearchQuery}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -70,32 +76,89 @@ export default function AirportAdmin() {
 
         fetchAirports()
 
-    }, [searchQuery, page, pageSize, backendURL, selectedCarrier, newAirportAdded])
-    // const handleAddAirport = async (newAirport: SubmitAirport, onSuccess: ()=> void, onError: ()=> void) => {
-    //     setIsLoading(true)
-    //     const response = await fetch(`${backendURL}/flight/addAirport`,{
-    //     method: "POST",
-    //     headers: {
-    //         "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify(newAirport),
-    //     })
-        
-    //     if(response.ok) {
-    //         const data = await response.json()
-    //         console.log(data)
-    //         onSuccess()
-    //         toast.success("Airport added successfully")
-    //         const currStatus = newAirportAdded
-    //         setNewAirportAdded(!currStatus)
-    //     }else{
-    //         toast.error("Failed to add airport, Check console for more details.")
-    //         console.error("Error adding airport:", await response.json())
-    //         onError()
-    //     }
-    //     setIsLoading(false)
-    // }
-
+    }, [debounceSearchQuery, page, pageSize, backendURL, selectedCarrier, newAirportAdded])
+    const handleAddAirport = async (newAirport: SubmitAirport, onSuccess: ()=> void, onError: ()=> void) => {
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const response = await fetch(`${backendURL}/flight/addAirport`,{
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(newAirport),
+                })
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    onSuccess()
+                    setNewAirportAdded(!newAirportAdded)
+                }else{
+                    console.error("Error adding airport:", await response.json())
+                    onError()
+                }
+            }, {
+                loading: "Adding airport...",
+                success: () => {
+                    setIsLoading(false)
+                    return "Airport added successfully"
+                },
+                error: (error) => {
+                    setIsLoading(false)
+                    return `Failed to add airport, Check console for more details.`
+                }
+            }
+        )
+    }
+    const handleEditAirport = async (newAirport: SubmitAirport, onSuccess: ()=> void, onError: ()=> void) => {
+        console.log("editing airport", newAirport)
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const response = await fetch(`${backendURL}/flight/editAirport`,{
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(newAirport),
+                })
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    onSuccess()
+                    setNewAirportAdded(!newAirportAdded)
+                }else{
+                    console.error("Error editing airport:", await response.json())
+                    onError()
+                }
+            }, {
+                loading: "Editing airport...",
+                success: () => {
+                    setIsLoading(false)
+                    return "Airport edited successfully"
+                },
+                error: (error) => {
+                    setIsLoading(false)
+                    return `Failed to edit airport, Check console for more details.`
+                }
+            }
+        )
+    }
+    const promptEditAirport = (index: number) => {
+        const airport = airports[index]
+        setDefaultValue({
+            airportCode: airport.airportCode,
+            name: airport.name,
+            country: airport.country,
+            city: airport.city,
+            latitude: airport.latitude,
+            longitude: airport.longitude,
+            timezone: airport.timezone,
+            altitude: airport.altitude ?? 0 // Provide a default value if altitude is undefined
+        })
+        setIsAddAirportOpen(true)
+    }
+    
     const SelectSizeInput = ()=>{
         return (
         <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
@@ -149,7 +212,17 @@ export default function AirportAdmin() {
                         />
                         <SelectSizeInput />
                     </div>
-                    <AirportTable searchQuery={searchQuery} setSearchQuery={setSearchQuery} airports={airports} isLoading={isLoading} />
+                    <AirportTable 
+                        handleDeleteAirport={(index)=>{
+                            toast.error("Delete airline feature is not implemented yet.")
+                        }}
+                        handleEditAirport={(index)=>{
+                            promptEditAirport(index)
+                        }}
+                        searchQuery={searchQuery} setSearchQuery={(query)=>{
+                            setSearchQuery(query)
+                            setPage(1)
+                        }} airports={airports} isLoading={isLoading} />
                     <div className="flex flex-row justify-between mt-4">
                     <CustomPagination className="w-full flex flex-row justify-start" 
                         currentPage={parseInt(String(page))} 
@@ -163,12 +236,17 @@ export default function AirportAdmin() {
                 </CardContent>
             </Card> 
 
-            {/* <AddAirportSheet
+            <AddAirportSheet
                 open={isAddAirportOpen}
-                onOpenChange={setIsAddAirportOpen}
+                onOpenChange={()=>{
+                    setIsAddAirportOpen(false)
+                    setDefaultValue(null)
+                }}
                 onAddAirport={handleAddAirport}
+                onEditAirport={handleEditAirport}
                 isLoading={isLoading}
-            /> */}
+                defaultValue={defaultValue}
+            />
         </div>
     )
 }

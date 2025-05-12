@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, Clock, CreditCard, Edit, MoreHorizontal, Plane, Plus, Trash, User, Users, Wallet } from "lucide-react"
+import { Calendar, Clock, CreditCard, Edit, MoreHorizontal, Plane, Trash, User, Users, Wallet } from "lucide-react"
 import { useState } from "react"
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -32,10 +32,9 @@ interface BookingDetailsProps {
   onDeleteBooking?: (bookingId:string) => void
   onModifyBookingDate?: (bookingId:string) => void
   onModifyBookingStatus?: (bookingId:string, status: BookingStatus) => void
-  onDeleteTicket?: (bookingId:string, ticketId: string, passengerId: string) => void
+  onDeleteTicket?: (bookingId:string, ticketId: string) => void
   onDeletePassenger?: (bookingId:string, passengerId: string) => void
-  onCreatePayment?: (bookingId:string) => void
-  onDeletePayment?: (bookingId:string) => void
+  onDeletePayment?: (bookingId:string, paymentId: string) => void
   // User actions
   onRefund?: (bookingId: string) => void
   onCancel?: (bookingId: string) => void
@@ -111,7 +110,6 @@ export function BookingDetails({
   onDeleteBooking,
   onDeleteTicket,
   onDeletePassenger,
-  onCreatePayment,
   onDeletePayment,
   //User actions
   onRefund,
@@ -138,7 +136,7 @@ export function BookingDetails({
     try {
       const useTimezone = timezone === "USER_CURRENT_TIMEZONE" ? Intl.DateTimeFormat().resolvedOptions().timeZone : timezone
       if(timeStr === "") return "N/A"
-      return formatInTimeZone(new Date(timeStr),useTimezone, "hh:mm a")
+      return formatInTimeZone(new Date(timeStr),useTimezone, "HH:mm")
     } catch (e) {
         console.error("formatTime Error: ", e)
       return timeStr
@@ -608,7 +606,7 @@ export function BookingDetails({
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                               <DropdownMenuItem
-                                                onClick={() => onDeleteTicket?.(item.ticket || "",ticket.tid, passenger.pid)}
+                                                onClick={() => onDeleteTicket?.(item.ticket || "",ticket.tid)}
                                                 className="text-red-600"
                                               >
                                                 <Trash className="mr-2 h-4 w-4" /> Delete Ticket
@@ -712,15 +710,12 @@ export function BookingDetails({
                         
                         <div className="flex justify-end gap-2 w-full">
                           {
-                            !item.payment.paymentId && (
-                              <Button variant="outline" onClick={()=>{ onCreatePayment?.(item.ticket || "") }}>
-                                <Plus className="mr-2 h-4 w-4" /> Create Payment
-                              </Button>
-                            )
-                          }
-                          {
                             item.payment.paymentId &&
-                            <Button variant="outline" className="text-red-600" onClick={()=>{ onDeletePayment?.(item.ticket || "")  }}>
+                            <Button variant="outline" className="text-red-600" onClick={() => { 
+                              if (item.payment.paymentId) {
+                                onDeletePayment?.(item.ticket || "", item.payment.paymentId);
+                              }
+                            }}>
                               <Trash className="mr-2 h-4 w-4" /> Delete Payment
                             </Button>
                           }

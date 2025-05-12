@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -23,9 +24,9 @@ export default function AirlineTable({ airlines, isLoading,
   handleEditAirline,
   handleDeleteAirline
 }: AirlineTableProps) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const [sortColumn, setSortColumn] = useState<keyof AirlineAPIType>("airlineCode")
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
     const handleSort = (column: keyof AirlineAPIType) => {
@@ -139,12 +140,12 @@ export default function AirlineTable({ airlines, isLoading,
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      <Button onClick={()=>{
+                      {/* <Button onClick={()=>{
                         handleDeleteAirline(index)
                       }} variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
-                      </Button>
+                      </Button> */}
                     </TableCell>
                 </TableRow>
             )) : (

@@ -20,14 +20,16 @@ interface AddFlightSheetProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onAddFlight: (flight: SubmitFlight, onSuccess: () => void, onError: () => void) => void
+    onEditFlight: (flight: SubmitFlight, onSuccess: () => void, onError: () => void) => void
     isLoading: boolean
     carrier: {name:string, code:string}
+    defaultValue: SubmitFlight | null
 }
 
-export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoading, carrier }: AddFlightSheetProps) {
+export default function AddFlightSheet({ open, onOpenChange, onAddFlight, onEditFlight, isLoading, carrier, defaultValue }: AddFlightSheetProps) {
     
     const { backend: backendURL }: BackendURLType = useBackendURL();
-
+    const [mode, setMode] = useState<"add" | "edit">("add")
     const [flightNum, setFlightNum] = useState<string>("")
 
     const [departureAirport, setDepartureAirport] = useState<Airport | null>(null)
@@ -81,15 +83,71 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
             setIsError(true)
         })
     }, [arrTime, arrivalAirport, carrier.code, depTime, departureAirport, flightNum, onAddFlight, onOpenChange])
-    
+    const handleEdit = useCallback(async ()=>{
+        if(!departureAirport || !arrivalAirport) {
+            toast.error("Departure and Arrival airports are required")
+            return
+        }
+        if(!flightNum) {
+            toast.error("Flight number is required")
+            return
+        }
+        setLoadingSubmit(true)
+        onEditFlight({
+            flightNum: flightNum,
+            departureTime: depTime,
+            arrivalTime: arrTime,
+            departAirportId: departureAirport.code,
+            arriveAirportId: arrivalAirport.code,
+            airlineCode: carrier.code
+        }, () => {
+            setLoadingSubmit(false)
+            setErrorSubmit("")
+            setIsError(false)
+            onOpenChange(false)
+            //Reset the form
+            setFlightNum("")
+            setDepartureAirport(null)
+            setArrivalAirport(null)
+            setDepTime("00:00:00")
+            setArrTime("00:00:00")
+        }, () => {
+            setLoadingSubmit(false)
+            setErrorSubmit("Failed to edit flight")
+            setIsError(true)
+        })
+    }
+    , [arrTime, arrivalAirport, carrier.code, depTime, departureAirport, flightNum, onEditFlight, onOpenChange])
+
     useEffect(() => {
-        if(needSubmit){
+        if(defaultValue){
+            setMode("edit")
+            setFlightNum(defaultValue.flightNum)
+            setDepTime(defaultValue.departureTime)
+            setArrTime(defaultValue.arrivalTime)
+            setDepartureAirport({code: defaultValue.departAirportId, name: defaultValue.departAirportId, city: "", country: "", short_country: ""})
+            setArrivalAirport({code: defaultValue.arriveAirportId, name: defaultValue.arriveAirportId, city: "", country: "", short_country: ""})
+        }else{
+            setMode("add")
+            setFlightNum("")
+            setDepTime("00:00:00")
+            setArrTime("00:00:00")
+            setDepartureAirport(null)
+            setArrivalAirport(null)
+        }
+    }, [defaultValue])
+
+    useEffect(() => {
+        if(needSubmit && mode == "add"){
             handleSubmit()
+            setNeedSubmit(false)
+        }else if(needSubmit && mode == "edit"){
+            handleEdit()
             setNeedSubmit(false)
         }
         return () => setNeedSubmit(false)
 
-    }, [needSubmit, handleSubmit])
+    }, [needSubmit, handleSubmit, mode, handleEdit])
   
 
     const isOvernightFlight = (depTime: string, arrTime: string) => {
@@ -106,8 +164,8 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-md md:max-w-lg px-4">
             <SheetHeader className="mt-7">
-                <SheetTitle>Add New Flight</SheetTitle>
-                <SheetDescription>Create a new flight for {carrier.name} ({carrier.code}). <br /> Fill in the details below.</SheetDescription>
+                <SheetTitle>{mode == "edit" ? "Edit " : "Add new"} Flight</SheetTitle>
+                <SheetDescription>{mode == "edit" ? "Edit exist " : "Create a new"} flight for {carrier.name} ({carrier.code}). <br /> Fill in the details below.</SheetDescription>
             </SheetHeader>
             {isError || !carrier.name || !carrier.code ? (
             <Alert variant="destructive" className="mb-4">
@@ -121,7 +179,7 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
                 <div className="space-y-2">
                     <Label htmlFor="dep_time">Flight number</Label>
                     <span className="text-muted-foreground text-xs">(e.g. 243, 244-1, 244-2)</span>
-                    <Input id="dep_time" type="text" placeholder="Enter flight number (e.g. 243, 244-1, 244-2)" value={flightNum} onChange={(e) => setFlightNum(e.target.value)} />
+                    <Input id="dep_time" disabled={mode === "edit"} type="text" placeholder="Enter flight number (e.g. 243, 244-1, 244-2)" value={flightNum} onChange={(e) => setFlightNum(e.target.value)} />
                 </div>
 
                     {/* Departure */}
@@ -129,6 +187,7 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
                     <Label>Departure Airport</Label>
                     <DebouncedSearch<Airport>
                         title="Airport or city"
+                        disabled={mode === "edit"}
                         selected={departureAirport}
                         onSelect={setDepartureAirport}
                         requestMethod="GET"
@@ -157,6 +216,7 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
                         <DebouncedSearch<Airport>
                             title="Airport or city"
                             selected={arrivalAirport}
+                            disabled={mode === "edit"}
                             onSelect={setArrivalAirport}
                             requestMethod="GET"
                             results={arrivalAirports}
@@ -209,10 +269,10 @@ export default function AddFlightSheet({ open, onOpenChange, onAddFlight, isLoad
                             {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Adding...
+                                {mode == "edit" ? "Edit" : "Add"}ing...
                             </>
                             ) : (
-                            "Add Flight"
+                            (mode == "edit" ? "Edit" : "Add")+" Flight"
                             )}
                         </Button>
                     </div>

@@ -60,7 +60,7 @@ export const CheckoutForm = ({ selectedRoute, totalFare, thbFare, onComplete }: 
           })
           const bookingData = await createBooking.json()
           console.log("Booking Data: ", bookingData)
-          if(bookingData.success) {
+          if(bookingData.status) {
             setIsBookingCreated(true)
             toast.success("Payment Successful: Booking confirmed!");
             onComplete()

@@ -19,18 +19,28 @@ import { DebouncedSearch } from "../../reusable/search"
 // import { Card, CardContent, CardHeader } from "../ui/card"
 import { toast } from "sonner"
 import { Alert, AlertDescription, AlertTitle } from "../../ui/alert"
+import modelAircraft from "../../../../data/model_name.json"
 
 interface AddScheduleSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAddFlight: (flight: SubmitSchedule, onSuccess: () => void, onError: () => void) => void
-  isLoading: boolean
+  isLoading: boolean,
+  defaultValue?: SubmitSchedule | null
+  defaultDepartAirport?: string
+  defaultArriveAirport?: string
+  handleEditSchedule: (flights: SubmitSchedule)=>void
 }
 
-export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLoading }: AddScheduleSheetProps) {
+export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLoading,defaultValue , handleEditSchedule,
+defaultDepartAirport,
+defaultArriveAirport
+
+ }: AddScheduleSheetProps) {
   const [scheduleType, setScheduleType] = useState("single")
-  
   const { backend: backendURL }: BackendURLType = useBackendURL();
+  
+  const [mode, setMode] = useState<"add" | "edit">("add")
 
   const [selectedCarrier, setSelectedCarrier] = useState<Airline>()
   const [carriers, setCarriers] = useState<Airline[]>([])
@@ -52,7 +62,46 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
   const [arrDate, setArrDate] = useState<Date | undefined>(addDays(new Date(), 1))
   const [depTime, setDepTime] = useState(selectedFlight?.departure_time || "12:00")
   const [arrTime, setArrTime] = useState(selectedFlight?.arrival_time   || "14:00")
-
+  useEffect(()=>{
+    if(defaultValue != null){
+      setMode("edit")
+      console.log("Default value:", defaultValue)
+      setScheduleType(defaultValue.type)
+      setSelectedCarrier({code: defaultValue.airlineCode, name: defaultValue.airlineCode})
+      setSelectedFlight({
+        flight_number: defaultValue.flightNum ?? "",
+        airlineCode: defaultValue.airlineCode ?? "",
+        departure_time: defaultValue.departureDate ? defaultValue.departureDate.split("T")[1].split("00.000Z")[0] : "",
+        arrival_time: defaultValue.arrivalDate ? defaultValue.arrivalDate.split("T")[1].split("00.000Z")[0] : "",
+        depart_airport: defaultDepartAirport ?? "", // Provide a default or fetch the actual value
+        arrive_airport: defaultArriveAirport ?? ""  // Provide a default or fetch the actual value
+      })
+      setDepDate(new Date(defaultValue.departureDate ?? ""))
+      setArrDate(new Date(defaultValue.arrivalDate ?? ""))
+      setDepTime(defaultValue.departureDate ? defaultValue.departureDate.split("T")[1].split("00.000Z")[0] : new Date().toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: false }))
+      setArrTime(defaultValue.arrivalDate ? defaultValue.arrivalDate.split("T")[1].split("00.000Z")[0] : new Date().toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: false }))
+      setSelectedModel({
+        model: defaultValue.model,
+        model_name: modelAircraft[defaultValue.model as keyof typeof modelAircraft] || "",
+        airlineCode: defaultValue.airlineCode
+      })
+      setSelectedRegistration({
+        registration: defaultValue.registration ?? "",
+        model: defaultValue.model,
+        airlineCode: defaultValue.airlineCode,
+        totalFlight: 0 // Provide a default value or fetch the actual value
+      })
+    }else{
+      setMode("add")
+      setScheduleType("single")
+      setSelectedCarrier(undefined)
+      setSelectedFlight(undefined)
+      setDepDate(new Date())
+      setArrDate(addDays(new Date(), 1))
+      setDepTime("12:00")
+      setArrTime("14:00")
+    }
+  }, [defaultValue, defaultDepartAirport, defaultArriveAirport])
   useEffect(() => {
     if (selectedFlight) {
       // setDepDate(new Date(selectedFlight.departure_time))
@@ -181,11 +230,33 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
     }
   }, [scheduleType, depDate, depTime, arrDate, arrTime, selectedFlight, selectedCarrier, selectedModel, selectedRegistration, startDate, endDate, daysOfWeek, onAddFlight, onOpenChange])
   
+  const handleEdit = useCallback(() => {
+    console.log("departure date:", depDate)
+    console.log("departure time:", depTime)
+    console.log("arrival date:", arrDate)
+    console.log("arrival time:", arrTime)
+
+    //replace arrival date, time part with time from arrTime
+    const depDateTime = new Date(depDate!.toISOString().split("T")[0] + "T" + depTime + ":00Z").toISOString()
+    const arrDateTime = new Date(arrDate!.toISOString().split("T")[0] + "T" + arrTime + ":00Z").toISOString()
+
+    handleEditSchedule({
+      type: "single",
+      flightNum: selectedFlight?.flight_number || "",
+      airlineCode: selectedCarrier?.code || "",
+      model: selectedModel?.model || "",
+      registration: selectedRegistration?.registration || "",
+      departureDate: depDateTime || "",
+      arrivalDate: arrDateTime || "",
+    })
+  },[arrDate, arrTime, depDate, depTime, handleEditSchedule, selectedCarrier?.code, selectedFlight?.flight_number, selectedModel?.model, selectedRegistration?.registration])
+  
   useEffect(() => {
-    if(needSubmit) handleSubmit()
+    if(needSubmit && mode == "add") handleSubmit()
+    if(needSubmit && mode == "edit") handleEdit()
     return () => setNeedSubmit(false)
 
-  }, [needSubmit, handleSubmit])
+  }, [needSubmit, handleSubmit, handleEdit, mode])
   
   const toggleDayOfWeek = (day: string) => {
     if (daysOfWeek.includes(day)) {
@@ -204,13 +275,12 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
 
     return arrMinutesTotal < depMinutesTotal
   }
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md md:max-w-lg px-4">
         <SheetHeader className="mt-7">
-          <SheetTitle>Add New Flight Schedule</SheetTitle>
-          <SheetDescription>Create a new flight schedule. Fill in the details below.</SheetDescription>
+          <SheetTitle>{mode === "edit" ? "Edit" : "Add New"} Flight Schedule</SheetTitle>
+          <SheetDescription>{mode === "edit" ? "" : "Create new schedule. "}Fill in the details below.</SheetDescription>
         </SheetHeader>
         {isError && (
           <Alert variant="destructive" className="mb-4">
@@ -221,9 +291,15 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
         )}
         <div className="space-y-4">
           <Tabs value={scheduleType} onValueChange={setScheduleType} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className={`
+              grid w-full
+              ${mode === "edit" ? "grid-cols-1" : "grid-cols-2"}
+              `}>
               <TabsTrigger value="single">Single Flight</TabsTrigger>
-              <TabsTrigger value="recurring">Recurring Schedule</TabsTrigger>
+              {
+                mode === "edit" ? null : 
+                <TabsTrigger value="recurring">Recurring Schedule</TabsTrigger>
+              }
             </TabsList>
 
             <TabsContent value="single" className="space-y-4 pt-4">
@@ -232,6 +308,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                 <span className="text-xs text-muted-foreground">(e.g. CX, SQ, Thai Airways, or operated airport in format ap:&#10100;code&#10101;)</span>
                 <DebouncedSearch<Airline>
                   title="Airlines Carrier"
+                  disabled={mode === "edit"}
                   selected={selectedCarrier ?? null}
                   onSelect={setSelectedCarrier}
                   results={carriers}
@@ -259,6 +336,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                   <DebouncedSearch<Flight>
                     title="Search for flight number (e.g. cnx, 123, or bkk,cnx)"
                     selected={selectedFlight ?? null}
+                    disabled={mode === "edit"}
                     onSelect={setSelectedFlight}
                     requestMethod="GET"
                     results={carrierFlights}
@@ -321,7 +399,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="dep_time">Departure Time (UTC)</Label>
-                      <Input id="dep_time" type="time" value={depTime} disabled onChange={(e) => setDepTime(e.target.value)} />
+                      <Input id="dep_time" type="time" value={depTime} onChange={(e) => setDepTime(e.target.value)} />
                     </div>
                   </div>
 
@@ -354,7 +432,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="arr_time">Arrival Time (UTC)</Label>
-                      <Input id="arr_time" type="time" value={arrTime} disabled onChange={(e) => setArrTime(e.target.value)} />
+                      <Input id="arr_time" type="time" value={arrTime} onChange={(e) => setArrTime(e.target.value)} />
                     </div>
                   </div>
 
@@ -371,6 +449,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                     <DebouncedSearch<AircraftModel>
                       title="Aircraft Model"
                       selected={selectedModel ?? null}
+                      disabled={mode === "edit"}
                       onSelect={setSelectedModel}
                       dependent={selectedCarrier?.code}
                       loadBefore={true}
@@ -399,6 +478,7 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
                       <Label>Aircraft Registration</Label>
                       <DebouncedSearch<AircraftRegistration>
                         title="Aircraft Registration"
+                        disabled={mode === "edit"}
                         selected={selectedRegistration ?? null}
                         onSelect={setSelectedRegistration}
                         requestMethod="GET"
@@ -637,10 +717,10 @@ export default function AddScheduleSheet({ open, onOpenChange, onAddFlight, isLo
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adding...
+                  {mode === "edit" ? "Edit" : "Add"}ing...
                 </>
               ) : (
-                "Add Schedule"
+                (mode === "edit" ? "Edit" : "Add") + " Schedule"
               )}
             </Button>
           </div>

@@ -55,6 +55,27 @@ export default function BookingAdmin() {
     const [deleteBookingIndex, setDeleteBookingIndex] = useState<number>(0)
     const [deleteBookingCancel, setDeleteBookingCancel] = useState<boolean>(false)
 
+    //State for deleting passenger
+    // /delete-passenger/:userId/:passportNum/:bookingId
+    // /delete-ticket/:userId/:ticketId
+    // /delete-payment/:bookingId/:paymentId
+    const [deletePassenger, setDeletePassenger] = useState<boolean>(false)
+    const [deletePassengerId, setDeletePassengerId] = useState<string>("")
+    const [deletePassengerBookingIndex, setDeletePassengerBookingIndex] = useState<number>(0)
+    const [deletePassengerCancel, setDeletePassengerCancel] = useState<boolean>(false)
+    
+    //State for deleting ticket
+    const [deleteTicket, setDeleteTicket] = useState<boolean>(false)
+    const [deleteTicketId, setDeleteTicketId] = useState<string>("")
+    const [deleteTicketBookingIndex, setDeleteTicketBookingIndex] = useState<number>(0)
+    const [deleteTicketCancel, setDeleteTicketCancel] = useState<boolean>(false)
+
+    //State for deleting payment
+    const [deletePayment, setDeletePayment] = useState<boolean>(false)
+    const [deletePaymentId, setDeletePaymentId] = useState<string>("")
+     
+    const [deletePaymentBookingIndex, setDeletePaymentBookingIndex] = useState<number>(0)
+    const [deletePaymentCancel, setDeletePaymentCancel] = useState<boolean>(false)
 
     useEffect(()=>{
         const fetchPassenger = async () => {
@@ -283,7 +304,142 @@ export default function BookingAdmin() {
         setDeleteBookingId("")
         setDeleteBookingIndex(0)
     }
+
+    const handleDeletePassenger = async (bookingId: string, passengerId: string, index:number) => {
+        setDeletePassengerCancel(false);
+        setDeletePassenger(true);
+        setDeletePassengerId(passengerId);
+        setDeletePassengerBookingIndex(index);
+    }
+    const cancelDeletePassenger = async () => {
+        setDeletePassenger(false)
+        setDeletePassengerId("")
+        setDeletePassengerBookingIndex(0)
+    }
+    const confirmDeletePassenger = async () => {
+        toast.promise(
+            async () => {
+                const response = await fetch(`/api/booking/delete-passenger/${booking[deletePassengerBookingIndex].userId}/${deletePassengerId}/${booking[deletePassengerBookingIndex].ticket}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                })
+                if (response.ok) {
+                    const data = await response.json()
+                    if(data.status == false){
+                        throw new Error(data.message)
+                    }
+                    setDeletePassenger(false)
+                    setDeletePassengerId("")
+                    setDeletePassengerBookingIndex(0)
+                    isFetchRef.current = false
+                    setINeedUpdate(true)
+                } else {
+                    const data = await response.json()
+                    toast.error(data.message)
+                    throw new Error(data.message)
+                }
+            }, {
+                loading: "Deleting passenger...",
+                success: "Passenger deleted successfully",
+                error: (err) => {
+                    console.error(err)
+                    return "Error deleting passenger"
+                }
+            })
+    }
+
+    const handleDeleteTicket = async (bookingId: string, ticketId: string, index:number) => {
+        setDeleteTicketCancel(false);
+        setDeleteTicket(true);
+        setDeleteTicketId(ticketId);
+        setDeleteTicketBookingIndex(index);
+    }
+    const cancelDeleteTicket = async () => {
+        setDeleteTicket(false)
+        setDeleteTicketId("")
+        setDeleteTicketBookingIndex(0)
+    }
+    const confirmDeleteTicket = async () => {
+        toast.promise(
+            async () => {
+                const response = await fetch(`/api/booking/delete-ticket/${booking[deleteTicketBookingIndex].userId}/${deleteTicketId}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                })
+                if (response.ok) {
+                    const data = await response.json()
+                    if(data.status == false){
+                        throw new Error(data.message)
+                    }
+                    setDeleteTicket(false)
+                    setDeleteTicketId("")
+                    setDeleteTicketBookingIndex(0)
+                    isFetchRef.current = false
+                    setINeedUpdate(true)
+                } else {
+                    const data = await response.json()
+                    toast.error(data.message)
+                    throw new Error(data.message)
+                }
+            }, {
+                loading: "Deleting ticket...",
+                success: "Ticket deleted successfully",
+                error: (err) => {
+                    console.error(err)
+                    return "Error deleting ticket"
+                }
+            })
+    }
     
+    const handleDeletePayment = async (bookingId: string, paymentId: string, index:number) => {
+        setDeletePaymentCancel(false);
+        setDeletePayment(true);
+        setDeletePaymentId(paymentId);
+        setDeletePaymentBookingIndex(index);
+    }
+    const cancelDeletePayment = async () => {
+        setDeletePayment(false)
+        setDeletePaymentId("")
+        setDeletePaymentBookingIndex(0)
+    }
+    const confirmDeletePayment = async () => {
+        toast.promise(
+            async () => {
+                const response = await fetch(`/api/booking/delete-payment/${booking[deletePaymentBookingIndex].ticket}/${deletePaymentId}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                })
+                if (response.ok) {
+                    const data = await response.json()
+                    if(data.status == false){
+                        throw new Error(data.message)
+                    }
+                    setDeletePayment(false)
+                    setDeletePaymentId("")
+                    setDeletePaymentBookingIndex(0)
+                    isFetchRef.current = false
+                    setINeedUpdate(true)
+                } else {
+                    const data = await response.json()
+                    toast.error(data.message)
+                    throw new Error(data.message)
+                }
+            }, {
+                loading: "Deleting payment...",
+                success: "Payment deleted successfully",
+                error: (err) => {
+                    console.error(err)
+                    return "Error deleting payment"
+                }
+            })
+    }
+
     const SelectSizeInput = ()=>{
         return (
             <Select value={String(size)} onValueChange={(value) => {
@@ -464,6 +620,108 @@ export default function BookingAdmin() {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+                <Dialog open={deletePassenger} onOpenChange={()=>{
+                    setDeletePassengerCancel(true)
+                    cancelDeletePassenger()
+                }} modal>
+                    <DialogContent forceMount>
+                        <DialogHeader className="items-center">
+                            <DialogTitle>
+                                <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+                                    <TriangleAlert className="h-7 w-7 text-destructive" />
+                                </div>
+                                Are you sure to delete Passenger?
+                            </DialogTitle>
+                            <DialogDescription className="text-[15px] text-center">
+                                This action will delete the passenger from the selected booking only.
+                                <br />
+                                This action cannot be undone. (Cannot be restored or create a new one)
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="mt-2 sm:justify-center">
+                            <DialogClose asChild>
+                                <Button className='cursor-pointer' disabled={deletePassengerCancel} variant="outline"
+                                    onClick={()=>{
+                                        setDeletePassengerCancel(true)
+                                        cancelDeletePassenger()
+                                    }}
+                                >{
+                                    deletePassengerCancel == true ? <Loader2 className="animate-spin h-4 w-4" /> : "Cancel"}</Button>
+                            </DialogClose>
+                            <Button className='cursor-pointer' disabled={deletePassengerCancel} variant="destructive" onClick={confirmDeletePassenger}>
+                                Delete Passenger
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                <Dialog open={deleteTicket} onOpenChange={()=>{
+                    setDeleteTicketCancel(true)
+                    cancelDeleteTicket()
+                }} modal>
+                    <DialogContent forceMount>
+                        <DialogHeader className="items-center">
+                            <DialogTitle>
+                                <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+                                    <TriangleAlert className="h-7 w-7 text-destructive" />
+                                </div>
+                                Are you sure to delete Ticket?
+                            </DialogTitle>
+                            <DialogDescription className="text-[15px] text-center">
+                                This action will delete only selected ticket for selected passenger.
+                                <br />
+                                This action cannot be undone. (Cannot be restored or create a new one)
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="mt-2 sm:justify-center">
+                            <DialogClose asChild>
+                                <Button className='cursor-pointer' disabled={deleteTicketCancel} variant="outline"
+                                    onClick={()=>{
+                                        setDeleteTicketCancel(true)
+                                        cancelDeleteTicket()
+                                    }}
+                                >{
+                                    deleteTicketCancel == true ? <Loader2 className="animate-spin h-4 w-4" /> : "Cancel"}</Button>
+                            </DialogClose>
+                            <Button className='cursor-pointer' disabled={deleteTicketCancel} variant="destructive" onClick={confirmDeleteTicket}>
+                                Delete Ticket
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                <Dialog open={deletePayment} onOpenChange={()=>{
+                    setDeletePaymentCancel(true)
+                    cancelDeletePayment()
+                }} modal>
+                    <DialogContent forceMount>
+                        <DialogHeader className="items-center">
+                            <DialogTitle>
+                                <div className="mb-2 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+                                    <TriangleAlert className="h-7 w-7 text-destructive" />
+                                </div>
+                                Are you sure to delete Payment?
+                            </DialogTitle>
+                            <DialogDescription className="text-[15px] text-center">
+                                This action will delete only selected ticket for selected passenger.
+                                <br />
+                                This action cannot be undone. (Cannot be restored or create a new one)
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="mt-2 sm:justify-center">
+                            <DialogClose asChild>
+                                <Button className='cursor-pointer' disabled={deletePaymentCancel} variant="outline"
+                                    onClick={()=>{
+                                        setDeletePaymentCancel(true)
+                                        cancelDeletePayment()
+                                    }}
+                                >{
+                                    deletePaymentCancel == true ? <Loader2 className="animate-spin h-4 w-4" /> : "Cancel"}</Button>
+                            </DialogClose>
+                            <Button className='cursor-pointer' disabled={deletePaymentCancel} variant="destructive" onClick={confirmDeletePayment}>
+                                Delete Payment
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold tracking-tight">Booking Management</h1>
                 </div>
@@ -492,16 +750,25 @@ export default function BookingAdmin() {
                         <div className="flex flex-col gap-4">
                             {booking?.length == 0 ? null : booking.map((item, bIndex) => (
                                 <BookingDetails
-                                onModifyBookingStatus={(bookingId:string, status: BookingStatus) => {
-                                    handleStatusChange(bookingId, status, bIndex)
-                                }}
-                                onModifyBookingDate={(bookingId:string) => {
-                                    handleBookingDateChange(bookingId, bIndex)
-                                }}
-                                onDeleteBooking={(bookingId:string) => {
-                                    handleDeleteBooking(bookingId, bIndex)
-                                }}
-                                key={item.ticket} item={item} isAdmin={true} defaultOpen={bIndex===0} />
+                                    onModifyBookingStatus={(bookingId:string, status: BookingStatus) => {
+                                        handleStatusChange(bookingId, status, bIndex)
+                                    }}
+                                    onModifyBookingDate={(bookingId:string) => {
+                                        handleBookingDateChange(bookingId, bIndex)
+                                    }}
+                                    onDeleteBooking={(bookingId:string) => {
+                                        handleDeleteBooking(bookingId, bIndex)
+                                    }}
+                                    onDeletePassenger={(bookingId:string, passengerId: string) => {
+                                        handleDeletePassenger(bookingId, passengerId, bIndex)
+                                    }}
+                                    onDeleteTicket={(bookingId:string, ticketId: string)=>{
+                                        handleDeleteTicket(bookingId, ticketId, bIndex)
+                                    }}
+                                    onDeletePayment={(bookingId:string, paymentId: string)=>{
+                                        handleDeletePayment(bookingId, paymentId, bIndex)
+                                    }}
+                                    key={item.ticket} item={item} isAdmin={true} defaultOpen={bIndex===0} />
                             ))}
                         </div>
                     </>

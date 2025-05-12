@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Loader2, TriangleAlert } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 // import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Airline, Flight, SubmitTransit } from "@/types/type"
+import { adminTransitListType, Airline, Flight, SubmitTransit } from "@/types/type"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 import { DebouncedSearch } from "../../reusable/search"
 // import { Card, CardContent, CardHeader } from "../ui/card"
@@ -18,12 +18,17 @@ interface AddFlightSheetProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onAddTransit: (flight: SubmitTransit, onSuccess: () => void, onError: () => void) => void
+    onEditTransit: (flight: SubmitTransit, onSuccess: () => void, onError: () => void) => void
     isLoading: boolean
+    defaultValue: SubmitTransit | null
+    helperDefaultValue: adminTransitListType | null
 }
 
-export default function AddFlightSheet({ open, onOpenChange, onAddTransit, isLoading }: AddFlightSheetProps) {
+export default function AddFlightSheet({ open, onOpenChange, onAddTransit,onEditTransit, isLoading, defaultValue, helperDefaultValue }: AddFlightSheetProps) {
     
     const { backend: backendURL }: BackendURLType = useBackendURL();
+
+    const [mode, setMode] = useState<"edit" | "add">("add")
 
     const [selectedCarrier1, setSelectedCarrier1] = useState<Airline>()
     const [carriers1, setCarriers1] = useState<Airline[]>([])
@@ -74,14 +79,71 @@ export default function AddFlightSheet({ open, onOpenChange, onAddTransit, isLoa
         })
     }, [backendURL, onAddTransit, onOpenChange, selectedCarrier1, selectedCarrier2, selectedFlight1, selectedFlight2])
     
+    const handleEdit = useCallback(async ()=>{
+        if(!selectedCarrier1 || !selectedFlight1 || !selectedCarrier2 || !selectedFlight2){
+            toast.error("Please fill out all fields")
+            return
+        }else{
+            //check if flight is match with helperDefaultValue, if match then no updated toast info to tell user, if not then update handle
+            if(helperDefaultValue?.flightNumFrom == selectedFlight1.flight_number && helperDefaultValue?.flightNumTo == selectedFlight2.flight_number
+                && helperDefaultValue?.airlineCodeFrom == selectedCarrier1.code && helperDefaultValue?.airlineCodeTo == selectedCarrier2.code){
+                toast.info("No changes made", {description: "It will close automatically, with no changes were made."})
+                setTimeout(() => {
+                    onOpenChange(false)
+                }, 2000);
+            }else{
+                onEditTransit({
+                    airlineCodeFrom: selectedCarrier1.code,
+                    flightNumFrom: selectedFlight1.flight_number,
+                    airlineCodeTo: selectedCarrier2.code,
+                    flightNumTo: selectedFlight2.flight_number,
+                }, () => {
+                    setLoadingSubmit(false)
+                    setErrorSubmit("")
+                    setIsError(false)
+                    onOpenChange(false)
+                }, () => {
+                    setLoadingSubmit(false)
+                    setErrorSubmit("Failed to edit flight")
+                    setIsError(true)
+                })
+            }
+
+        }
+    }, [helperDefaultValue?.airlineCodeFrom, helperDefaultValue?.airlineCodeTo, helperDefaultValue?.flightNumFrom, helperDefaultValue?.flightNumTo, onEditTransit, onOpenChange, selectedCarrier1, selectedCarrier2, selectedFlight1, selectedFlight2])
+
+    useEffect(()=>{
+        if(defaultValue && helperDefaultValue){
+            setMode("edit")
+            setSelectedCarrier1({code: defaultValue.airlineCodeFrom, name: helperDefaultValue.airlineNameFrom})
+            setSelectedCarrier2({code: defaultValue.airlineCodeTo, name: helperDefaultValue.airlineNameTo})
+            setSelectedFlight1({flight_number: defaultValue.flightNumFrom, airlineCode: defaultValue.airlineCodeFrom, 
+                departure_time: "", arrival_time: "", depart_airport: helperDefaultValue.departureAirportCode, arrive_airport: helperDefaultValue.transitAirportCode})
+            setSelectedFlight2({flight_number: defaultValue.flightNumTo, airlineCode: defaultValue.airlineCodeTo, 
+                departure_time: "", arrival_time: "", depart_airport: helperDefaultValue.transitAirportCode, arrive_airport: helperDefaultValue.arrivalAirportCode})
+        }else{
+            setMode("add")
+            setIsError(false)
+            setErrorSubmit("")
+            setSelectedCarrier1(undefined)
+            setSelectedCarrier2(undefined)
+            setSelectedFlight1(undefined)
+            setSelectedFlight2(undefined)
+        }
+    }, [defaultValue, helperDefaultValue])
+
     useEffect(() => {
         if(needSubmit){
-            handleSubmit()
+            if(mode === "edit"){
+                handleEdit()
+            }else if(mode === "add"){
+                handleSubmit()
+            }
             setNeedSubmit(false)
         }
         return () => setNeedSubmit(false)
 
-    }, [needSubmit, handleSubmit])
+    }, [needSubmit, handleSubmit, mode, handleEdit])
   
 
     const isOvernightFlight = (depTime: string, arrTime: string) => {
@@ -98,8 +160,8 @@ export default function AddFlightSheet({ open, onOpenChange, onAddTransit, isLoa
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-md md:max-w-lg px-4">
                 <SheetHeader className="mt-7">
-                    <SheetTitle>Add New Transit</SheetTitle>
-                    <SheetDescription>Create a new transit. <br /> Fill in the details below.</SheetDescription>
+                    <SheetTitle>{mode === "edit" ? "Edit" : "Add New"} Transit</SheetTitle>
+                    <SheetDescription>{mode === "edit" ? "" : "Create new transit. "}<br /> Fill in the details below.</SheetDescription>
                 </SheetHeader>
                 {isError ? (
                 <Alert variant="destructive" className="mb-4">
@@ -243,10 +305,10 @@ export default function AddFlightSheet({ open, onOpenChange, onAddTransit, isLoa
                             {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Adding...
+                                {mode === "edit" ? "Edit" : "Add"}ing...
                             </>
                             ) : (
-                            "Add Transit"
+                            (mode === "edit" ? "Edit" : "Add") + "Transit"
                             )}
                         </Button>
                     </div>

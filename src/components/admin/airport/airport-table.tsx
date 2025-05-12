@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,8 @@ import { useState } from "react"
 
 interface AirlineTableProps {
   airports: AirportAPIType[]
+  handleEditAirport: (index: number) => void
+  handleDeleteAirport: (index: number) => void
   isLoading: boolean
   searchQuery: string
   setSearchQuery: (query: string) => void
@@ -17,11 +20,13 @@ interface AirlineTableProps {
 
 export default function AirlineTable({ airports, isLoading,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  handleEditAirport,
+  handleDeleteAirport
 }: AirlineTableProps) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const [sortColumn, setSortColumn] = useState<keyof AirportAPIType>("airportCode")
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
     const handleSort = (column: keyof AirportAPIType) => {
@@ -129,14 +134,18 @@ export default function AirlineTable({ airports, isLoading,
                       {airport.numAssociateAirline}
                     </TableCell>
                     <TableCell className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button onClick={()=>{
+                        handleEditAirport(index)
+                      }} variant="outline" size="sm">
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                      {/* <Button onClick={()=>{
+                        handleDeleteAirport(index)
+                      }} variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
-                      </Button>
+                      </Button> */}
                     </TableCell>
                 </TableRow>
             )) : (

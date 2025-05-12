@@ -142,7 +142,7 @@ export const adminQueryModule = new Elysia({
                 p.nationality,
                 p.ageRange
             FROM passenger_booking pb
-            JOIN passenger p ON pb.passportNum = p.passportNum
+            JOIN passenger p ON pb.passportNum = p.passportNum AND p.userId = pb.userId
             WHERE pb.bookingId = ${booking.bookingId}
             `;
     
@@ -606,7 +606,7 @@ export const adminQueryModule = new Elysia({
                     (SELECT COUNT(*) FROM flightOperate WHERE flightOperate.airlineCode = airline.airlineCode) AS numAssociateSchedule
                 FROM airline
                 WHERE airlineCode LIKE ${wildcard} OR 
-                      \`name\` LIKE ${wildcard}
+                      airlineName LIKE ${wildcard}
                 LIMIT ${size} OFFSET ${offset}
             `;
             if (!airlines || airlines.length === 0) {
@@ -624,7 +624,7 @@ export const adminQueryModule = new Elysia({
                 totalCount = await prisma.$queryRaw`
                     SELECT COUNT(*) as count FROM airline
                     WHERE airlineCode LIKE ${wildcard} OR 
-                      \`name\` LIKE ${wildcard}
+                          airlineName LIKE ${wildcard}
                 `;
                 const total = Number(totalCount[0]?.count || 0);
                 return {

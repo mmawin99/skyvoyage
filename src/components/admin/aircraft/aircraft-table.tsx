@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AircraftRegistration } from '@/types/type'
-import { Edit, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 const AircraftTable = ({
@@ -50,7 +49,7 @@ const AircraftTable = ({
                         </Button>
                     </TableHead>
                     <TableHead>Total flight</TableHead>
-                    <TableHead>Manage</TableHead>
+                    {/* <TableHead>Manage</TableHead> */}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -75,9 +74,9 @@ const AircraftTable = ({
                         <TableCell>
                             <Skeleton className="h-6 w-40" />
                         </TableCell>
-                        <TableCell>
+                        {/* <TableCell>
                             <Skeleton className="h-6 w-24" />
-                        </TableCell>
+                        </TableCell> */}
                         </TableRow>
                     ))
                     ) : aircraft.length > 0 ? (
@@ -87,16 +86,12 @@ const AircraftTable = ({
                             <TableCell>{aircraft.airlineCode}</TableCell>
                             <TableCell>{aircraft.model}</TableCell>
                             <TableCell>{aircraft.totalFlight}</TableCell>
-                            <TableCell className='flex flex-row gap-2'>
-                                <Button variant="outline" size="sm">
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    Edit
-                                </Button>
+                            {/* <TableCell className='flex flex-row gap-2'>
                                 <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                     <Trash2 className="h-4 w-4 mr-1" />
                                     Delete
                                 </Button>
-                            </TableCell>
+                            </TableCell> */}
                         </TableRow>
                     ))
                     ) : (

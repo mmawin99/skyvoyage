@@ -114,33 +114,11 @@ export default function AirlineAdmin() {
     }
 
     const handleEditAirline = async (newAirline: SubmitAirline, onSuccess: ()=> void, onError: ()=> void) => {
-        // setIsLoading(true)
-        // const response = await fetch(`${backendURL}/flight/editAirline`,{
-        //     method: "POST",
-        //     headers: {
-        //         "Content-Type": "application/json",
-        //     },
-        //     body: JSON.stringify(newAirline),
-        // })
-        
-        // if(response.ok) {
-        //     const data = await response.json()
-        //     console.log(data)
-        //     onSuccess()
-        //     toast.success("Airline edited successfully")
-        //     const currStatus = newAirlineAdded
-        //     setNewAirlineAdded(!currStatus)
-        // }else{
-        //     toast.error("Failed to edit airline, Check console for more details.")
-        //     console.error("Error editing airline:", await response.json())
-        //     onError()
-        // }
-        // setIsLoading(false)
         toast.promise(
             async () => {
                 setIsLoading(true)
                 const response = await fetch(`${backendURL}/flight/editAirline`,{
-                    method: "POST",
+                    method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
                     },

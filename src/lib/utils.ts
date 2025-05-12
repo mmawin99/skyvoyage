@@ -36,3 +36,20 @@ export const formatInTimeZone = (date: Date, timeZone: string, format: string): 
         .replace("MM", lookup.month ?? "")
         .replace("yyyy", lookup.year ?? "");
     }
+
+
+// Define color mapping for seat classes
+export const classColorMap: Record<string, string> = {
+    "F": "#Cb0404", // First Class
+    "C": "#f4631E", // Business Class
+    "W": "#ff9f00", // Premium Economy
+    "Y": "#309898"  // Economy
+};
+
+// Define class name mapping
+export const classNameMap: Record<string, string> = {
+    "F": "First Class",
+    "C": "Business Class",
+    "W": "Premium Economy",
+    "Y": "Economy"
+};

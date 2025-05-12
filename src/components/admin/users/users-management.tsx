@@ -41,7 +41,7 @@ const UserManagementComponent = ({
                 const data = await response.json()
                 console.log(data)
                 setUserList(data.data)
-                setTotalCount(data.pagination.total)
+                setTotalCount(data.pagination.totalCount)
                 setIsLoading(false)
             } catch (error) {
                 console.error('Error fetching data:', error)

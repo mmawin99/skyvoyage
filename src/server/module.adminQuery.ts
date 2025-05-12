@@ -88,7 +88,7 @@ export const adminQueryModule = new Elysia({
             status: true,
             data: [],
             pagination: {
-                total,
+                totalCount: total,
                 page,
                 size
             }
@@ -304,7 +304,7 @@ export const adminQueryModule = new Elysia({
             status: true,
             booking: transformedBookings,
             pagination: {
-            total,
+            totalCount: total,
             page,
             size,
             totalPages: Math.ceil(total / size)
@@ -421,7 +421,7 @@ export const adminQueryModule = new Elysia({
                 kind: kind,
                 data: users,
                 pagination: {
-                    total,
+                    totalCount: total,
                     page,
                     size
                 }
@@ -456,8 +456,11 @@ export const adminQueryModule = new Elysia({
                     latitude,
                     longitude,
                     altitude,
-                   (SELECT COUNT(*) FROM flight WHERE flight.departAirportId = airportCode OR flight.arriveAirportId = airportCode) AS numAssociateFlight,
-                    (SELECT COUNT(*) FROM airline WHERE airline.airlineCode IN (SELECT DISTINCT airlineCode FROM flight f2 WHERE f2.departAirportId = airportCode OR f2.arriveAirportId = airportCode)) AS numAssociateAirline
+                    (SELECT COUNT(*) FROM flight WHERE flight.departAirportId = airport.airportCode OR flight.arriveAirportId = airport.airportCode) AS numAssociateFlight,
+                    (SELECT COUNT(*) FROM airline WHERE airline.airlineCode IN (
+                            SELECT DISTINCT airlineCode FROM flight f2 WHERE f2.departAirportId = airport.airportCode OR f2.arriveAirportId = airport.airportCode
+                        )
+                    ) AS numAssociateAirline
                 FROM airport
                 LIMIT ${size} OFFSET ${offset}
             `;
@@ -481,7 +484,7 @@ export const adminQueryModule = new Elysia({
                     status: true,
                     data: sanitizeBigInt(airports),
                     pagination: {
-                        total,
+                        totalCount: total,
                         page,
                         size
                     }
@@ -499,8 +502,11 @@ export const adminQueryModule = new Elysia({
                     latitude,
                     longitude,
                     altitude,
-                    (SELECT COUNT(*) FROM flight WHERE flight.departAirportId = airportCode OR flight.arriveAirportId = airportCode) AS numAssociateFlight,
-                    (SELECT COUNT(*) FROM airline WHERE airline.airlineCode IN (SELECT DISTINCT airlineCode FROM flight f2 WHERE f2.departAirportId = airportCode OR f2.arriveAirportId = airportCode)) AS numAssociateAirline
+                    (SELECT COUNT(*) FROM flight WHERE flight.departAirportId = airport.airportCode OR flight.arriveAirportId = airport.airportCode) AS numAssociateFlight,
+                    (SELECT COUNT(*) FROM airline WHERE airline.airlineCode IN (
+                            SELECT DISTINCT airlineCode FROM flight f2 WHERE f2.departAirportId = airport.airportCode OR f2.arriveAirportId = airport.airportCode
+                        )
+                    ) AS numAssociateAirline
                 FROM airport
                 WHERE airportCode LIKE ${wildcard} OR 
                       \`name\` LIKE ${wildcard} OR country LIKE ${wildcard} OR city LIKE ${wildcard}
@@ -528,7 +534,7 @@ export const adminQueryModule = new Elysia({
                     status: true,
                     data: sanitizeBigInt(airports),
                     pagination: {
-                        total,
+                        totalCount: total,
                         page,
                         size
                     }
@@ -557,9 +563,9 @@ export const adminQueryModule = new Elysia({
                 SELECT 
                     airlineCode,
                     airlineName,
-                    (SELECT COUNT(*) FROM flight WHERE flight.airlineCode = airlineCode) AS numAssociateFlight,
-                    (SELECT COUNT(*) FROM aircraft WHERE aircraft.ownerAirlineCode = airlineCode) AS numAssociateAircraft,
-                    (SELECT COUNT(*) FROM flightOperate WHERE flightOperate.airlineCode = airlineCode) AS numAssociateSchedule
+                    (SELECT COUNT(*) FROM flight WHERE flight.airlineCode = airline.airlineCode) AS numAssociateFlight,
+                    (SELECT COUNT(*) FROM aircraft WHERE aircraft.ownerAirlineCode = airline.airlineCode) AS numAssociateAircraft,
+                    (SELECT COUNT(*) FROM flightOperate WHERE flightOperate.airlineCode = airline.airlineCode) AS numAssociateSchedule
                 FROM airline
                 LIMIT ${size} OFFSET ${offset}
             `;
@@ -583,7 +589,7 @@ export const adminQueryModule = new Elysia({
                     status: true,
                     data: sanitizeBigInt(airlines),
                     pagination: {
-                        total,
+                        totalCount: total,
                         page,
                         size
                     }
@@ -595,9 +601,9 @@ export const adminQueryModule = new Elysia({
                 SELECT 
                     airlineCode,
                     airlineName,
-                    (SELECT COUNT(*) FROM flight WHERE flight.airlineCode = airlineCode) AS numAssociateFlight,
-                    (SELECT COUNT(*) FROM aircraft WHERE aircraft.ownerAirlineCode = airlineCode) AS numAssociateAircraft,
-                    (SELECT COUNT(*) FROM flightOperate WHERE flightOperate.airlineCode = airlineCode) AS numAssociateSchedule
+                    (SELECT COUNT(*) FROM flight WHERE flight.airlineCode = airline.airlineCode) AS numAssociateFlight,
+                    (SELECT COUNT(*) FROM aircraft WHERE aircraft.ownerAirlineCode = airline.airlineCode) AS numAssociateAircraft,
+                    (SELECT COUNT(*) FROM flightOperate WHERE flightOperate.airlineCode = airline.airlineCode) AS numAssociateSchedule
                 FROM airline
                 WHERE airlineCode LIKE ${wildcard} OR 
                       \`name\` LIKE ${wildcard}
@@ -625,7 +631,7 @@ export const adminQueryModule = new Elysia({
                     status: true,
                     data: sanitizeBigInt(airlines),
                     pagination: {
-                        total,
+                        totalCount: total,
                         page,
                         size
                     }

@@ -16,10 +16,12 @@ import AirlineTable from "./airline-table"
 interface AirlineAdminResponseType {
     message: string
     data: AirlineAPIType[]
-    size: number
-    page: number
     status: boolean
-    totalCount: number
+    pagination:{
+        size: number
+        page: number
+        totalCount: number
+    }
 }
 
 export default function AirlineAdmin() {
@@ -55,7 +57,7 @@ export default function AirlineAdmin() {
                     const data: AirlineAdminResponseType = await response.json()
                     console.log(data)
                     setAirlines(data?.data)
-                    setTotalCount(data?.totalCount)
+                    setTotalCount(data?.pagination.totalCount)
                     console.log(data?.data)
                 } else {
                     console.error("Error fetching airlines:", await response.json())

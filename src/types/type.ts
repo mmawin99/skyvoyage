@@ -377,6 +377,24 @@ export interface SeatmapAPI{
     seatStatus: 'available' | 'reserved';
 }
 
+export interface SeatmapAPIAdmin{
+    seatId: string;
+    seatNum: string;
+    row: number;
+    column: string;
+    class: string;
+    price: number;
+    features: {
+        s: {
+            p: string; //seat_pitch
+            w: string; //seat_width
+            r: string; //seat_recline
+        },
+        f: number[] //features_id
+    };
+    floor: number;
+}
+
 export interface SeatmapFetch{
     status: boolean,
     msg: string,
@@ -599,4 +617,14 @@ export interface SubmitAircraft{
     ownerAirlineCode: string,
     model: string,
     seatMapId: string,
+}
+
+export interface SeatmapAPIMetadata{
+    seatMapId: string
+    airlineCode: string
+    airlineName: string
+    aircraftModel: string
+    version: string
+    seatCount: number
+    classDistribution: string
 }

@@ -15,10 +15,12 @@ import AirportTable from "./airport-table"
 interface AirportAdminResponseType {
     message: string
     data: AirportAPIType[]
-    size: number
-    page: number
     status: boolean
-    totalCount: number
+    pagination:{
+        size: number
+        page: number
+        totalCount: number
+    }
 }
 
 export default function AirportAdmin() {
@@ -54,7 +56,7 @@ export default function AirportAdmin() {
                     const data: AirportAdminResponseType = await response.json()
                     console.log(data)
                     setAirports(data?.data)
-                    setTotalCount(data?.totalCount)
+                    setTotalCount(data?.pagination.totalCount)
                     console.log(data?.data)
                 } else {
                     console.error("Error fetching airports:", await response.json())

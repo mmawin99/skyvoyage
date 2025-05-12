@@ -52,6 +52,19 @@ export function sanitizeBigInt(obj: any): any {
   }
   return obj;
 }
+export function sanitizeBigInt2(obj: any): any {
+    if (typeof obj === 'bigint') {
+        return Number(obj);
+    } else if (Array.isArray(obj)) {
+        return obj.map(sanitizeBigInt);
+    } else if (obj && typeof obj === 'object') {
+        return Object.fromEntries(
+            Object.entries(obj).map(([k, v]) => [k, sanitizeBigInt(v)])
+        );
+    }
+    return obj;
+}
+
 
 export function getPreviousPeriod(startDate:string, endDate:string): { start: string; end: string } {
   const start = new Date(startDate);

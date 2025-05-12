@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid'
 import Elysia, { error } from "elysia";
 // import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt, sanitizeStringForSql } from "@/server/lib";
-import { PrismaClient } from "../../prisma-client";
-import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitAircraft, SubmitSchedule, SubmitTransit, UniversalFlightSchedule } from '@/types/type';
+import { airline, PrismaClient } from "../../prisma-client";
+import { adminFlightListType, adminTransitListType, FareType, ScheduleListAdmin, SubmitAircraft, SubmitAirline, SubmitSchedule, SubmitTransit, UniversalFlightSchedule } from '@/types/type';
 import { SubmitFlight } from '@/types/type';
 
 const prisma = new PrismaClient()
@@ -477,7 +477,85 @@ export const flightModule = new Elysia({
             })
         }
     })
-    .get("/schedule/:size/:kind/:page", async ({params,query}:{params:{ query: string, size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, query:{query:string}})=>{
+    .post("/addAirline", async({body}:{body:SubmitAirline})=>{
+        try{
+            const { airlineCode, airlineName } = body
+            if (!airlineCode || !airlineName) {
+                return error(400, {
+                    status: false,
+                    message: 'Missing required fields',
+                })
+            }
+            // Check if airline already exists
+            const airlineExists:airline[] = await prisma.$queryRaw`
+                SELECT * FROM airline 
+                WHERE airlineCode = ${airlineCode}
+            `
+            if (airlineExists.length > 0) {
+                return error(400, {
+                    status: false,
+                    message: 'Airline already exists',
+                })
+            }
+
+            await prisma.$executeRaw`
+                INSERT INTO airline (airlineCode, airlineName) 
+                VALUES (${airlineCode}, ${airlineName})
+            `
+            return {
+                status: true,
+                message: 'Airline added successfully',
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
+    })
+    .put("/editAirline", async({body}:{body:SubmitAirline})=>{
+        try{
+            const { airlineCode, airlineName } = body
+            if (!airlineCode || !airlineName) {
+                return error(400, {
+                    status: false,
+                    message: 'Missing required fields',
+                })
+            }
+
+            // Check if airline exists
+            const airlineExists:airline[] = await prisma.$queryRaw`
+                SELECT * FROM airline 
+                WHERE airlineCode = ${airlineCode}
+            `
+            if (airlineExists.length === 0 || airlineExists.length > 1) {
+                return error(404, {
+                    status: false,
+                    message: 'Airline not found',
+                })
+            }
+
+            await prisma.$executeRaw`
+                UPDATE airline 
+                SET airlineName = ${airlineName} 
+                WHERE airlineCode = ${airlineCode}
+            `
+            return {
+                status: true,
+                message: 'Airline updated successfully',
+            }
+        }catch(err){
+            console.error(err)
+            return error(500, {
+                status: false,
+                message: 'Internal server error',
+                error: err,
+            })
+        }
+    })
+    .get("/schedule/:size/:kind/:page", async ({params,query}:{params:{ size:number, page:number, kind:"all" | "upcoming" | "inflight" | "completed" }, query:{query:string}})=>{
         const timeStart = Date.now()
         const { size, page, kind} = params
         if(isNaN(parseInt(String(size))) || isNaN(parseInt(String(page)))){
@@ -532,10 +610,11 @@ export const flightModule = new Elysia({
                 } else if (kind === "completed") {
                     queryString += ` WHERE fo.arrivalTime < NOW()`;
                 }else if (kind === "all") {
-                    queryString += ` WHERE fo.departureTime > CASE
-                            WHEN UTC_TIME() < '12:00:00' THEN UTC_DATE()
-                            ELSE CONCAT(UTC_DATE(), ' 12:00:00')
-                        END`;
+                    queryString += ` WHERE fo.departureTime > 
+    CASE
+        WHEN UTC_TIME() < '12:00:00' THEN CAST(CONCAT(UTC_DATE(), ' 00:00:00') AS DATETIME)
+        ELSE CAST(CONCAT(UTC_DATE(), ' 12:00:00') AS DATETIME)
+    END`;
                 }
                 
                 // Add ordering and pagination
@@ -557,14 +636,17 @@ export const flightModule = new Elysia({
                 } else if (kind === "completed") {
                     countQueryString += ` WHERE fo.arrivalTime < NOW()`;
                 } else if (kind === "all") {
-                    countQueryString += ` WHERE fo.departureTime > CASE
-                            WHEN UTC_TIME() < '12:00:00' THEN UTC_DATE()
-                            ELSE CONCAT(UTC_DATE(), ' 12:00:00')
-                        END`;
+                    countQueryString += ` WHERE fo.departureTime > 
+    CASE
+        WHEN UTC_TIME() < '12:00:00' THEN CAST(CONCAT(UTC_DATE(), ' 00:00:00') AS DATETIME)
+        ELSE CAST(CONCAT(UTC_DATE(), ' 12:00:00') AS DATETIME)
+    END`;
                 }
                 
                 totalCount = await prisma.$queryRawUnsafe(countQueryString);
             } else {
+                console.log("---Searching with query---")
+                console.log("searchString", searchString)
                 // Build search query with wildcard
                 const wildcardValue = `%${sanitizeStringForSql(searchString)}%`; // Assuming 'wildcard' was derived from 'query'
                 
@@ -612,10 +694,11 @@ export const flightModule = new Elysia({
                 } else if (kind === "completed") {
                     queryString += ` AND fo.arrivalTime < NOW()`;
                 } else if (kind === "all") {
-                    queryString += ` WHERE fo.departureTime > CASE
-                            WHEN UTC_TIME() < '12:00:00' THEN UTC_DATE()
-                            ELSE CONCAT(UTC_DATE(), ' 12:00:00')
-                        END`;
+                    queryString += ` AND fo.departureTime > 
+    CASE
+        WHEN UTC_TIME() < '12:00:00' THEN CAST(CONCAT(UTC_DATE(), ' 00:00:00') AS DATETIME)
+        ELSE CAST(CONCAT(UTC_DATE(), ' 12:00:00') AS DATETIME)
+    END`;
                 }
                 
                 // Add ordering and pagination
@@ -655,10 +738,11 @@ export const flightModule = new Elysia({
                 } else if (kind === "completed") {
                     countQueryString += ` AND fo.arrivalTime < NOW()`;
                 } else if (kind === "all") {
-                    countQueryString += ` WHERE fo.departureTime > CASE
-                            WHEN UTC_TIME() < '12:00:00' THEN UTC_DATE()
-                            ELSE CONCAT(UTC_DATE(), ' 12:00:00')
-                        END`;
+                    countQueryString += ` AND fo.departureTime > 
+    CASE
+        WHEN UTC_TIME() < '12:00:00' THEN CAST(CONCAT(UTC_DATE(), ' 00:00:00') AS DATETIME)
+        ELSE CAST(CONCAT(UTC_DATE(), ' 12:00:00') AS DATETIME)
+    END`;
                 }
                 
                 totalCount = await prisma.$queryRawUnsafe(countQueryString);

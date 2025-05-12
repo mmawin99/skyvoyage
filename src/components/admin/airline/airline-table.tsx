@@ -13,11 +13,15 @@ interface AirlineTableProps {
   isLoading: boolean
   searchQuery: string
   setSearchQuery: (query: string) => void
+  handleEditAirline: (index: number) => void
+  handleDeleteAirline: (index: number) => void
 }
 
 export default function AirlineTable({ airlines, isLoading,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  handleEditAirline,
+  handleDeleteAirline
 }: AirlineTableProps) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [sortColumn, setSortColumn] = useState<keyof AirlineAPIType>("airlineCode")
@@ -129,11 +133,15 @@ export default function AirlineTable({ airlines, isLoading,
                       {airline.numAssociateAircraft}
                     </TableCell>
                     <TableCell className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button onClick={()=>{
+                        handleEditAirline(index)
+                      }} variant="outline" size="sm">
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                      <Button onClick={()=>{
+                        handleDeleteAirline(index)
+                      }} variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
                       </Button>

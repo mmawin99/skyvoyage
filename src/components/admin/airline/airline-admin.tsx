@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Airline, AirlineAPIType } from "@/types/type"
+import { Airline, AirlineAPIType, SubmitAirline } from "@/types/type"
 import { PlusCircle } from "lucide-react"
 import { useEffect, useState } from "react"
 import { BackendURLType, useBackendURL } from "../../backend-url-provider"
@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 // import AirlineTable from "./airline-table"
 // import AddAirlineSheet from "./add-airline-sheet"
 import AirlineTable from "./airline-table"
+import AddAirlineSheet from "./add-airline-sheet"
+import { toast } from "sonner"
+import { useDebounce } from "@uidotdev/usehooks"
 
 interface AirlineAdminResponseType {
     message: string
@@ -30,10 +33,6 @@ export default function AirlineAdmin() {
     const [isAddAirlineOpen, setIsAddAirlineOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
 
-    const [selectedCarrier, setSelectedCarrier]     = useState<Airline>()
-    const [carriers, setCarriers]                   = useState<Airline[]>([])
-    const [loadingCarrier, setLoadingCarrier]       = useState<boolean>(false)
-
     //Pagination state
     const [page, setPage] = useState<number>(1)
     const [searchQuery, setSearchQuery] = useState<string>("")
@@ -42,12 +41,15 @@ export default function AirlineAdmin() {
     
     //Refresh for new airline added
     const [newAirlineAdded, setNewAirlineAdded] = useState<boolean>(false)
+
+    const [defaultValue, setDefaultValue] = useState<SubmitAirline|null>(null)
+    const debouncecSearchQuery = useDebounce(searchQuery, 500)
     useEffect(()=>{
         const fetchAirlines = async () => {
             setIsLoading(true)
             if(!backendURL || backendURL == "") return
             try {
-                const response = await fetch(`/api/query/admin/airline/${pageSize}/${page}?query=${searchQuery}`, {
+                const response = await fetch(`/api/query/admin/airline/${pageSize}/${page}?query=${debouncecSearchQuery}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -71,32 +73,113 @@ export default function AirlineAdmin() {
 
         fetchAirlines()
 
-    }, [searchQuery, page, pageSize, backendURL, selectedCarrier, newAirlineAdded])
-    // const handleAddAirline = async (newAirline: SubmitAirline, onSuccess: ()=> void, onError: ()=> void) => {
-    //     setIsLoading(true)
-    //     const response = await fetch(`${backendURL}/flight/addAirline`,{
-    //     method: "POST",
-    //     headers: {
-    //         "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify(newAirline),
-    //     })
-        
-    //     if(response.ok) {
-    //         const data = await response.json()
-    //         console.log(data)
-    //         onSuccess()
-    //         toast.success("Airline added successfully")
-    //         const currStatus = newAirlineAdded
-    //         setNewAirlineAdded(!currStatus)
-    //     }else{
-    //         toast.error("Failed to add airline, Check console for more details.")
-    //         console.error("Error adding airline:", await response.json())
-    //         onError()
-    //     }
-    //     setIsLoading(false)
-    // }
+    }, [debouncecSearchQuery, page, pageSize, backendURL, newAirlineAdded])
+    
+    const handleAddAirline = async (newAirline: SubmitAirline, onSuccess: ()=> void, onError: ()=> void) => {
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const response = await fetch(`${backendURL}/flight/addAirline`,{
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(newAirline),
+                })
+                
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    onSuccess()
+                    const currStatus = newAirlineAdded
+                    setNewAirlineAdded(!currStatus)
+                }else{
+                    console.error("Error adding airline:", await response.json())
+                    toast.error("Failed to add airline")
+                }
+            },
+            {
+                loading: "Adding airline...",
+                success: () => {
+                    setIsLoading(false)
+                    return "Airline added successfully"
+                },
+                error: (error) => {
+                    setIsLoading(false)
+                    console.error("Error adding airline:", error)
+                    return "Failed to add airline, Check console for more details."
+                }
+            }
+        )
+    }
 
+    const handleEditAirline = async (newAirline: SubmitAirline, onSuccess: ()=> void, onError: ()=> void) => {
+        // setIsLoading(true)
+        // const response = await fetch(`${backendURL}/flight/editAirline`,{
+        //     method: "POST",
+        //     headers: {
+        //         "Content-Type": "application/json",
+        //     },
+        //     body: JSON.stringify(newAirline),
+        // })
+        
+        // if(response.ok) {
+        //     const data = await response.json()
+        //     console.log(data)
+        //     onSuccess()
+        //     toast.success("Airline edited successfully")
+        //     const currStatus = newAirlineAdded
+        //     setNewAirlineAdded(!currStatus)
+        // }else{
+        //     toast.error("Failed to edit airline, Check console for more details.")
+        //     console.error("Error editing airline:", await response.json())
+        //     onError()
+        // }
+        // setIsLoading(false)
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const response = await fetch(`${backendURL}/flight/editAirline`,{
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(newAirline),
+                })
+                
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    onSuccess()
+                    const currStatus = newAirlineAdded
+                    setNewAirlineAdded(!currStatus)
+                }else{
+                    console.error("Error editing airline:", await response.json())
+                    toast.error("Failed to edit airline")
+                }
+            },
+            {
+                loading: "Editing airline...",
+                success: () => {
+                    setIsLoading(false)
+                    return "Airline edited successfully"
+                },
+                error: (error) => {
+                    setIsLoading(false)
+                    console.error("Error editing airline:", error)
+                    return "Failed to edit airline, Check console for more details."
+                }
+            }
+        )
+    }
+
+    const promptEditAirline = (index: number)=>{
+        setDefaultValue({
+            airlineCode: airlines[index].airlineCode,
+            airlineName: airlines[index].airlineName
+        })
+        setIsAddAirlineOpen(true)
+    }
     const SelectSizeInput = ()=>{
         return (
         <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
@@ -119,11 +202,7 @@ export default function AirlineAdmin() {
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">Airline Management</h1>
                 <Button onClick={() => { 
-                // if((selectedCarrier?.name ?? "") == ""){
-                    // toast.error("Please select an airline first.")
-                // }else{
                     setIsAddAirlineOpen(true)
-                // }
                 }} className="gap-1">
                 <PlusCircle className="h-4 w-4" />
                     Add Airline
@@ -150,7 +229,16 @@ export default function AirlineAdmin() {
                         />
                         <SelectSizeInput />
                     </div>
-                    <AirlineTable searchQuery={searchQuery} setSearchQuery={setSearchQuery} airlines={airlines} isLoading={isLoading} />
+                    <AirlineTable 
+                        handleDeleteAirline={(index)=>{
+                            toast.error("Delete airline feature is not implemented yet.")
+                        }}
+                        handleEditAirline={(index)=>{
+                            promptEditAirline(index)
+                        }}
+                        searchQuery={searchQuery} setSearchQuery={setSearchQuery} airlines={airlines} 
+                        isLoading={isLoading} 
+                    />
                     <div className="flex flex-row justify-between mt-4">
                     <CustomPagination className="w-full flex flex-row justify-start" 
                         currentPage={parseInt(String(page))} 
@@ -164,12 +252,17 @@ export default function AirlineAdmin() {
                 </CardContent>
             </Card> 
 
-            {/* <AddAirlineSheet
+            <AddAirlineSheet
                 open={isAddAirlineOpen}
-                onOpenChange={setIsAddAirlineOpen}
+                onOpenChange={()=>{
+                    setIsAddAirlineOpen(false)
+                    setDefaultValue(null)
+                }}
                 onAddAirline={handleAddAirline}
+                onEditAirline={handleEditAirline}
                 isLoading={isLoading}
-            /> */}
+                defaultValue={defaultValue}
+            />
         </div>
     )
 }

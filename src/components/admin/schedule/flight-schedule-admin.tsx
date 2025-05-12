@@ -13,6 +13,7 @@ import { BackendURLType, useBackendURL } from "../../backend-url-provider"
 import { CustomPagination } from "../../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
 import AddScheduleSheet from "./add-schedule-sheet"
+import { useDebounce } from "@uidotdev/usehooks"
 
 interface ScheduleFetchResponse {
   message: string
@@ -36,12 +37,13 @@ export default function ScheduleAdmin() {
     const [searchQuery, setSearchQuery] = useState<string>("")
     const [pageSize, setPageSize] = useState<number>(20)
     const [totalCount, setTotalCount] = useState<number>(0)
+    const debounceSearchQuery = useDebounce(searchQuery, 500)
     useEffect(()=>{
         const fetchFlights = async () => {
         setIsLoading(true)
         if(!backendURL || backendURL == "") return
         try {
-            const response = await fetch(`${backendURL}/flight/schedule/${pageSize}/${kind}/${page}?query=${searchQuery}`, {
+            const response = await fetch(`${backendURL}/flight/schedule/${pageSize}/${kind}/${page}?query=${debounceSearchQuery}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -57,6 +59,7 @@ export default function ScheduleAdmin() {
             console.error("Error fetching flights:", await response.json())
             }
         } catch (error) {
+            toast.error("Failed to fetch flights, Check console for more details.")
             console.error("Error fetching flights:", error)
         } finally {
             setIsLoading(false)
@@ -66,7 +69,7 @@ export default function ScheduleAdmin() {
         fetchFlights()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery, page, pageSize, kind])
+    }, [debounceSearchQuery, page, pageSize, kind])
     const handleAddFlight = async (newFlight: SubmitSchedule, onSuccess: ()=> void, onError: ()=> void) => {
         setIsLoading(true)
         // Simulate API call

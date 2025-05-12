@@ -541,7 +541,6 @@ export interface SubmitAirline{
     airlineCode: string,
     airlineName: string,
 }
-
 export interface SubmitAirport{
     airportCode: string,
     name: string,
@@ -552,6 +551,7 @@ export interface SubmitAirport{
     longitude: number,
     altitude: number
 }
+
 
 export interface SubmitUser{
     firstname: string,

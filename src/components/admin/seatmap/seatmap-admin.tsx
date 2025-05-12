@@ -17,25 +17,9 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { SeatmapAPIMetadata } from "@/types/type"
 import { SeatMapEditor } from "./seatmap-editor"
-
-function useDebounce<T>(value: T, delay: number): T {
-    const [debouncedValue, setDebouncedValue] = useState(value)
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value)
-        }, delay)
-
-        return () => {
-            clearTimeout(handler)
-        }
-    }, [value, delay])
-
-    return debouncedValue
-}
+import { useDebounce } from "@uidotdev/usehooks"
 
 export const SeatmapAdmin = () => {
-
     const [mode, setMode] = useState<"edit" | "add" | "list">("list")
     const [effectiveSeatmapId, setEffectiveSeatmapId] = useState<string>("")
     const [data, setData] = useState<SeatmapAPIMetadata[]>([])

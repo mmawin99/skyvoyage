@@ -87,12 +87,12 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+        <Card className="overflow-hidden hover:shadow-lg transition-shadow pt-0">
           <div className="relative h-48">
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
             <div
               className="h-full bg-cover bg-center"
-              style={{ backgroundImage: "url('/placeholder.svg?height=400&width=600')" }}
+              style={{ backgroundImage: "url('/earlybird.jpg')" }}
             />
             <Badge className="absolute top-3 left-3 z-20 bg-blue-600">Limited Time</Badge>
           </div>
@@ -108,12 +108,12 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+        <Card className="overflow-hidden hover:shadow-lg transition-shadow pt-0">
           <div className="relative h-48">
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
             <div
               className="h-full bg-cover bg-center"
-              style={{ backgroundImage: "url('/placeholder.svg?height=400&width=600')" }}
+              style={{ backgroundImage: "url('/family.jpg')" }}
             />
             <Badge className="absolute top-3 left-3 z-20 bg-green-600">Family Deal</Badge>
           </div>
@@ -131,12 +131,12 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+        <Card className="overflow-hidden hover:shadow-lg transition-shadow pt-0">
           <div className="relative h-48">
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
             <div
               className="h-full bg-cover bg-center"
-              style={{ backgroundImage: "url('/placeholder.svg?height=400&width=600')" }}
+              style={{ backgroundImage: "url('/business.jpg')" }}
             />
             <Badge className="absolute top-3 left-3 z-20 bg-purple-600">Business Class</Badge>
           </div>
@@ -169,7 +169,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20 z-10" />
             <div
               className="h-64 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-              style={{ backgroundImage: "url('/placeholder.svg?height=500&width=400')" }}
+              style={{ backgroundImage: "url('/jfk.jpg')" }}
             />
             <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
               <h3 className="text-xl font-bold text-white">New York</h3>
@@ -186,7 +186,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20 z-10" />
             <div
               className="h-64 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-              style={{ backgroundImage: "url('/placeholder.svg?height=500&width=400')" }}
+              style={{ backgroundImage: "url('/lhr.jpg')" }}
             />
             <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
               <h3 className="text-xl font-bold text-white">London</h3>
@@ -203,7 +203,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20 z-10" />
             <div
               className="h-64 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-              style={{ backgroundImage: "url('/placeholder.svg?height=500&width=400')" }}
+              style={{ backgroundImage: "url('/hnd.jpg')" }}
             />
             <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
               <h3 className="text-xl font-bold text-white">Tokyo</h3>
@@ -220,7 +220,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20 z-10" />
             <div
               className="h-64 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-              style={{ backgroundImage: "url('/placeholder.svg?height=500&width=400')" }}
+              style={{ backgroundImage: "url('/cdg.jpg')" }}
             />
             <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
               <h3 className="text-xl font-bold text-white">Paris</h3>
@@ -238,7 +238,7 @@ export default function Home() {
 
     {/* Rest of the content remains the same */}
     <div className="container mx-auto py-16 px-4">
-      <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Why Fly With SkyWings</h2>
+      <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Why Fly With SkyVoyage</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="text-center">
@@ -336,7 +336,7 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-white/90 mb-6">
-                &ldquo;As a frequent business traveler, I appreciate the punctuality and efficiency of SkyWings. Their
+                &ldquo;As a frequent business traveler, I appreciate the punctuality and efficiency of SkyVoyage. Their
                 business class service is worth every penny.&rdquo;
               </p>
               <div className="flex items-center">

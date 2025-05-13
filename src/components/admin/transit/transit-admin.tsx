@@ -13,6 +13,7 @@ import { CustomPagination } from "../../custom-pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select"
 import AddTransitSheet from "./add-transit-sheet"
 import TransitTable from "./transit-table"
+import { useDebounce } from "@uidotdev/usehooks"
 
 interface TransitAdminResponseType {
     message: string
@@ -44,6 +45,7 @@ export default function TransitAdmin() {
 
     const [defaultValue, setDefaultValue] = useState<SubmitTransit | null>(null)
     const [helperDefaultValue, setHelperDefaultValue] = useState<adminTransitListType | null>(null)
+    const debounceSearchQuery = useDebounce(searchQuery, 500)
     useEffect(()=>{
         const fetchTransits = async () => {
             setIsLoading(true)
@@ -55,7 +57,7 @@ export default function TransitAdmin() {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        searchQuery: searchQuery
+                        searchQuery: debounceSearchQuery
                     })
                 })
                 if (response.ok) {
@@ -76,7 +78,7 @@ export default function TransitAdmin() {
 
         fetchTransits()
 
-    }, [searchQuery, page, pageSize, backendURL, selectedCarrier, newTransitAdded])
+    }, [debounceSearchQuery, page, pageSize, backendURL, selectedCarrier, newTransitAdded])
     const handleAddTransit = async (newTransit: SubmitTransit, onSuccess: ()=> void, onError: ()=> void) => {
         toast.promise(
             async () => {

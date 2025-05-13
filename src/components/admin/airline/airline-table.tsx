@@ -140,12 +140,12 @@ export default function AirlineTable({ airlines, isLoading,
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      {/* <Button onClick={()=>{
+                      <Button onClick={()=>{
                         handleDeleteAirline(index)
                       }} variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
-                      </Button> */}
+                      </Button>
                     </TableCell>
                 </TableRow>
             )) : (

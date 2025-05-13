@@ -85,6 +85,47 @@ export default function AircraftAdmin() {
         setIsLoading(false)
     }
 
+    const confirmDeleteAircraft = async (index: number) => {
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const response = await fetch(`${backendURL}/flight/deleteAircraft/${aircraft[index].registration}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                })
+                if (response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    toast.success("Aircraft deleted successfully")
+                    const currStatusAdded = newAircraftAdded
+                    setNewAircraftAdded(!currStatusAdded)
+                } else {
+                    toast.error("Failed to delete Aircraft, Check console for more details.")
+                    console.error("Error deleting Aircraft:", await response.json())
+                }
+            },
+            {
+                loading: "Deleting Aircraft...",
+                success: "Aircraft deleted successfully",
+                error: "Failed to delete Aircraft, Check console for more details.",
+            }
+        )
+    }
+
+    const handleDeleteAircraft = async (index: number)=>{
+        toast.warning("are you sure you want to delete this aircraft?", {
+            description: "This action cannot be undone",
+            action: {
+                label: "Delete",
+                onClick: async () => {
+                    confirmDeleteAircraft(index)
+                }
+            }
+        })
+    }
+
     return (
             <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
@@ -100,7 +141,10 @@ export default function AircraftAdmin() {
                             title="Search for airline"
                             Icon={PlaneIcon}
                             selected={selectedCarrier ?? null}
-                            onSelect={setSelectedCarrier}
+                            onSelect={(sel)=>{
+                                setSelectedCarrier(sel)
+                                setPage(1)
+                            }}
                             requestMethod="GET"
                             results={carriers}
                             setResults={setCarriers}
@@ -160,7 +204,7 @@ export default function AircraftAdmin() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex flex-col">
-                                        {aircraft.length > 0 ? <AircraftTable aircraft={aircraft} isLoading={isLoadingAircraft} /> : (
+                                        {aircraft.length > 0 ? <AircraftTable handleDeleteAircraft={handleDeleteAircraft} aircraft={aircraft} isLoading={isLoadingAircraft} /> : (
                                             <div className="flex flex-col items-center justify-center gap-6 py-6 w-full">
                                                 <PlaneTakeoff className="h-24 w-24 text-blue-600" />
                                                 <div className="text-xl font-semibold">No aircraft found</div>

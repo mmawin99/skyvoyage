@@ -79,28 +79,6 @@ export default function FlightAdmin() {
 
     }, [debounceSearchQuery, page, pageSize, backendURL, selectedCarrier, newFlightAdded])
     const handleAddFlight = async (newFlight: SubmitFlight, onSuccess: ()=> void, onError: ()=> void) => {
-        // setIsLoading(true)
-        // const response = await fetch(`${backendURL}/flight/addFlight`,{
-        // method: "POST",
-        // headers: {
-        //     "Content-Type": "application/json",
-        // },
-        // body: JSON.stringify(newFlight),
-        // })
-        
-        // if(response.ok) {
-        //     const data = await response.json()
-        //     console.log(data)
-        //     onSuccess()
-        //     toast.success("Flight added successfully")
-        //     const currStatus = newFlightAdded
-        //     setNewFlightAdded(!currStatus)
-        // }else{
-        //     toast.error("Failed to add flight, Check console for more details.")
-        //     console.error("Error adding flight:", await response.json())
-        //     onError()
-        // }
-        // setIsLoading(false)
         toast.promise(
             async () => {
                 if(!backendURL || backendURL == "") return
@@ -182,6 +160,52 @@ export default function FlightAdmin() {
         })
         setIsAddFlightOpen(true)
     }
+
+    const confirmDeleteFlight = async (index: number) => {
+        const flight = flights[index]
+        toast.promise(
+            async () => {
+                if(!backendURL || backendURL == "") return
+                const response = await fetch(`${backendURL}/flight/deleteFlight/${flight.airlineCode}/${flight.flightNum}`,{
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                })
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    setNewFlightAdded(!newFlightAdded)
+                    return data
+                }else{
+                    console.error("Failed to delete flight")
+                }
+            }
+            , {
+                loading: "Deleting flight...",
+                success: (data) => {
+                    console.log(data)
+                    return "Flight deleted successfully"
+                },
+                error: (error) => {
+                    console.error("Error deleting flight:", error)
+                    return "Failed to delete flight, Check console for more details."
+                },
+            }
+        )
+    }
+
+    const handleDeleteFlight = async (index: number) => {
+        toast.warning("Are you sure you want to delete this flight?", {
+            action: {
+                label: "Delete",
+                onClick: () => {
+                    confirmDeleteFlight(index)
+                }
+            }
+        })
+    }
+
     const SelectSizeInput = ()=>{
         return (
         <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
@@ -263,7 +287,9 @@ export default function FlightAdmin() {
                         />
                         <SelectSizeInput />
                     </div>
-                    <FlightTable handleEditFlight={promptEditFlight} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
+                    <FlightTable 
+                    handleDeleteFlight={handleDeleteFlight}
+                    handleEditFlight={promptEditFlight} searchQuery={searchQuery} setSearchQuery={setSearchQuery} flights={flights} isLoading={isLoading} />
                     <div className="flex flex-row justify-between mt-4">
                     <CustomPagination className="w-full flex flex-row justify-start" 
                         currentPage={parseInt(String(page))} 

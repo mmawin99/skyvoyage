@@ -159,6 +159,50 @@ export default function AirportAdmin() {
         setIsAddAirportOpen(true)
     }
     
+    const confirmDeleteAirport = async (index: number) => {
+        const airport = airports[index]
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const response = await fetch(`${backendURL}/flight/deleteAirport/${airport.airportCode}`,{
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                })
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    setNewAirportAdded(!newAirportAdded)
+                }else{
+                    console.error("Error deleting airport:", await response.json())
+                }
+            }, {
+                loading: "Deleting airport...",
+                success: () => {
+                    setIsLoading(false)
+                    return "Airport deleted successfully"
+                },
+                error: (error) => {
+                    setIsLoading(false)
+                    return `Failed to delete airport, Check console for more details.`
+                }
+            }
+        )
+    }
+
+    const handleDeleteAirport = async (index: number) => {
+        toast.warning("Are you sure you want to delete this airport?", {
+            description: "This action cannot be undone.",
+            action: {
+                label: "Delete",
+                onClick: async () => {
+                    confirmDeleteAirport(index)
+                }    
+            }
+        })
+    }
+
     const SelectSizeInput = ()=>{
         return (
         <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
@@ -214,7 +258,7 @@ export default function AirportAdmin() {
                     </div>
                     <AirportTable 
                         handleDeleteAirport={(index)=>{
-                            toast.error("Delete airline feature is not implemented yet.")
+                            handleDeleteAirport(index)
                         }}
                         handleEditAirport={(index)=>{
                             promptEditAirport(index)

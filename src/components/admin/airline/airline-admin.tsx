@@ -151,6 +151,55 @@ export default function AirlineAdmin() {
         )
     }
 
+    const confirmDeleteAirline = async (index: number) => {
+        const airlineCode = airlines[index].airlineCode
+        toast.promise(
+            async () => {
+                setIsLoading(true)
+                const response = await fetch(`${backendURL}/flight/deleteAirline/${airlineCode}`,{
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                })
+                
+                if(response.ok) {
+                    const data = await response.json()
+                    console.log(data)
+                    const currStatus = newAirlineAdded
+                    setNewAirlineAdded(!currStatus)
+                }else{
+                    console.error("Error deleting airline:", await response.json())
+                    toast.error("Failed to delete airline")
+                }
+            },
+            {
+                loading: "Deleting airline...",
+                success: () => {
+                    setIsLoading(false)
+                    return "Airline deleted successfully"
+                },
+                error: (error) => {
+                    setIsLoading(false)
+                    console.error("Error deleting airline:", error)
+                    return "Failed to delete airline, Check console for more details."
+                }
+            }
+        )
+    }
+
+    const handleDeleteAirline = async (index: number)=>{
+        toast.warning("Are you sure you want to delete this airline?", {
+            description: "This action cannot be undone.",
+            action: {
+                "label": "Delete",
+                onClick: ()=>{
+                    confirmDeleteAirline(index)
+                }
+            }
+        })
+    }
+
     const promptEditAirline = (index: number)=>{
         setDefaultValue({
             airlineCode: airlines[index].airlineCode,
@@ -209,7 +258,7 @@ export default function AirlineAdmin() {
                     </div>
                     <AirlineTable 
                         handleDeleteAirline={(index)=>{
-                            toast.error("Delete airline feature is not implemented yet.")
+                            handleDeleteAirline(index)
                         }}
                         handleEditAirline={(index)=>{
                             promptEditAirline(index)

@@ -1832,11 +1832,11 @@ export const flightModule = new Elysia({
         }
     })
     .post("/flightlist/:airline/:size/:page", async ({params, body}:{
-        body:{search: string},
+        body:{searchQuery: string},
         params:{airline:string, size:number, page:number, search:string}
     })=>{
         const { airline, size, page, } = params
-        const { search } = body
+        const { searchQuery:search } = body
         if(!airline || !size || !page){
             return error(400, {
                 status: false,

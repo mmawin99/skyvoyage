@@ -31,7 +31,6 @@ export interface BookingOverTime {
 export interface TotalRevenue {
     timeInterval: string
     totalRevenue: number
-    percentChange: number
 }
   
 export interface RevenueByRoute {

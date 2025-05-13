@@ -26,16 +26,7 @@ export const dashboardAdminModule = new Elysia({
         const totalRevenue:TotalRevenue[] = await prisma.$queryRaw`
             SELECT
                 timeInterval,
-                totalRevenue,
-                CASE
-                    WHEN LAG(totalRevenue) OVER (ORDER BY timeInterval) IS NULL 
-                        OR LAG(totalRevenue) OVER (ORDER BY timeInterval) = 0
-                        THEN 0
-                    ELSE ROUND(
-                        ((totalRevenue - LAG(totalRevenue) OVER (ORDER BY timeInterval))
-                        / LAG(totalRevenue) OVER (ORDER BY timeInterval)) * 100, 2
-                    )
-                END AS percentChange
+                totalRevenue
             FROM (
                 SELECT
                     DATE_FORMAT(paymentDate, ${interval}) AS timeInterval,
@@ -49,22 +40,15 @@ export const dashboardAdminModule = new Elysia({
         const previousPeriodTotalRevenue:TotalRevenue[] = await prisma.$queryRaw`
             SELECT
                 timeInterval,
-                totalRevenue,
-                CASE
-                    WHEN LAG(totalRevenue) OVER (ORDER BY timeInterval) IS NULL 
-                        OR LAG(totalRevenue) OVER (ORDER BY timeInterval) = 0
-                        THEN 0
-                    ELSE ROUND(
-                        ((totalRevenue - LAG(totalRevenue) OVER (ORDER BY timeInterval))
-                        / LAG(totalRevenue) OVER (ORDER BY timeInterval)) * 100, 2
-                    )
-                END AS percentChange
+                totalRevenue
             FROM (
                 SELECT
                     DATE_FORMAT(paymentDate, ${interval}) AS timeInterval,
                     SUM(amount) AS totalRevenue
                 FROM payment JOIN booking b ON payment.bookingId = b.bookingId
-                WHERE b.status = 'PAID' AND (paymentDate BETWEEN STR_TO_DATE(${previousStart}, '%Y-%m-%dT%H:%i:%s.%fZ') AND STR_TO_DATE(${previousEnd}, '%Y-%m-%dT%H:%i:%s.%fZ'))
+                WHERE b.status = 'PAID' AND (paymentDate BETWEEN 
+                    STR_TO_DATE(${previousStart}, '%Y-%m-%dT%H:%i:%s.%fZ') 
+                    AND STR_TO_DATE(${previousEnd}, '%Y-%m-%dT%H:%i:%s.%fZ'))
                 GROUP BY timeInterval
                 ORDER BY timeInterval
             ) AS subquery;

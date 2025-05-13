@@ -1456,8 +1456,7 @@ export const flightModule = new Elysia({
                     JOIN airport aa ON f.arriveAirportId = aa.airportCode
                     JOIN airline a ON a.airlineCode = f.airlineCode
                     WHERE (
-                        fo.flightId LIKE '${wildcardValue}'
-                        OR fo.flightNum LIKE '${wildcardValue}'
+                        fo.flightNum LIKE '${wildcardValue}'
                         OR f.departAirportId LIKE '${wildcardValue}'
                         OR f.arriveAirportId LIKE '${wildcardValue}'
                         OR da.name LIKE '${wildcardValue}'

@@ -14,7 +14,7 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
       cancellation: "Fee applies",
       priorityBoarding: false,
       label: "Economy",
-      refundable: false,
+      refundable: true,
       loungeAccess: false,
       mealSelection: false
     },
@@ -30,7 +30,7 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
       cancellation: "Fee applies",
       priorityBoarding: false,
       label: "Value",
-      refundable: false,
+      refundable: true,
       loungeAccess: false,
       mealSelection: false
     },
@@ -47,7 +47,7 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
       priorityBoarding: false,
       recommended: true,
       label: "Popular",
-      refundable: cabinclass == "W" ? true : false,
+      refundable: true,
       loungeAccess: false,
       mealSelection: cabinclass == "W" ? true : false
     },
@@ -63,7 +63,7 @@ export const FarePackageList = (flight:UniversalFlightSchedule, cabinclass:"Y"|"
       cancellation: "Fee applies",
       priorityBoarding: true,
       label: "Business",
-      refundable: cabinclass === "C" || cabinclass === "F" || cabinclass === "W" ? true : false,
+      refundable: true,
       loungeAccess: true,
       mealSelection: true
     },

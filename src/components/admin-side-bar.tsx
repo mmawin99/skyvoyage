@@ -1,5 +1,6 @@
 "use client"
 import {
+  BadgeDollarSign,
   Building2,
   CalendarClock,
   ChevronsLeftRightEllipsis,
@@ -78,6 +79,11 @@ const data = {
       title: "Aircraft",
       url: "/admin/aircrafts",
       icon: PlaneIcon,
+    },
+    {
+      title: "Aircraft Cost",
+      url: "/admin/cost",
+      icon: BadgeDollarSign,
     },
     {
       title: "Flights",

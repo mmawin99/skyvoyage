@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import Elysia, { error } from "elysia";
+import Elysia, { error, t } from "elysia";
 // import modelAircraft from "../../data/model_name.json"
 import { sanitizeBigInt, sanitizeStringForSql } from "@/server/lib";
 import { airline, flight as Flight, PrismaClient } from "../../prisma-client";
@@ -714,7 +714,6 @@ export const flightModule = new Elysia({
             })
         }
     })
-    // 3. Delete Aircraft Endpoint
     .delete("/deleteAircraft/:aircraftId", async ({params}:{params:{aircraftId:string}})=>{
         const { aircraftId } = params
         
@@ -2121,4 +2120,131 @@ export const flightModule = new Elysia({
                 },
             }
         }
+    })
+    .post('/addAircraftCost', async ({ body }) => {
+        try {
+            const newCost = await prisma.aircraftCost.create({
+            data: {
+                model: body.model,
+                ownerAirlineCode: body.ownerAirlineCode,
+                costPerMile: body.costPerMile
+            }
+            })
+            
+            return {
+                status: true,
+                message: 'Aircraft cost added successfully',
+                data: newCost
+            }
+        } catch (err) {
+            return error(500, {
+                status: false,
+                message: `Failed to add aircraft cost: ${(err as Error).message}`
+            })
+        }
+    },
+    {
+        body: t.Object({
+            model: t.String(),
+            ownerAirlineCode: t.String(),
+            costPerMile: t.Number()
+        })
+    })
+    .put('/editAircraftCost',async ({ body }) => {
+        try {
+            const updatedCost = await prisma.$queryRaw`
+                UPDATE aircraftCost
+                SET costPerMile = ${body.costPerMile}
+                WHERE model = ${body.model} AND ownerAirlineCode = ${body.ownerAirlineCode}
+            `
+            
+            return {
+                status: true,
+                message: 'Aircraft cost updated successfully',
+                data: updatedCost
+            }
+        } catch (err) {
+            return error(500, {
+                status: false,
+                message: `Failed to update aircraft cost: ${(err as Error).message}`
+            })
+            
+        }
+    },
+    {
+        body: t.Object({
+            model: t.String(),
+            ownerAirlineCode: t.String(),
+            costPerMile: t.Number()
+        })
+    })
+    .delete('/deleteAircraftCost/:model/:airlineCode',async ({ params }:{params:{model:string,airlineCode:string}}) => {
+        try {
+            await prisma.$executeRaw`
+                DELETE FROM aircraftCost
+                WHERE model = ${params.model} AND ownerAirlineCode = ${params.airlineCode}
+            `
+            
+            return {
+                status: true,
+                message: 'Aircraft cost deleted successfully'
+            }
+        } catch (err) {
+            return error(500, {
+                status: false,
+                message: `Failed to delete aircraft cost: ${(err as Error).message}`
+            })
+        }
+    },
+    {
+        body: t.Object({
+            model: t.String(),
+            ownerAirlineCode: t.String()
+        })
+    })
+    .get('/aircraftcost/:airlineCode/:pageSize/:page', async ({ params }) => {
+        try {
+            const { airlineCode, pageSize, page } = params
+            const pageNumber = parseInt(page)
+            const pageSizeNumber = parseInt(pageSize)
+            const offset = (pageNumber - 1) * pageSizeNumber
+            
+            // Using queryRaw for count operation
+            const countResult:{count:number}[] = await prisma.$queryRaw`
+                SELECT COUNT(*) as count
+                FROM aircraftCost
+                WHERE ownerAirlineCode = ${airlineCode}
+            `
+            
+            const totalCount = Number(countResult[0].count || 0)
+            
+            // Using queryRaw for paginated select operation
+            const costs = await prisma.$queryRaw`
+                SELECT model, ownerAirlineCode, costPerMile
+                FROM aircraftCost
+                WHERE ownerAirlineCode = ${airlineCode}
+                ORDER BY model
+                LIMIT ${pageSizeNumber} OFFSET ${offset}
+            `
+            
+            return {
+                status: true,
+                data: costs,
+                totalCount,
+                page: pageNumber,
+                pageSize: pageSizeNumber
+            }
+        } catch (err) {
+            return error(500, {
+                status: false,
+                message: `Failed to retrieve aircraft costs: ${(err as Error).message}`
+            })
+        }
+    },
+    {
+        params: t.Object({
+            airlineCode: t.String(),
+            pageSize: t.String(),
+            page: t.String()
+        })
     })

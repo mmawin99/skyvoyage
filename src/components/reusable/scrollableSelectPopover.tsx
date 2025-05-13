@@ -27,6 +27,7 @@ interface ScrollableSelectPopoverProps<T> {
     getKey: (item: T) => string
     getSearchValue?: (item: T) => string
     onSelect: (item: T) => void
+    disabled?: boolean
 }
 
 export function ScrollableSelectPopover<T>({
@@ -36,6 +37,7 @@ export function ScrollableSelectPopover<T>({
     placeholder = "Search...",
     pageSize = 20,
     renderItem,
+    disabled = false,
     renderSelectedItem,
     getKey,
     getSearchValue = (item: T) => getKey(item), // fallback
@@ -114,6 +116,7 @@ export function ScrollableSelectPopover<T>({
             <PopoverTrigger asChild>
                 <Button
                 variant="outline"
+                disabled={disabled}
                 role="combobox"
                 className="w-full justify-between"
                 type="button"

@@ -2,9 +2,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardImage, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { PassengerTicket, searchSelectedRoutes, ticketMealUpdatorType } from '@/types/type'
+import { FareType, PassengerTicket, searchSelectedRoutes, ticketMealUpdatorType } from '@/types/type'
 import { ArrowRight } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import mealList from '../../../../data/meal.json'
 const MealSelectionCard = ({onInteract}:{
     onInteract: ()=> void
@@ -41,6 +41,13 @@ const MealSelectionCard = ({onInteract}:{
 
     )
 }
+
+interface fareTypeForMeal{
+    segmentIndex: number,
+    package: FareType,
+    cabinClass: "C" | "Y" | "F" | "W",
+}
+
 const MealAdditionForm = ({
     onClose,
     selectedRoute,
@@ -55,7 +62,22 @@ const MealAdditionForm = ({
     setDefaultValue?: React.Dispatch<React.SetStateAction<ticketMealUpdatorType[]>>
 }) =>{
     const [mealSelection, setMealSelection] = useState<ticketMealUpdatorType[]>(defaultValue); 
-    
+    const [checkFarePrice, setCheckFarePrice] = useState<fareTypeForMeal[]>([]);
+
+    useEffect(()=>{
+        const fpList:fareTypeForMeal[] = []
+        selectedRoute.selectedDepartRoute.flight.segments.forEach(() => {
+            fpList.push({
+                segmentIndex: fpList.length,
+                package: selectedRoute.selectedDepartRoute.selectedFare,
+                cabinClass: selectedRoute.queryString.cabinClass
+            })
+        })
+        if(fpList.length > 0){
+            setCheckFarePrice(fpList);
+        }
+    }, [selectedRoute])
+
     // Function to handle meal selection
     const handleMealSelection = (segmentIndex: number, passengerIndex: number, mealIndex: string) => {
         const meal = parseInt(mealIndex);
@@ -78,7 +100,13 @@ const MealAdditionForm = ({
                     ticketIndex: segmentIndex,
                     mealIndex: meal,
                     mealLabel: mealList[meal].name,
-                    price: mealList[meal].price,
+                    price: checkFarePrice.length > 0 ? 
+                        (
+                            checkFarePrice[segmentIndex].package === "STANDARD" && checkFarePrice[segmentIndex].cabinClass === "Y" ? mealList[meal].price
+                            : (checkFarePrice[segmentIndex].package === "STANDARD" && checkFarePrice[segmentIndex].cabinClass === "W" ? 0
+                            : 0)
+                        )
+                    : mealList[meal].price,
                 };
             }
             
@@ -154,7 +182,7 @@ const MealAdditionForm = ({
                                             
                                             return (
                                                 <div key={`segment-meal-${segmentIndex}-passenger-${passengerIndex}`} className='flex flex-row justify-between'>
-                                                    <span>Additional Meal Weight For <span className='font-semibold'>{passenger.firstName} {passenger.lastName[0].toUpperCase()}.</span></span>
+                                                    <span>Additional Meal For <span className='font-semibold'>{passenger.firstName} {passenger.lastName[0].toUpperCase()}.</span></span>
                                                     <Select 
                                                         value={currentValue}
                                                         onValueChange={(value) => handleMealSelection(segmentIndex, passengerIndex, value)}
@@ -164,7 +192,16 @@ const MealAdditionForm = ({
                                                                 {currentValue === '-1' ? 
                                                                     'Unselected meal - Free of charge' : 
                                                                     <div className='text-left'>
-                                                                        <div>{mealList[parseInt(currentValue)].name} - ${mealList[parseInt(currentValue)].price}.00</div>
+                                                                        <div>{mealList[parseInt(currentValue)].name} - ${
+                                                                            checkFarePrice.length > 0 ?
+                                                                                (checkFarePrice[segmentIndex].package === "STANDARD" && checkFarePrice[segmentIndex].cabinClass === "Y" ? 
+                                                                                    (mealList[parseInt(currentValue)].price + ".00")
+                                                                                : (checkFarePrice[segmentIndex].package === "STANDARD" && checkFarePrice[segmentIndex].cabinClass === "W" ? "Free of charge"
+                                                                                : "Free of charge")
+                                                                            )
+                                                                            :
+                                                                            (mealList[parseInt(currentValue)].price + ".00")
+                                                                            }</div>
                                                                         <div className='text-xs text-muted-foreground line-clamp-3 w-40'>{mealList[parseInt(currentValue)].description}</div>
                                                                     </div>
                                                                 }

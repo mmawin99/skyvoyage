@@ -628,3 +628,14 @@ export interface SeatmapAPIMetadata{
     seatCount: number
     classDistribution: string
 }
+
+export interface SubmitAircraftCost{
+    model: string,
+    ownerAirlineCode: string,
+    costPerMile: number
+}
+export interface AircraftCost {
+    model: string,
+    ownerAirlineCode: string,
+    costPerMile: number
+}

@@ -22,7 +22,7 @@ export const userModule = new Elysia({
                 status: false,
             })
             // check is firstname, lastname is in english and numbers only
-            const regex = /^[a-zA-Z0-9]+$/
+            const regex = /^[a-zA-Z0-9.-]+$/
             if(!regex.test(firstname) || !regex.test(lastname)) return error(401, {
                 message: 'Firstname and lastname must be in english and numbers only',
                 status: false,

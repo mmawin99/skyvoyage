@@ -73,9 +73,21 @@ const MealAdditionForm = ({
                 cabinClass: selectedRoute.queryString.cabinClass
             })
         })
+        if (selectedRoute.selectedReturnRoute && selectedRoute.selectedReturnRoute?.selectedFare) {
+            const selectedFare = selectedRoute.selectedReturnRoute.selectedFare;
+            selectedRoute.selectedReturnRoute.flight.segments.forEach(() => {
+                fpList.push({
+                    segmentIndex: fpList.length,
+                    package: selectedFare, // now guaranteed defined
+                    cabinClass: selectedRoute.queryString.cabinClass
+                });
+            });
+        }
         if(fpList.length > 0){
             setCheckFarePrice(fpList);
         }
+        console.log("use fucking Effect ranned.", checkFarePrice);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRoute])
 
     // Function to handle meal selection
@@ -192,15 +204,15 @@ const MealAdditionForm = ({
                                                                 {currentValue === '-1' ? 
                                                                     'Unselected meal - Free of charge' : 
                                                                     <div className='text-left'>
-                                                                        <div>{mealList[parseInt(currentValue)].name} - ${
+                                                                        <div>{mealList[parseInt(currentValue)].name} - {
                                                                             checkFarePrice.length > 0 ?
                                                                                 (checkFarePrice[segmentIndex].package === "STANDARD" && checkFarePrice[segmentIndex].cabinClass === "Y" ? 
-                                                                                    (mealList[parseInt(currentValue)].price + ".00")
-                                                                                : (checkFarePrice[segmentIndex].package === "STANDARD" && checkFarePrice[segmentIndex].cabinClass === "W" ? "Free of charge"
-                                                                                : "Free of charge")
+                                                                                    ("$"+mealList[parseInt(currentValue)].price + ".00")
+                                                                                : (checkFarePrice[segmentIndex].package === "STANDARD" && checkFarePrice[segmentIndex].cabinClass === "W" ? " Free of charge"
+                                                                                : " Free of charge")
                                                                             )
                                                                             :
-                                                                            (mealList[parseInt(currentValue)].price + ".00")
+                                                                            ("$"+mealList[parseInt(currentValue)].price + ".00")
                                                                             }</div>
                                                                         <div className='text-xs text-muted-foreground line-clamp-3 w-40'>{mealList[parseInt(currentValue)].description}</div>
                                                                     </div>
@@ -216,7 +228,19 @@ const MealAdditionForm = ({
                                                                             key={`segment-b-${segmentIndex}-p-${passengerIndex}-w-${mIndex}`} 
                                                                             value={`${mIndex}`}>
                                                                             <div>
-                                                                                <div>{meal.name} - ${meal.price}.00</div>
+                                                                                <div>{meal.name} - 
+
+                                                                                    {
+                                                                                        checkFarePrice.length > 0 ?
+                                                                                            (checkFarePrice[segmentIndex].package === "STANDARD" && checkFarePrice[segmentIndex].cabinClass === "Y" ? 
+                                                                                                ("$"+meal.price + ".00")
+                                                                                            : (checkFarePrice[segmentIndex].package === "STANDARD" && checkFarePrice[segmentIndex].cabinClass === "W" ? " Free of charge"
+                                                                                            : " Free of charge")
+                                                                                        )
+                                                                                        :
+                                                                                        ("$"+meal.price + ".00")
+                                                                                    }
+                                                                                </div>
                                                                                 <div className='text-xs text-muted-foreground line-clamp-3 w-40'>{meal.description}</div>
                                                                             </div>
                                                                         </SelectItem>

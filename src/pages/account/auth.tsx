@@ -20,6 +20,7 @@ import { CountryList } from "@/lib/country"
 import { Country } from "@/types/type"
 import { CountryCode, parsePhoneNumberFromString } from 'libphonenumber-js';
 import { signIn, signOut } from "next-auth/react"
+import { toast } from "sonner"
 const typedCountries = CountryList;
 
 export default function AuthPage() {
@@ -152,6 +153,9 @@ export default function AuthPage() {
                   console.log(data)
                   setIsError(true)
                   setError("signup_failed")
+                  if(data.message || data.error){
+                    toast.error(data.message || data.error)
+                  }
                 }
             }else{
               setIsError(true)
